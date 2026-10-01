@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Publicar Producto</string>
+    <string name="titulo_publicar">Publicar producto</string>
+    <string name="campo_nombre">Nombre</string>
+    <string name="campo_descripcion">Descripción</string>
+    <string name="campo_precio">Precio (S/)</string>
+    <string name="campo_stock">Stock</string>
+    <string name="campo_categoria">Categoría</string>
+    <string name="campo_estado">Estado</string>
+    <string name="boton_publicar">Publicar</string>
+    <string name="boton_cancelar">Cancelar</string>
+</resources>
