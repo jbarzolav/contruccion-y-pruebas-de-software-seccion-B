@@ -33,6 +33,43 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public Producto obtenerPorId(Long id) {
         return productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado con id " + id));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Producto no encontrado con id " + id));
+    }
+
+    @Transactional
+    public Producto agregarImagen(Long idProducto, String imagenUrl, Long vendedorId) {
+
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Producto no encontrado con id " + idProducto
+                        ));
+
+        if (!producto.getVendedorId().equals(vendedorId)) {
+            throw new IllegalArgumentException(
+                    "El producto no pertenece al vendedor"
+            );
+        }
+
+        if (imagenUrl == null || imagenUrl.isBlank()) {
+            throw new IllegalArgumentException(
+                    "La imagen no puede estar vacía"
+            );
+        }
+
+        String imagen = imagenUrl.toLowerCase();
+
+        if (!imagen.endsWith(".jpg")
+                && !imagen.endsWith(".jpeg")
+                && !imagen.endsWith(".png")) {
+            throw new IllegalArgumentException(
+                    "Formato de imagen no permitido"
+            );
+        }
+
+        producto.setImagenUrl(imagenUrl);
+
+        return productoRepository.save(producto);
     }
 }
