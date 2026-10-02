@@ -1,5 +1,9 @@
 package com.ejemplo.publicarproducto.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,18 +32,38 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 
-private val ESTADOS = listOf("DISPONIBLE", "AGOTADO", "INACTIVO")
+private val ESTADOS = listOf(
+    "DISPONIBLE",
+    "AGOTADO",
+    "INACTIVO"
+)
 
 @Composable
 fun PublicarProductoScreen(
     modifier: Modifier = Modifier,
     viewModel: PublicarProductoViewModel = viewModel()
 ) {
+    var imagenUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+
+    val selectorImagen = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        imagenUri = uri
+
+        if (uri != null) {
+            viewModel.onImagenChange(uri.toString())
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -54,13 +77,18 @@ fun PublicarProductoScreen(
             fontWeight = FontWeight.Bold
         )
 
-        // -------- Campos --------
         OutlinedTextField(
             value = viewModel.nombre,
             onValueChange = viewModel::onNombreChange,
-            label = { Text("Nombre *") },
+            label = {
+                Text("Nombre *")
+            },
             isError = viewModel.erroresCampo.containsKey("nombre"),
-            supportingText = { viewModel.erroresCampo["nombre"]?.let { Text(it) } },
+            supportingText = {
+                viewModel.erroresCampo["nombre"]?.let {
+                    Text(it)
+                }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -68,21 +96,37 @@ fun PublicarProductoScreen(
         OutlinedTextField(
             value = viewModel.descripcion,
             onValueChange = viewModel::onDescripcionChange,
-            label = { Text("Descripción *") },
+            label = {
+                Text("Descripción *")
+            },
             isError = viewModel.erroresCampo.containsKey("descripcion"),
-            supportingText = { viewModel.erroresCampo["descripcion"]?.let { Text(it) } },
+            supportingText = {
+                viewModel.erroresCampo["descripcion"]?.let {
+                    Text(it)
+                }
+            },
             minLines = 3,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             OutlinedTextField(
                 value = viewModel.precio,
                 onValueChange = viewModel::onPrecioChange,
-                label = { Text("Precio (S/) *") },
+                label = {
+                    Text("Precio (S/) *")
+                },
                 isError = viewModel.erroresCampo.containsKey("precio"),
-                supportingText = { viewModel.erroresCampo["precio"]?.let { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                supportingText = {
+                    viewModel.erroresCampo["precio"]?.let {
+                        Text(it)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal
+                ),
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -90,10 +134,18 @@ fun PublicarProductoScreen(
             OutlinedTextField(
                 value = viewModel.stock,
                 onValueChange = viewModel::onStockChange,
-                label = { Text("Stock *") },
+                label = {
+                    Text("Stock *")
+                },
                 isError = viewModel.erroresCampo.containsKey("stock"),
-                supportingText = { viewModel.erroresCampo["stock"]?.let { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                supportingText = {
+                    viewModel.erroresCampo["stock"]?.let {
+                        Text(it)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -102,9 +154,15 @@ fun PublicarProductoScreen(
         OutlinedTextField(
             value = viewModel.categoria,
             onValueChange = viewModel::onCategoriaChange,
-            label = { Text("Categoría *") },
+            label = {
+                Text("Categoría *")
+            },
             isError = viewModel.erroresCampo.containsKey("categoria"),
-            supportingText = { viewModel.erroresCampo["categoria"]?.let { Text(it) } },
+            supportingText = {
+                viewModel.erroresCampo["categoria"]?.let {
+                    Text(it)
+                }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -114,20 +172,80 @@ fun PublicarProductoScreen(
             onSeleccionado = viewModel::onEstadoChange
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(
+            modifier = Modifier.height(8.dp)
+        )
 
-        // -------- Botones --------
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "Imagen del producto *",
+            fontWeight = FontWeight.SemiBold
+        )
+
+        Button(
+            onClick = {
+                selectorImagen.launch("image/*")
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Seleccionar imagen")
+        }
+
+        if (viewModel.erroresCampo.containsKey("imagen")) {
+            Text(
+                text = viewModel.erroresCampo["imagen"] ?: "",
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        if (imagenUri != null) {
+            Text("Vista previa:")
+
+            Image(
+                painter = rememberAsyncImagePainter(imagenUri),
+                contentDescription = "Vista previa del producto",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            OutlinedButton(
+                onClick = {
+                    imagenUri = null
+                    viewModel.quitarImagen()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Quitar imagen")
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(4.dp)
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Button(
                 onClick = viewModel::publicar,
                 enabled = viewModel.uiState != PublicarUiState.Loading,
                 modifier = Modifier.weight(1f)
             ) {
-                Text(if (viewModel.uiState == PublicarUiState.Loading) "Publicando…" else "Publicar")
+                Text(
+                    if (viewModel.uiState == PublicarUiState.Loading) {
+                        "Publicando…"
+                    } else {
+                        "Publicar"
+                    }
+                )
             }
 
             OutlinedButton(
-                onClick = viewModel::cancelar,
+                onClick = {
+                    viewModel.cancelar()
+                    imagenUri = null
+                },
                 enabled = viewModel.uiState != PublicarUiState.Loading,
                 modifier = Modifier.weight(1f)
             ) {
@@ -135,14 +253,16 @@ fun PublicarProductoScreen(
             }
         }
 
-        // -------- Estados: carga, éxito y error --------
         when (val state = viewModel.uiState) {
             is PublicarUiState.Loading -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.height(24.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(24.dp)
+                    )
+
                     Text("Enviando al backend…")
                 }
             }
@@ -176,19 +296,32 @@ fun PublicarProductoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EstadoDropdown(seleccionado: String, onSeleccionado: (String) -> Unit) {
-    var expandido by remember { mutableStateOf(false) }
+private fun EstadoDropdown(
+    seleccionado: String,
+    onSeleccionado: (String) -> Unit
+) {
+    var expandido by remember {
+        mutableStateOf(false)
+    }
 
     ExposedDropdownMenuBox(
         expanded = expandido,
-        onExpandedChange = { expandido = it }
+        onExpandedChange = {
+            expandido = it
+        }
     ) {
         OutlinedTextField(
             value = seleccionado,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Estado") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
+            label = {
+                Text("Estado")
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                    expanded = expandido
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()
@@ -196,11 +329,15 @@ private fun EstadoDropdown(seleccionado: String, onSeleccionado: (String) -> Uni
 
         ExposedDropdownMenu(
             expanded = expandido,
-            onDismissRequest = { expandido = false }
+            onDismissRequest = {
+                expandido = false
+            }
         ) {
             ESTADOS.forEach { opcion ->
                 DropdownMenuItem(
-                    text = { Text(opcion) },
+                    text = {
+                        Text(opcion)
+                    },
                     onClick = {
                         onSeleccionado(opcion)
                         expandido = false

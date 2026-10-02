@@ -6,14 +6,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
+import com.ejemplo.publicarproducto.model.ImagenProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.network.RetrofitClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
-/**
- * Estados de la pantalla: carga, éxito y error.
- */
 sealed interface PublicarUiState {
     data object Idle : PublicarUiState
     data object Loading : PublicarUiState
@@ -29,6 +27,7 @@ class PublicarProductoViewModel : ViewModel() {
     var stock by mutableStateOf("")
     var categoria by mutableStateOf("")
     var estado by mutableStateOf("DISPONIBLE")
+    var imagenUrl by mutableStateOf("")
 
     var erroresCampo by mutableStateOf<Map<String, String>>(emptyMap())
         private set
@@ -36,12 +35,43 @@ class PublicarProductoViewModel : ViewModel() {
     var uiState by mutableStateOf<PublicarUiState>(PublicarUiState.Idle)
         private set
 
-    fun onNombreChange(v: String) { nombre = v; limpiarError("nombre") }
-    fun onDescripcionChange(v: String) { descripcion = v; limpiarError("descripcion") }
-    fun onPrecioChange(v: String) { precio = v; limpiarError("precio") }
-    fun onStockChange(v: String) { stock = v; limpiarError("stock") }
-    fun onCategoriaChange(v: String) { categoria = v; limpiarError("categoria") }
-    fun onEstadoChange(v: String) { estado = v }
+    fun onNombreChange(v: String) {
+        nombre = v
+        limpiarError("nombre")
+    }
+
+    fun onDescripcionChange(v: String) {
+        descripcion = v
+        limpiarError("descripcion")
+    }
+
+    fun onPrecioChange(v: String) {
+        precio = v
+        limpiarError("precio")
+    }
+
+    fun onStockChange(v: String) {
+        stock = v
+        limpiarError("stock")
+    }
+
+    fun onCategoriaChange(v: String) {
+        categoria = v
+        limpiarError("categoria")
+    }
+
+    fun onEstadoChange(v: String) {
+        estado = v
+    }
+
+    fun onImagenChange(v: String) {
+        imagenUrl = v
+        limpiarError("imagen")
+    }
+
+    fun quitarImagen() {
+        imagenUrl = ""
+    }
 
     private fun limpiarError(campo: String) {
         if (erroresCampo.containsKey(campo)) {
@@ -50,22 +80,32 @@ class PublicarProductoViewModel : ViewModel() {
         uiState = PublicarUiState.Idle
     }
 
-    /** Validaciones en el cliente (mismas reglas del backend). */
     private fun validar(): Boolean {
         val errores = mutableMapOf<String, String>()
 
-        if (nombre.isBlank()) errores["nombre"] = "El nombre es obligatorio"
-        if (descripcion.isBlank()) errores["descripcion"] = "La descripción es obligatoria"
+        if (nombre.isBlank()) {
+            errores["nombre"] = "El nombre es obligatorio"
+        }
+
+        if (descripcion.isBlank()) {
+            errores["descripcion"] = "La descripción es obligatoria"
+        }
 
         val precioValor = precio.toDoubleOrNull()
+
         when {
-            precio.isBlank() -> errores["precio"] = "El precio es obligatorio"
-            precioValor == null -> errores["precio"] = "El precio no es un número válido"
-            precioValor <= 0 -> errores["precio"] = "El precio debe ser mayor a 0"
-            else -> errores.remove("precio")
+            precio.isBlank() ->
+                errores["precio"] = "El precio es obligatorio"
+
+            precioValor == null ->
+                errores["precio"] = "El precio no es un número válido"
+
+            precioValor <= 0 ->
+                errores["precio"] = "El precio debe ser mayor a 0"
         }
 
         val stockValor = stock.toIntOrNull()
+
         if (stock.isBlank()) {
             errores["stock"] = "El stock es obligatorio"
         } else if (stockValor == null) {
@@ -74,17 +114,27 @@ class PublicarProductoViewModel : ViewModel() {
             errores["stock"] = "El stock no puede ser negativo"
         }
 
-        if (categoria.isBlank()) errores["categoria"] = "La categoría es obligatoria"
+        if (categoria.isBlank()) {
+            errores["categoria"] = "La categoría es obligatoria"
+        }
 
-        erroresCampo = errores.filterValues { it.isNotBlank() }
+        if (imagenUrl.isBlank()) {
+            errores["imagen"] = "La imagen es obligatoria"
+        }
+
+        erroresCampo = errores
         return erroresCampo.isEmpty()
     }
 
     fun publicar() {
         if (!validar()) {
-            uiState = PublicarUiState.Error("Corrige los campos marcados antes de publicar.")
+            uiState = PublicarUiState.Error(
+                "Corrige los campos marcados antes de publicar."
+            )
             return
         }
+
+        val urlImagenBackend = "https://ejemplo.com/producto.jpg"
 
         val request = ProductoRequest(
             nombre = nombre.trim(),
@@ -93,7 +143,7 @@ class PublicarProductoViewModel : ViewModel() {
             stock = stock.toInt(),
             categoria = categoria.trim(),
             estado = estado,
-            imagenUrl = "https://via.placeholder.com/300",
+            imagenUrl = urlImagenBackend,
             vendedorId = 1L
         )
 
@@ -101,15 +151,52 @@ class PublicarProductoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.crearProducto(request)
+                val respuesta =
+                    RetrofitClient.productoApi.crearProducto(request)
 
                 if (respuesta.isSuccessful) {
-                    val id = respuesta.body()?.id
-                    uiState = PublicarUiState.Success("¡Producto registrado correctamente! (ID $id)")
-                    limpiarFormulario()
+
+                    val idProducto = respuesta.body()?.id
+
+                    if (idProducto != null) {
+
+                        val imagenRequest = ImagenProductoRequest(
+                            imagenUrl = urlImagenBackend,
+                            vendedorId = 1L
+                        )
+
+                        val respuestaImagen =
+                            RetrofitClient.productoApi.agregarImagen(
+                                idProducto,
+                                imagenRequest
+                            )
+
+                        if (respuestaImagen.isSuccessful) {
+                            uiState = PublicarUiState.Success(
+                                "¡Producto e imagen registrados correctamente! (ID $idProducto)"
+                            )
+                            limpiarFormulario()
+                        } else {
+                            uiState = PublicarUiState.Error(
+                                "El producto fue creado, pero no se pudo registrar la imagen."
+                            )
+                        }
+
+                    } else {
+                        uiState = PublicarUiState.Error(
+                            "No se pudo obtener el ID del producto."
+                        )
+                    }
+
                 } else {
-                    uiState = PublicarUiState.Error(mensajeDeError(respuesta.code(), respuesta.errorBody()?.string()))
+                    uiState = PublicarUiState.Error(
+                        mensajeDeError(
+                            respuesta.code(),
+                            respuesta.errorBody()?.string()
+                        )
+                    )
                 }
+
             } catch (e: Exception) {
                 uiState = PublicarUiState.Error(
                     "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
@@ -131,16 +218,23 @@ class PublicarProductoViewModel : ViewModel() {
         stock = ""
         categoria = ""
         estado = "DISPONIBLE"
+        imagenUrl = ""
     }
 
     private fun mensajeDeError(codigo: Int, cuerpo: String?): String {
         return try {
-            val error = Gson().fromJson(cuerpo, ErrorResponse::class.java)
+            val error = Gson().fromJson(
+                cuerpo,
+                ErrorResponse::class.java
+            )
+
             val mensajes = error?.messages?.joinToString(" | ")
+
             when {
                 !mensajes.isNullOrBlank() -> mensajes
                 else -> "Error $codigo: no se pudo registrar el producto."
             }
+
         } catch (_: Exception) {
             "Error $codigo: no se pudo registrar el producto."
         }
