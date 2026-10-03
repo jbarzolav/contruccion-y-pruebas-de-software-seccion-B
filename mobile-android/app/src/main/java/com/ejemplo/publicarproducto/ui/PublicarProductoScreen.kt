@@ -285,9 +285,10 @@ fun PublicarProductoScreen(
     }
 }
 
+// Reutilizado por EditarProductoScreen (HU 03)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EstadoDropdown(
+fun EstadoDropdown(
     seleccionado: String,
     onSeleccionado: (String) -> Unit
 ) {
