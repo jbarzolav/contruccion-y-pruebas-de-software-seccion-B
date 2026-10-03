@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { crearProducto, agregarImagenProducto } from '../api/productos.js'
+import { useEffect, useState } from 'react'
+import { crearProducto, subirImagenProducto } from '../api/productos.js'
+import { validarProducto } from '../validation/productoValidaciones.js'
 
 const FORM_INICIAL = {
   nombre: '',
@@ -15,7 +16,9 @@ const CAMPOS_OCULTOS = {
   vendedorId: 1,
 }
 
-export default function PublicarProducto() {
+const FORMATOS_PERMITIDOS = ['image/jpeg', 'image/png']
+
+export default function PublicarProducto({ onProductoCreado }) {
   const [formulario, setFormulario] = useState(FORM_INICIAL)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState(null)
@@ -25,32 +28,17 @@ export default function PublicarProducto() {
   const [imagen, setImagen] = useState(null)
   const [vistaPrevia, setVistaPrevia] = useState(null)
 
+  // Libera la memoria del blob de la vista previa al cambiar o al desmontar
+  useEffect(() => {
+    return () => {
+      if (vistaPrevia) {
+        URL.revokeObjectURL(vistaPrevia)
+      }
+    }
+  }, [vistaPrevia])
+
   const validar = (datos) => {
-    const errs = {}
-
-    if (!datos.nombre.trim()) {
-      errs.nombre = 'El nombre es obligatorio'
-    }
-
-    if (!datos.descripcion.trim()) {
-      errs.descripcion = 'La descripción es obligatoria'
-    }
-
-    if (datos.precio === '' || datos.precio === null) {
-      errs.precio = 'El precio es obligatorio'
-    } else if (Number(datos.precio) <= 0) {
-      errs.precio = 'El precio debe ser mayor a 0'
-    }
-
-    if (datos.stock === '' || datos.stock === null) {
-      errs.stock = 'El stock es obligatorio'
-    } else if (Number(datos.stock) < 0) {
-      errs.stock = 'El stock no puede ser negativo'
-    }
-
-    if (!datos.categoria.trim()) {
-      errs.categoria = 'La categoría es obligatoria'
-    }
+    const errs = validarProducto(datos)
 
     if (!imagen) {
       errs.imagen = 'La imagen es obligatoria'
@@ -86,9 +74,7 @@ export default function PublicarProducto() {
       return
     }
 
-    const formatosPermitidos = ['image/jpeg', 'image/png']
-
-    if (!formatosPermitidos.includes(archivo.type)) {
+    if (!FORMATOS_PERMITIDOS.includes(archivo.type)) {
       setErrores((prev) => ({
         ...prev,
         imagen: 'Solo se permiten imágenes JPG, JPEG o PNG',
@@ -106,13 +92,19 @@ export default function PublicarProducto() {
     })
   }
 
-  // HU02 - Quitar imagen
+  // HU02 - Quitar imagen (libera el blob)
   const quitarImagen = () => {
+    if (vistaPrevia) {
+      URL.revokeObjectURL(vistaPrevia)
+    }
     setImagen(null)
     setVistaPrevia(null)
   }
 
   const handleCancelar = () => {
+    if (vistaPrevia) {
+      URL.revokeObjectURL(vistaPrevia)
+    }
     setFormulario(FORM_INICIAL)
     setErrores({})
     setMensaje(null)
@@ -148,20 +140,24 @@ export default function PublicarProducto() {
       // HU01 - Crear producto
       const creado = await crearProducto(payload)
 
-      // HU02 - Asociar imagen al producto creado
-      await agregarImagenProducto(creado.id, {
-        imagenUrl: imagen.name,
-        vendedorId: CAMPOS_OCULTOS.vendedorId,
-      })
+      // HU02 - Subir el archivo REAL de la imagen (multipart)
+      await subirImagenProducto(creado.id, imagen, CAMPOS_OCULTOS.vendedorId)
+
+      const productoFinalizado = {
+        ...creado,
+        imagenUrl: `producto: ${imagen.name}`,
+      }
 
       setMensaje({
         tipo: 'exito',
-        texto: `¡Producto registrado correctamente! (ID ${creado.id})`,
+        texto: `¡Producto y imagen registrados correctamente! (ID ${creado.id})`,
       })
 
+      // HU03 - Ofrece el producto recién creado al formulario de edición
+      onProductoCreado?.(productoFinalizado)
+
       setFormulario(FORM_INICIAL)
-      setImagen(null)
-      setVistaPrevia(null)
+      quitarImagen()
     } catch (error) {
       if (error.response?.data?.messages) {
         setMensaje({
