@@ -19,6 +19,7 @@ env/
 build/
 *.apk
 local.properties
+gradle-daemon-jvm.properties
 
 # IDEs
 .idea/

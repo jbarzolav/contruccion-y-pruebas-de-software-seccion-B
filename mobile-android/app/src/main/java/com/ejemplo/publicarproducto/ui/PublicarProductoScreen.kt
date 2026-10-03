@@ -50,17 +50,14 @@ fun PublicarProductoScreen(
     modifier: Modifier = Modifier,
     viewModel: PublicarProductoViewModel = viewModel()
 ) {
-    var imagenUri by remember {
-        mutableStateOf<Uri?>(null)
-    }
+    // HU02 - La URI vive en el ViewModel para no perderse al rotar la pantalla
+    val imagenUri = viewModel.imagenUri?.let(Uri::parse)
 
     val selectorImagen = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        imagenUri = uri
-
         if (uri != null) {
-            viewModel.onImagenChange(uri.toString())
+            viewModel.onImagenChange(uri)
         }
     }
 
@@ -210,10 +207,7 @@ fun PublicarProductoScreen(
             )
 
             OutlinedButton(
-                onClick = {
-                    imagenUri = null
-                    viewModel.quitarImagen()
-                },
+                onClick = viewModel::quitarImagen,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Quitar imagen")
@@ -242,10 +236,7 @@ fun PublicarProductoScreen(
             }
 
             OutlinedButton(
-                onClick = {
-                    viewModel.cancelar()
-                    imagenUri = null
-                },
+                onClick = viewModel::cancelar,
                 enabled = viewModel.uiState != PublicarUiState.Loading,
                 modifier = Modifier.weight(1f)
             ) {
