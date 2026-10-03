@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -179,6 +180,14 @@ public class ProductoService {
         producto.setEstado(estado);
 
         return productoRepository.save(producto);
+    }
+
+    // ------------------------------------------------------------------
+    // HU 05 - Mis productos
+    // ------------------------------------------------------------------
+    @Transactional(readOnly = true)
+    public List<Producto> obtenerProductosDelVendedor(Long vendedorId) {
+        return productoRepository.findByVendedorId(vendedorId);
     }
 
     // ------------------------------------------------------------------

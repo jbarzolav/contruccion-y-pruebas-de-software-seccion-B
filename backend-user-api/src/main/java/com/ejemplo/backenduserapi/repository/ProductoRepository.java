@@ -3,5 +3,7 @@ package com.ejemplo.backenduserapi.repository;
 import com.ejemplo.backenduserapi.entity.Producto;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+    List<Producto> findByVendedorId(Long vendedorId);
 }
