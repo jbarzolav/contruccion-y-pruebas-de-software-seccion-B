@@ -115,3 +115,49 @@ button:disabled {
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* HU 04 - Diálogo de confirmación de retiro */
+.btn-peligro {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: min(92vw, 420px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modal h3 {
+  margin-top: 0;
+}
+
+.modal p {
+  color: #3e4c59;
+}
+
+.modal .botones {
+  justify-content: flex-end;
+}
+
+.badge-retirado {
+  display: inline-block;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}

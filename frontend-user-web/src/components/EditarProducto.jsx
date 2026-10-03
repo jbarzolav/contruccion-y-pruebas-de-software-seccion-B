@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { actualizarProducto } from '../api/productos.js'
+import { useEffect, useRef, useState } from 'react'
+import { actualizarProducto, retirarProducto } from '../api/productos.js'
 import { validarProducto } from '../validation/productoValidaciones.js'
 
 const FORM_INICIAL = {
@@ -26,9 +26,21 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
   const [mensaje, setMensaje] = useState(null)
   const [cargando, setCargando] = useState(false)
 
+  // HU 04 - Retiro de la publicación
+  const [confirmarRetiro, setConfirmarRetiro] = useState(false)
+  const [retirando, setRetirando] = useState(false)
+
+  const idAnteriorRef = useRef(null)
+
   // Precarga de los datos actuales del producto
   useEffect(() => {
     if (!producto) return
+
+    // El mensaje solo se limpia cuando cambia de producto (no al retirar)
+    if (idAnteriorRef.current !== producto.id) {
+      setMensaje(null)
+    }
+    idAnteriorRef.current = producto.id
 
     setFormulario({
       nombre: producto.nombre ?? '',
@@ -39,7 +51,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
       estado: producto.estado ?? 'DISPONIBLE',
     })
     setErrores({})
-    setMensaje(null)
+    setConfirmarRetiro(false)
   }, [producto])
 
   const handleChange = (e) => {
@@ -61,6 +73,51 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
     setErrores({})
     setMensaje(null)
     onCancelar?.()
+  }
+
+  // HU 04 - Retirar publicación (baja lógica, sin delete físico)
+  const retirarPublicacion = async () => {
+    setConfirmarRetiro(false)
+    setMensaje(null)
+
+    try {
+      setRetirando(true)
+
+      const actualizado = await retirarProducto(
+        producto.id,
+        producto.vendedorId ?? VENDEDOR_ACTUAL
+      )
+
+      setMensaje({
+        tipo: 'exito',
+        texto: `Publicación retirada (estado ${actualizado.estado}). El producto no se eliminó: es una baja lógica.`,
+      })
+
+      onGuardado?.(actualizado)
+    } catch (error) {
+      if (error.response?.data?.messages) {
+        setMensaje({
+          tipo: 'error',
+          texto: error.response.data.messages.join(' | '),
+        })
+      } else if (error.response) {
+        const estado = error.response.status
+        const texto =
+          estado === 404
+            ? 'El producto ya no existe en el backend.'
+            : estado === 403
+              ? 'No tienes permiso para retirar este producto.'
+              : `Error ${estado}: no se pudo retirar la publicación.`
+        setMensaje({ tipo: 'error', texto })
+      } else {
+        setMensaje({
+          tipo: 'error',
+          texto: 'No hay conexión con el backend. Verifica que esté corriendo en el puerto 8080.',
+        })
+      }
+    } finally {
+      setRetirando(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -140,9 +197,14 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
     )
   }
 
+  const estaRetirado = producto.estado === 'RETIRADO'
+
   return (
     <section className="tarjeta">
-      <h2>Editar producto (ID {producto.id})</h2>
+      <h2>
+        Editar producto (ID {producto.id}){' '}
+        {estaRetirado && <span className="badge-retirado">RETIRADO</span>}
+      </h2>
 
       <form onSubmit={handleSubmit} noValidate>
 
@@ -227,6 +289,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
               <option value="DISPONIBLE">DISPONIBLE</option>
               <option value="AGOTADO">AGOTADO</option>
               <option value="INACTIVO">INACTIVO</option>
+              <option value="RETIRADO">RETIRADO</option>
             </select>
           </div>
         </div>
@@ -244,6 +307,16 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
           >
             Cancelar
           </button>
+
+          {/* HU 04 - Retirar publicación */}
+          <button
+            type="button"
+            className="btn-peligro"
+            onClick={() => setConfirmarRetiro(true)}
+            disabled={cargando || retirando || estaRetirado}
+          >
+            {estaRetirado ? 'Ya retirado' : 'Retirar publicación'}
+          </button>
         </div>
 
       </form>
@@ -255,6 +328,40 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
         >
           {mensaje.texto}
         </p>
+      )}
+
+      {/* HU 04 - Diálogo de confirmación antes de retirar */}
+      {confirmarRetiro && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal">
+            <h3>¿Retirar esta publicación?</h3>
+            <p>
+              El producto <strong>{producto.nombre}</strong> (ID {producto.id})
+              quedará con estado <strong>RETIRADO</strong>. No se eliminará de
+              la base de datos: es una <strong>baja lógica</strong>.
+            </p>
+
+            <div className="botones">
+              <button
+                type="button"
+                className="btn-secundario"
+                onClick={() => setConfirmarRetiro(false)}
+                disabled={retirando}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-peligro"
+                onClick={retirarPublicacion}
+                disabled={retirando}
+              >
+                {retirando ? 'Retirando…' : 'Sí, retirar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )

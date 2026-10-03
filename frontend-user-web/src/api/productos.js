@@ -38,4 +38,14 @@ export async function actualizarProducto(idProducto, producto, vendedorId = 1) {
   return data
 }
 
+// HU 04 - PATCH /api/productos/{id}/estado (baja lógica, sin eliminar)
+export async function retirarProducto(idProducto, vendedorId = 1) {
+  const { data } = await api.patch(
+    `/${idProducto}/estado`,
+    { estado: 'RETIRADO' },
+    { params: { vendedorId } }
+  )
+  return data
+}
+
 export default api
