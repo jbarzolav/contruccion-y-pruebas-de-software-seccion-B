@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.dto.EstadoProductoRequest;
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
 import com.ejemplo.backenduserapi.service.ProductoService;
@@ -67,5 +68,21 @@ public class ProductoController {
         Producto actualizado = productoService.actualizar(idProducto, request, vendedorId);
 
         return ResponseEntity.ok(actualizado);
+    }
+
+    // ------------------------------------------------------------------
+    // HU 04 - Retirar publicación (baja lógica, sin delete físico)
+    // PATCH /api/productos/{idProducto}/estado?vendedorId=1
+    // Body opcional: { "estado": "RETIRADO" }  (si no llega, se asigna RETIRADO)
+    // ------------------------------------------------------------------
+    @PatchMapping("/{idProducto}/estado")
+    public ResponseEntity<Producto> cambiarEstado(
+            @PathVariable Long idProducto,
+            @RequestBody(required = false) EstadoProductoRequest request,
+            @RequestParam("vendedorId") Long vendedorId) {
+
+        String estado = (request == null) ? null : request.getEstado();
+
+        return ResponseEntity.ok(productoService.cambiarEstado(idProducto, estado, vendedorId));
     }
 }

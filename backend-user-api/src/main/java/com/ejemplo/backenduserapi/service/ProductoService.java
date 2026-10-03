@@ -2,6 +2,7 @@ package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
+import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
@@ -16,9 +17,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class ProductoService {
+
+    /** Estado que indica la baja lógica de una publicación (HU 04). */
+    public static final String ESTADO_RETIRADO = "RETIRADO";
+
+    private static final Set<String> ESTADOS_PERMITIDOS =
+            Set.of("DISPONIBLE", "AGOTADO", "INACTIVO", "RETIRADO");
 
     private static final String RUTA_PUBLICA_IMAGENES = "/imagenes/";
 
@@ -137,6 +145,38 @@ public class ProductoService {
         producto.setStock(request.getStock());
         producto.setCategoria(request.getCategoria());
         producto.setEstado(request.getEstado());
+
+        return productoRepository.save(producto);
+    }
+
+    // ------------------------------------------------------------------
+    // HU 04 - Retirar publicación (baja lógica)
+    // ------------------------------------------------------------------
+
+    /**
+     * Cambia el estado del producto SIN eliminarlo de la base de datos.
+     * Si no se indica estado, se asigna "RETIRADO".
+     *
+     * @throws ProductoNoEncontradoException -> 404
+     * @throws PropietarioInvalidoException  -> 403
+     * @throws EstadoInvalidoException       -> 400
+     */
+    @Transactional
+    public Producto cambiarEstado(Long idProducto, String estadoSolicitado, Long vendedorId) {
+
+        Producto producto = obtenerProductoDelVendedor(idProducto, vendedorId);
+
+        String estado = (estadoSolicitado == null || estadoSolicitado.isBlank())
+                ? ESTADO_RETIRADO
+                : estadoSolicitado.trim().toUpperCase(Locale.ROOT);
+
+        if (!ESTADOS_PERMITIDOS.contains(estado)) {
+            throw new EstadoInvalidoException(
+                    "Estado no válido: " + estadoSolicitado + ". Valores permitidos: " + ESTADOS_PERMITIDOS);
+        }
+
+        // Baja lógica: solo se actualiza el estado, el registro permanece en la BD
+        producto.setEstado(estado);
 
         return productoRepository.save(producto);
     }

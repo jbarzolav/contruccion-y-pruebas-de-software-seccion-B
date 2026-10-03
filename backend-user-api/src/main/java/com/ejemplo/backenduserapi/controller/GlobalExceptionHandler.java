@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
@@ -53,6 +54,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ImagenInvalidaException.class)
     public ResponseEntity<Map<String, Object>> handleImagenInvalida(ImagenInvalidaException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Imagen inválida", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Estado no permitido (HU 04) -> 400 Bad Request.
+     */
+    @ExceptionHandler(EstadoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleEstadoInvalido(EstadoInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Estado inválido", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
