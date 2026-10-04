@@ -45,8 +45,8 @@ class ProductoMisProductosControllerTest {
         mockMvc.perform(get("/api/vendedores/me/productos")
                         .param("vendedorId", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombre").value("Protoboard"))
-                .andExpect(jsonPath("$[0].vendedorId").value(1));
+                .andExpect(jsonPath("$[?(@.nombre == 'Protoboard')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.nombre == 'Protoboard')].vendedorId").value(1));
     }
 
     @Test

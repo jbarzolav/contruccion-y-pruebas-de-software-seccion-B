@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/productos")
 @CrossOrigin(origins = "*")
@@ -85,4 +87,16 @@ public class ProductoController {
 
         return ResponseEntity.ok(productoService.cambiarEstado(idProducto, estado, vendedorId));
     }
+
+    // ------------------------------------------------------------------
+    // HU 06 - Buscar productos por nombre
+    // GET /api/productos?nombre={texto}
+    // ------------------------------------------------------------------
+    @GetMapping
+    public ResponseEntity<List<Producto>> buscarPorNombre(
+            @RequestParam("nombre") String nombre) {
+
+        return ResponseEntity.ok(productoService.buscarPorNombre(nombre));
+    }
+
 }

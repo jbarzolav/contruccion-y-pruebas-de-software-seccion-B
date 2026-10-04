@@ -191,6 +191,19 @@ public class ProductoService {
     }
 
     // ------------------------------------------------------------------
+    // HU 06 - Buscar productos por nombre
+    // ------------------------------------------------------------------
+    @Transactional(readOnly = true)
+    public List<Producto> buscarPorNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return List.of();
+        }
+
+        return productoRepository.findByNombreContainingIgnoreCaseAndEstado(
+                nombre.trim(), "DISPONIBLE");
+    }
+
+    // ------------------------------------------------------------------
     // Reglas compartidas
     // ------------------------------------------------------------------
 
