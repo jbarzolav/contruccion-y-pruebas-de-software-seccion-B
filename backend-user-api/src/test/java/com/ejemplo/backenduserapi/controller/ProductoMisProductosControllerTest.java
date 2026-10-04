@@ -42,7 +42,7 @@ class ProductoMisProductosControllerTest {
     void obtenerProductosDelVendedor() throws Exception {
         crearProductoDePrueba(1L, "Protoboard");
 
-        mockMvc.perform(get("/api/productos/mis-productos")
+        mockMvc.perform(get("/api/vendedores/me/productos")
                         .param("vendedorId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nombre").value("Protoboard"))
@@ -51,7 +51,7 @@ class ProductoMisProductosControllerTest {
 
     @Test
     void obtenerListaVaciaCuandoVendedorNoTieneProductos() throws Exception {
-        mockMvc.perform(get("/api/productos/mis-productos")
+        mockMvc.perform(get("/api/vendedores/me/productos")
                         .param("vendedorId", "999"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
@@ -62,7 +62,7 @@ class ProductoMisProductosControllerTest {
         crearProductoDePrueba(10L, "Arduino Uno");
         crearProductoDePrueba(20L, "Sensor Ultrasonico");
 
-        mockMvc.perform(get("/api/productos/mis-productos")
+        mockMvc.perform(get("/api/vendedores/me/productos")
                         .param("vendedorId", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nombre").value("Arduino Uno"))

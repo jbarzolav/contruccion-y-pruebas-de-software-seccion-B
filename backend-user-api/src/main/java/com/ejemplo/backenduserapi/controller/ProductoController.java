@@ -10,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -85,18 +84,5 @@ public class ProductoController {
         String estado = (request == null) ? null : request.getEstado();
 
         return ResponseEntity.ok(productoService.cambiarEstado(idProducto, estado, vendedorId));
-    }
-
-    // ------------------------------------------------------------------
-    // HU 05 - Mis productos
-    // GET /api/productos/mis-productos?vendedorId=1
-    // ------------------------------------------------------------------
-    @GetMapping("/mis-productos")
-    public ResponseEntity<List<Producto>> obtenerMisProductos(
-            @RequestParam("vendedorId") Long vendedorId) {
-
-        return ResponseEntity.ok(
-                productoService.obtenerProductosDelVendedor(vendedorId)
-        );
     }
 }
