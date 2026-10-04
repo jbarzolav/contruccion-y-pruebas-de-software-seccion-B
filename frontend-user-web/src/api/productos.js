@@ -48,9 +48,9 @@ export async function retirarProducto(idProducto, vendedorId = 1) {
   return data
 }
 
-// HU 05 - GET /api/productos/mis-productos?vendedorId=1
+// HU 05 - GET /api/vendedores/me/productos?vendedorId=1
 export async function obtenerMisProductos(vendedorId = 1) {
-  const { data } = await api.get('/mis-productos', {
+  const { data } = await axios.get('http://localhost:8080/api/vendedores/me/productos', {
     params: { vendedorId },
   })
   return data
