@@ -36,6 +36,12 @@ interface ProductoApi {
         @Query("vendedorId") vendedorId: Long
     ): Response<List<ProductoResponse>>
 
+    // HU 06 - GET /api/productos?nombre={texto}
+    @GET("api/productos")
+    suspend fun buscarProductosPorNombre(
+        @Query("nombre") nombre: String
+    ): Response<List<ProductoResponse>>
+
     // HU 03 - PUT /api/productos/{idProducto}?vendedorId=1
     @PUT("api/productos/{idProducto}")
     suspend fun actualizarProducto(
