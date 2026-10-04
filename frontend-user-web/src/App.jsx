@@ -1,23 +1,41 @@
 import { useState } from 'react'
 import PublicarProducto from './components/PublicarProducto.jsx'
 import EditarProducto from './components/EditarProducto.jsx'
+import MisProductos from './components/MisProductos.jsx'
 
 export default function App() {
-  const [productoEnEdicion, setProductoEnEdicion] = useState(null)
+    const [productoEnEdicion, setProductoEnEdicion] = useState(null)
+    const [actualizarMisProductos, setActualizarMisProductos] = useState(0)
 
-  return (
-    <main className="contenedor">
-      <h1>Mi Marketplace</h1>
+    const handleProductoCreado = (producto) => {
+        setProductoEnEdicion(producto)
+        setActualizarMisProductos((valor) => valor + 1)
+    }
 
-      {/* HU 01 + HU 02 */}
-      <PublicarProducto onProductoCreado={setProductoEnEdicion} />
+    const handleProductoGuardado = (producto) => {
+        setProductoEnEdicion(producto)
+        setActualizarMisProductos((valor) => valor + 1)
+    }
 
-      {/* HU 03 */}
-      <EditarProducto
-        producto={productoEnEdicion}
-        onGuardado={setProductoEnEdicion}
-        onCancelar={() => setProductoEnEdicion(null)}
-      />
-    </main>
-  )
+    return (
+        <main className="contenedor">
+            <h1>Mi Marketplace</h1>
+
+            {/* HU 01 + HU 02 */}
+            <PublicarProducto onProductoCreado={handleProductoCreado} />
+
+            {/* HU 03 */}
+            <EditarProducto
+                producto={productoEnEdicion}
+                onGuardado={handleProductoGuardado}
+                onCancelar={() => setProductoEnEdicion(null)}
+            />
+
+            {/* HU 05 */}
+            <MisProductos
+                actualizar={actualizarMisProductos}
+                onEditar={setProductoEnEdicion}
+            />
+        </main>
+    )
 }

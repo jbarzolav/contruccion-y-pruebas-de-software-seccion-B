@@ -41,10 +41,18 @@ export async function actualizarProducto(idProducto, producto, vendedorId = 1) {
 // HU 04 - PATCH /api/productos/{id}/estado (baja lógica, sin eliminar)
 export async function retirarProducto(idProducto, vendedorId = 1) {
   const { data } = await api.patch(
-    `/${idProducto}/estado`,
-    { estado: 'RETIRADO' },
-    { params: { vendedorId } }
+      `/${idProducto}/estado`,
+      { estado: 'RETIRADO' },
+      { params: { vendedorId } }
   )
+  return data
+}
+
+// HU 05 - GET /api/productos/mis-productos?vendedorId=1
+export async function obtenerMisProductos(vendedorId = 1) {
+  const { data } = await api.get('/mis-productos', {
+    params: { vendedorId },
+  })
   return data
 }
 
