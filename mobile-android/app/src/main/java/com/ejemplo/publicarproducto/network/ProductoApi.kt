@@ -30,6 +30,12 @@ interface ProductoApi {
         @Path("idProducto") idProducto: Long
     ): Response<ProductoResponse>
 
+    // HU 05 - GET /api/vendedores/me/productos?vendedorId=1
+    @GET("api/vendedores/me/productos")
+    suspend fun obtenerMisProductos(
+        @Query("vendedorId") vendedorId: Long
+    ): Response<List<ProductoResponse>>
+
     // HU 03 - PUT /api/productos/{idProducto}?vendedorId=1
     @PUT("api/productos/{idProducto}")
     suspend fun actualizarProducto(

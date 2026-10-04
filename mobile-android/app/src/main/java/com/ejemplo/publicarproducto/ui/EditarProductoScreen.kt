@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,8 +36,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun EditarProductoScreen(
     modifier: Modifier = Modifier,
-    viewModel: EditarProductoViewModel = viewModel()
+    viewModel: EditarProductoViewModel = viewModel(),
+    productoId: Long? = null
 ) {
+    LaunchedEffect(productoId) {
+        productoId?.let {
+            viewModel.onIdChange(it.toString())
+            viewModel.cargarProducto()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -261,8 +270,8 @@ fun EditarProductoScreen(
             text = {
                 Text(
                     "El producto ${viewModel.nombre} (ID ${viewModel.producto?.id}) " +
-                        "quedará con estado RETIRADO. No se eliminará de la base de " +
-                        "datos: es una baja lógica."
+                            "quedará con estado RETIRADO. No se eliminará de la base de " +
+                            "datos: es una baja lógica."
                 )
             },
             confirmButton = {
