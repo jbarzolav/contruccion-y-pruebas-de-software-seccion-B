@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PublicarProducto from './components/PublicarProducto.jsx'
 import EditarProducto from './components/EditarProducto.jsx'
 import MisProductos from './components/MisProductos.jsx'
+import BuscarProductos from './components/BuscarProductos.jsx'
 
 export default function App() {
     const [productoEnEdicion, setProductoEnEdicion] = useState(null)
@@ -36,6 +37,9 @@ export default function App() {
                 actualizar={actualizarMisProductos}
                 onEditar={setProductoEnEdicion}
             />
+
+            {/* HU 06 */}
+            <BuscarProductos />
         </main>
     )
 }
