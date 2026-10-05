@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { buscarProductosPorNombre } from '../api/productos.js'
 
 export default function BuscarProductos() {
@@ -79,7 +80,11 @@ export default function BuscarProductos() {
 
       <div className="resultados-busqueda">
         {resultados.map((producto) => (
-          <article key={producto.id} className="producto-busqueda">
+          <Link
+            key={producto.id}
+            to={`/producto/${producto.id}`}
+            className="producto-busqueda producto-enlace"
+          >
             {producto.imagenUrl && (
               <img
                 src={`http://localhost:8080${producto.imagenUrl}`}
@@ -91,7 +96,7 @@ export default function BuscarProductos() {
             <h3>{producto.nombre}</h3>
             <p>Precio: S/ {Number(producto.precio).toFixed(2)}</p>
             <p>Disponibilidad: {producto.estado}</p>
-          </article>
+          </Link>
         ))}
       </div>
     </section>

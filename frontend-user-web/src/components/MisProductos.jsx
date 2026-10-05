@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { obtenerMisProductos } from '../api/productos.js'
 
 export default function MisProductos({ actualizar, onEditar }) {
@@ -37,29 +38,41 @@ export default function MisProductos({ actualizar, onEditar }) {
 
             {!cargando && !error && productos.map((producto) => (
                 <article className="producto-item" key={producto.id}>
-                    {producto.imagenUrl && (
-                        <img
-                            className="producto-imagen"
-                            src={`http://localhost:8080${producto.imagenUrl}`}
-                            alt={producto.nombre}
-                        />
-                    )}
+                    {/* HU 08 - toda la tarjeta abre el detalle (HU 07) */}
+                    <Link
+                        to={`/producto/${producto.id}`}
+                        className="producto-item-enlace"
+                    >
+                        {producto.imagenUrl && (
+                            <img
+                                className="producto-imagen"
+                                src={`http://localhost:8080${producto.imagenUrl}`}
+                                alt={producto.nombre}
+                            />
+                        )}
 
-                    <div className="producto-info">
-                        <h3>{producto.nombre}</h3>
-                        <p>Precio: S/ {Number(producto.precio).toFixed(2)}</p>
-                        <p>Stock: {producto.stock}</p>
-                        <p>Estado: {producto.estado}</p>
-
-                        <div className="botones">
-                            <button
-                                type="button"
-                                className="btn-secundario"
-                                onClick={() => onEditar?.(producto)}
-                            >
-                                Editar
-                            </button>
+                        <div className="producto-info">
+                            <h3>{producto.nombre}</h3>
+                            <p>Precio: S/ {Number(producto.precio).toFixed(2)}</p>
+                            <p>Stock: {producto.stock}</p>
+                            <p>Estado: {producto.estado}</p>
                         </div>
+                    </Link>
+
+                    <div className="producto-acciones">
+                        <button
+                            type="button"
+                            className="btn-secundario"
+                            onClick={() => onEditar?.(producto)}
+                        >
+                            Editar
+                        </button>
+                        <Link
+                            to={`/producto/${producto.id}`}
+                            className="btn-secundario"
+                        >
+                            Ver detalle
+                        </Link>
                     </div>
                 </article>
             ))}

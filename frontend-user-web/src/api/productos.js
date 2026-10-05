@@ -64,3 +64,22 @@ export async function buscarProductosPorNombre(nombre) {
   })
   return data
 }
+
+// HU 07 - GET /api/productos/{id} (detalle completo)
+export async function obtenerProducto(idProducto) {
+  const { data } = await api.get(`/${idProducto}`)
+  return data
+}
+
+// HU 07 - GET /api/productos/catalogo (solo DISPONIBLE)
+export async function obtenerCatalogo() {
+  const { data } = await api.get('/catalogo')
+  return data
+}
+
+// HU 07 - ruta de la imagen: las locales van contra el backend (:8080)
+export function urlImagen(imagenUrl) {
+  if (!imagenUrl) return null
+  if (imagenUrl.startsWith('http')) return imagenUrl
+  return `http://localhost:8080${imagenUrl}`
+}
