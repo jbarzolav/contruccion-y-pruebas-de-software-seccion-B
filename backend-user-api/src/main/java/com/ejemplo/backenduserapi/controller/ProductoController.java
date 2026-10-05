@@ -95,14 +95,15 @@ public class ProductoController {
     }
 
     // ------------------------------------------------------------------
-    // HU 06 - Buscar productos por nombre
-    // GET /api/productos?nombre={texto}
+    // HU 06 / HU 09 - Buscar productos por nombre y ordenar resultados
+    // GET /api/productos?nombre={texto}&sort={criterio}
     // ------------------------------------------------------------------
     @GetMapping
     public ResponseEntity<List<Producto>> buscarPorNombre(
-            @RequestParam("nombre") String nombre) {
+            @RequestParam("nombre") String nombre,
+            @RequestParam(value = "sort", required = false) String sort) {
 
-        return ResponseEntity.ok(productoService.buscarPorNombre(nombre));
+        return ResponseEntity.ok(productoService.buscarPorNombre(nombre, sort));
     }
 
     // ------------------------------------------------------------------

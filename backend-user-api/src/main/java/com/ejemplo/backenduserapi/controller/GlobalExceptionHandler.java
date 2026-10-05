@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
@@ -62,6 +63,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EstadoInvalidoException.class)
     public ResponseEntity<Map<String, Object>> handleEstadoInvalido(EstadoInvalidoException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Estado inválido", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Criterio de ordenamiento no permitido (HU 09) -> 400 Bad Request.
+     */
+    @ExceptionHandler(CriterioOrdenInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleCriterioOrdenInvalido(CriterioOrdenInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Criterio de ordenamiento inválido", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {

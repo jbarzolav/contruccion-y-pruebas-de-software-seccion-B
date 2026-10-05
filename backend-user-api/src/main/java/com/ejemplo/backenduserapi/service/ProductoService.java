@@ -2,6 +2,7 @@ package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
+import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -202,12 +204,59 @@ public class ProductoService {
     // ------------------------------------------------------------------
     @Transactional(readOnly = true)
     public List<Producto> buscarPorNombre(String nombre) {
+        return buscarPorNombre(nombre, null);
+    }
+
+    // ------------------------------------------------------------------
+    // HU 09 - Ordenar resultados de búsqueda
+    // ------------------------------------------------------------------
+    @Transactional(readOnly = true)
+    public List<Producto> buscarPorNombre(String nombre, String sort) {
         if (nombre == null || nombre.isBlank()) {
             return List.of();
         }
 
-        return productoRepository.findByNombreContainingIgnoreCaseAndEstado(
-                nombre.trim(), "DISPONIBLE");
+        List<Producto> productos =
+                productoRepository.findByNombreContainingIgnoreCaseAndEstado(
+                        nombre.trim(), "DISPONIBLE");
+
+        return ordenarProductos(productos, sort);
+    }
+
+    private List<Producto> ordenarProductos(List<Producto> productos, String sort) {
+
+        if (sort == null || sort.isBlank()) {
+            return productos;
+        }
+
+        Comparator<Producto> comparador = switch (sort.trim().toLowerCase(Locale.ROOT)) {
+            case "precio_asc" ->
+                    Comparator.comparing(Producto::getPrecio);
+
+            case "precio_desc" ->
+                    Comparator.comparing(Producto::getPrecio).reversed();
+
+            case "nombre_asc" ->
+                    Comparator.comparing(
+                            Producto::getNombre,
+                            String.CASE_INSENSITIVE_ORDER
+                    );
+
+            case "nombre_desc" ->
+                    Comparator.comparing(
+                            Producto::getNombre,
+                            String.CASE_INSENSITIVE_ORDER
+                    ).reversed();
+
+            default -> throw new CriterioOrdenInvalidoException(
+                    "Criterio de ordenamiento no permitido: " + sort
+                            + ". Valores permitidos: precio_asc, precio_desc, nombre_asc, nombre_desc"
+            );
+        };
+
+        return productos.stream()
+                .sorted(comparador)
+                .toList();
     }
 
     // ------------------------------------------------------------------
