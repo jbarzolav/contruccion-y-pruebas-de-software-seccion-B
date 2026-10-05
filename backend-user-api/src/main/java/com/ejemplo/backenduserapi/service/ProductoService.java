@@ -63,6 +63,13 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
+    /**
+     * HU 07 - Detalle de producto: devuelve el registro completo aunque esté
+     * RETIRADO (baja lógica del HU 04: sigue siendo consultable por su dueño).
+     * El catálogo y la búsqueda sí excluyen los retirados.
+     *
+     * @throws ProductoNoEncontradoException -> 404
+     */
     @Transactional(readOnly = true)
     public Producto obtenerPorId(Long id) {
         return productoRepository.findById(id)
@@ -201,6 +208,22 @@ public class ProductoService {
 
         return productoRepository.findByNombreContainingIgnoreCaseAndEstado(
                 nombre.trim(), "DISPONIBLE");
+    }
+
+    // ------------------------------------------------------------------
+    // HU 07 - Catálogo de productos
+    // ------------------------------------------------------------------
+
+    /**
+     * Listado público (catálogo) para que el usuario pueda seleccionar
+     * un producto y entrar a su detalle (HU 08).
+     *
+     * Solo incluye productos DISPONIBLE: los RETIRADO quedan fuera
+     * por regla de negocio (baja lógica, HU 04).
+     */
+    @Transactional(readOnly = true)
+    public List<Producto> listarDisponibles() {
+        return productoRepository.findByEstado("DISPONIBLE");
     }
 
     // ------------------------------------------------------------------

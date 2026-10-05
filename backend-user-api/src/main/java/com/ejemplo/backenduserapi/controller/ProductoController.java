@@ -35,6 +35,12 @@ public class ProductoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
+    // ------------------------------------------------------------------
+    // HU 07 - Detalle de producto
+    // GET /api/productos/{idProducto} → 200 con la información completa
+    // (incluida la imagen asociada). 404 si no existe; si está RETIRADO
+    // se responde igual porque es una baja lógica (HU 04).
+    // ------------------------------------------------------------------
     @GetMapping("/{idProducto}")
     public ResponseEntity<Producto> obtener(@PathVariable Long idProducto) {
 
@@ -97,6 +103,16 @@ public class ProductoController {
             @RequestParam("nombre") String nombre) {
 
         return ResponseEntity.ok(productoService.buscarPorNombre(nombre));
+    }
+
+    // ------------------------------------------------------------------
+    // HU 07 - Catálogo (soporta la HU 08: seleccionar un producto)
+    // GET /api/productos/catalogo → solo DISPONIBLE, igual que la búsqueda
+    // ------------------------------------------------------------------
+    @GetMapping("/catalogo")
+    public ResponseEntity<List<Producto>> catalogo() {
+
+        return ResponseEntity.ok(productoService.listarDisponibles());
     }
 
 }
