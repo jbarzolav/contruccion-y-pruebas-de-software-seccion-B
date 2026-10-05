@@ -1,5 +1,6 @@
 package com.ejemplo.publicarproducto.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +31,8 @@ import com.ejemplo.publicarproducto.model.ProductoResponse
 fun MisProductosScreen(
     modifier: Modifier = Modifier,
     viewModel: MisProductosViewModel = viewModel(),
-    onEditarProducto: (Long) -> Unit = {}
+    onEditarProducto: (Long) -> Unit = {},
+    onVerDetalle: (Long) -> Unit = {}
 ) {
     LaunchedEffect(Unit) {
         viewModel.cargarProductos()
@@ -73,6 +76,10 @@ fun MisProductosScreen(
                                 producto = producto,
                                 onEditar = {
                                     producto.id?.let(onEditarProducto)
+                                },
+                                // HU 08 - ver detalle del producto propio
+                                onVerDetalle = {
+                                    producto.id?.let(onVerDetalle)
                                 }
                             )
                         }
@@ -98,10 +105,14 @@ fun MisProductosScreen(
 @Composable
 private fun ProductoItem(
     producto: ProductoResponse,
-    onEditar: () -> Unit
+    onEditar: () -> Unit,
+    onVerDetalle: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        // HU 08 - la tarjeta abre el detalle (HU 07)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = producto.id != null) { onVerDetalle() }
     ) {
         Column(
             modifier = Modifier
@@ -129,6 +140,14 @@ private fun ProductoItem(
             Text("Precio: S/ ${producto.precio ?: "0.00"}")
             Text("Stock: ${producto.stock ?: 0}")
             Text("Estado: ${producto.estado.orEmpty()}")
+
+            OutlinedButton(
+                onClick = onVerDetalle,
+                enabled = producto.id != null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ver detalle")
+            }
 
             Button(
                 onClick = onEditar,

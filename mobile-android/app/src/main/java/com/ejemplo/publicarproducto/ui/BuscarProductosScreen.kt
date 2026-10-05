@@ -1,5 +1,6 @@
 package com.ejemplo.publicarproducto.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +23,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 
+/**
+ * HU 06 - Búsqueda de productos por nombre.
+ * HU 07/HU 08 - al abrir la pestaña se carga el catálogo y las tarjetas
+ * son clickeables: llevan al detalle del producto seleccionado.
+ */
 @Composable
 fun BuscarProductosScreen(
     modifier: Modifier = Modifier,
-    viewModel: BuscarProductosViewModel = viewModel()
+    viewModel: BuscarProductosViewModel = viewModel(),
+    onSeleccionarProducto: (Long) -> Unit = {}
 ) {
+    // Catálogo al entrar (base para seleccionar un producto - HU 08)
+    LaunchedEffect(Unit) {
+        viewModel.cargarCatalogo()
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -64,6 +77,12 @@ fun BuscarProductosScreen(
                 if (viewModel.productos.isEmpty()) {
                     Text("No se encontraron productos disponibles.")
                 } else {
+                    Text(
+                        text = "Toca un producto para ver su detalle.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -72,7 +91,12 @@ fun BuscarProductosScreen(
                             key = { it.id ?: 0L }
                         ) { producto ->
                             Card(
-                                modifier = Modifier.fillMaxWidth()
+                                // HU 08 - la tarjeta abre el detalle (HU 07)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = producto.id != null) {
+                                        producto.id?.let(onSeleccionarProducto)
+                                    }
                             ) {
                                 Column(
                                     modifier = Modifier

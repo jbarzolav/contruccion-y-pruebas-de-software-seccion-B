@@ -66,4 +66,34 @@ class BuscarProductosViewModel : ViewModel() {
             }
         }
     }
+
+    /**
+     * HU 07/HU 08 - Catálogo público (solo DISPONIBLE).
+     * Se carga al abrir la pestaña para que las tarjetas sean
+     * seleccionables y lleven al detalle.
+     */
+    fun cargarCatalogo() {
+        uiState = BuscarProductosUiState.Loading
+
+        viewModelScope.launch {
+            try {
+                val respuesta = RetrofitClient.productoApi.listarCatalogo()
+
+                if (respuesta.isSuccessful) {
+                    productos = respuesta.body().orEmpty()
+                    uiState = BuscarProductosUiState.Success
+                } else {
+                    productos = emptyList()
+                    uiState = BuscarProductosUiState.Error(
+                        "Error ${respuesta.code()}: no se pudo cargar el catálogo."
+                    )
+                }
+            } catch (e: Exception) {
+                productos = emptyList()
+                uiState = BuscarProductosUiState.Error(
+                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                )
+            }
+        }
+    }
 }
