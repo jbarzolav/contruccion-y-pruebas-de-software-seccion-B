@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { buscarProductosPorNombre } from '../api/productos.js'
 
 export default function BuscarProductos() {
@@ -7,17 +7,24 @@ export default function BuscarProductos() {
   const [mensaje, setMensaje] = useState('')
   const [buscando, setBuscando] = useState(false)
 
-  const handleBuscar = async (event) => {
-    event.preventDefault()
-
+  // HU 06 - búsqueda en tiempo real: se dispara al escribir, con debounce de 300 ms
+  useEffect(() => {
     const criterio = nombre.trim()
 
     if (!criterio) {
       setResultados([])
-      setMensaje('Ingresa un nombre de producto para buscar.')
-      return
+      setMensaje('')
+      return undefined
     }
 
+    const timer = setTimeout(() => {
+      ejecutarBusqueda(criterio)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [nombre])
+
+  async function ejecutarBusqueda(criterio) {
     try {
       setBuscando(true)
       setMensaje('')
@@ -28,12 +35,27 @@ export default function BuscarProductos() {
       if (productos.length === 0) {
         setMensaje('No se encontraron productos disponibles.')
       }
-    } catch (error) {
+    } catch {
       setResultados([])
       setMensaje('No se pudo realizar la búsqueda.')
     } finally {
       setBuscando(false)
     }
+  }
+
+  const handleBuscar = (event) => {
+    event.preventDefault()
+
+    const criterio = nombre.trim()
+
+    if (!criterio) {
+      setResultados([])
+      setMensaje('Ingresa un nombre de producto para buscar.')
+      return
+    }
+
+    // el botón fuerza la búsqueda sin esperar al debounce
+    ejecutarBusqueda(criterio)
   }
 
   return (
