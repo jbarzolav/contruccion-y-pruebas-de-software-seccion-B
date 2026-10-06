@@ -1,5 +1,6 @@
 package com.ejemplo.publicarproducto.network
 
+import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
@@ -42,6 +43,12 @@ interface ProductoApi {
         @Query("nombre") nombre: String,
         @Query("sort") sort: String? = null
     ): Response<List<ProductoResponse>>
+
+    // HU 10 - GET /api/productos/{idProducto}/disponibilidad
+    @GET("api/productos/{idProducto}/disponibilidad")
+    suspend fun obtenerDisponibilidadProducto(
+        @Path("idProducto") idProducto: Long
+    ): Response<DisponibilidadProductoResponse>
 
     // HU 07 - GET /api/productos/catalogo (solo productos DISPONIBLE)
     @GET("api/productos/catalogo")

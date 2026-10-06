@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.ProductoResponse
 
 /**
@@ -62,8 +63,10 @@ fun DetalleProductoScreen(
                 Text("← Volver")
             }
 
-            viewModel.producto?.estado?.let { estado ->
-                EstadoBadge(estado = estado)
+            viewModel.disponibilidad?.let { disponibilidad ->
+                EstadoBadge(
+                    estado = if (disponibilidad.disponible) "DISPONIBLE" else "AGOTADO"
+                )
             }
         }
 
@@ -90,8 +93,14 @@ fun DetalleProductoScreen(
             }
 
             DetalleProductoUiState.Success -> {
-                viewModel.producto?.let { producto ->
-                    DetalleContenido(producto = producto)
+                val producto = viewModel.producto
+                val disponibilidad = viewModel.disponibilidad
+
+                if (producto != null && disponibilidad != null) {
+                    DetalleContenido(
+                        producto = producto,
+                        disponibilidad = disponibilidad
+                    )
                 }
             }
         }
@@ -99,7 +108,10 @@ fun DetalleProductoScreen(
 }
 
 @Composable
-private fun DetalleContenido(producto: ProductoResponse) {
+private fun DetalleContenido(
+    producto: ProductoResponse,
+    disponibilidad: DisponibilidadProductoResponse
+) {
     // Galería de imágenes (hoy: 1 imagen por producto, HU 02)
     val imagen = producto.imagenUrl?.takeIf { it.isNotBlank() }
 
@@ -180,7 +192,12 @@ private fun DetalleContenido(producto: ProductoResponse) {
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            FilaDetalle("Stock", "${producto.stock ?: 0} unidades")
+            FilaDetalle(
+                "Disponibilidad",
+                if (disponibilidad.disponible) "Disponible" else "Agotado"
+            )
+            FilaDetalle("Stock", "${disponibilidad.stock} unidades")
+            FilaDetalle("Estado", disponibilidad.estado)
             FilaDetalle("Categoría", producto.categoria.orEmpty().ifBlank { "Sin categoría" })
             FilaDetalle("Vendedor", "#${producto.vendedorId ?: "-"}")
             FilaDetalle("ID del producto", "#${producto.id ?: "-"}")
@@ -206,19 +223,27 @@ private fun DetalleContenido(producto: ProductoResponse) {
         )
     }
 
-    if (producto.estado.equals("RETIRADO", ignoreCase = true)) {
+    if (!disponibilidad.disponible) {
         Surface(
             color = Color(0xFFFEE2E2),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Este producto fue retirado del catálogo (baja lógica).",
+                text = "Este producto no se encuentra disponible para compra.",
                 color = Color(0xFF991B1B),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
             )
         }
+    }
+
+    Button(
+        onClick = { },
+        enabled = disponibilidad.disponible,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Agregar al carrito")
     }
 }
 
