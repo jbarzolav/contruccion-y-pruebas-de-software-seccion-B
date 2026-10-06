@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.service;
 
+import com.ejemplo.backenduserapi.dto.DisponibilidadProductoResponse;
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
@@ -273,6 +274,28 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public List<Producto> listarDisponibles() {
         return productoRepository.findByEstado("DISPONIBLE");
+    }
+
+    // ------------------------------------------------------------------
+    // HU 10 - Disponibilidad de producto
+    // ------------------------------------------------------------------
+    @Transactional(readOnly = true)
+    public DisponibilidadProductoResponse consultarDisponibilidad(Long idProducto) {
+
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new ProductoNoEncontradoException(
+                        "Producto no encontrado con id " + idProducto));
+
+        boolean disponible = "DISPONIBLE".equalsIgnoreCase(producto.getEstado())
+                && producto.getStock() != null
+                && producto.getStock() > 0;
+
+        return new DisponibilidadProductoResponse(
+                producto.getId(),
+                producto.getStock(),
+                producto.getEstado(),
+                disponible
+        );
     }
 
     // ------------------------------------------------------------------

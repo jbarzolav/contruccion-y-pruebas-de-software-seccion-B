@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.dto.DisponibilidadProductoResponse;
 import com.ejemplo.backenduserapi.dto.EstadoProductoRequest;
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
@@ -105,7 +106,18 @@ public class ProductoController {
 
         return ResponseEntity.ok(productoService.buscarPorNombre(nombre, sort));
     }
+    // ------------------------------------------------------------------
+// HU 10 - Consultar disponibilidad de producto
+// GET /api/productos/{idProducto}/disponibilidad
+// ------------------------------------------------------------------
+    @GetMapping("/{idProducto}/disponibilidad")
+    public ResponseEntity<DisponibilidadProductoResponse> consultarDisponibilidad(
+            @PathVariable Long idProducto) {
 
+        return ResponseEntity.ok(
+                productoService.consultarDisponibilidad(idProducto)
+        );
+    }
     // ------------------------------------------------------------------
     // HU 07 - Catálogo (soporta la HU 08: seleccionar un producto)
     // GET /api/productos/catalogo → solo DISPONIBLE, igual que la búsqueda
