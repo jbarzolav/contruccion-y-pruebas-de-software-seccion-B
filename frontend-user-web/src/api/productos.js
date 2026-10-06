@@ -56,12 +56,15 @@ export async function obtenerMisProductos(vendedorId = 1) {
   return data
 }
 
-export default api
-// HU 06 - GET /api/productos?nombre={texto}
-export async function buscarProductosPorNombre(nombre) {
-  const { data } = await api.get('', {
-    params: { nombre: nombre.trim() },
-  })
+// HU 06 / HU 09 - GET /api/productos?nombre={texto}&sort={criterio}
+export async function buscarProductosPorNombre(nombre, sort = '') {
+  const params = { nombre: nombre.trim() }
+
+  if (sort) {
+    params.sort = sort
+  }
+
+  const { data } = await api.get('', { params })
   return data
 }
 
