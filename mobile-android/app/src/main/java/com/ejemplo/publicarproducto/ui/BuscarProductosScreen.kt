@@ -11,11 +11,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -25,8 +32,8 @@ import coil.compose.AsyncImage
 
 /**
  * HU 06 - Búsqueda de productos por nombre.
- * HU 07/HU 08 - al abrir la pestaña se carga el catálogo y las tarjetas
- * son clickeables: llevan al detalle del producto seleccionado.
+ * HU 07/HU 08 - catálogo y navegación al detalle.
+ * HU 09 - ordenamiento de resultados por precio y nombre.
  */
 @Composable
 fun BuscarProductosScreen(
@@ -34,7 +41,8 @@ fun BuscarProductosScreen(
     viewModel: BuscarProductosViewModel = viewModel(),
     onSeleccionarProducto: (Long) -> Unit = {}
 ) {
-    // Catálogo al entrar (base para seleccionar un producto - HU 08)
+    var menuOrdenAbierto by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.cargarCatalogo()
     }
@@ -66,6 +74,60 @@ fun BuscarProductosScreen(
             Text("Buscar")
         }
 
+        Column {
+            OutlinedButton(
+                onClick = { menuOrdenAbierto = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    when (viewModel.criterioOrden) {
+                        "precio_asc" -> "Precio: menor a mayor"
+                        "precio_desc" -> "Precio: mayor a menor"
+                        "nombre_asc" -> "Nombre: A-Z"
+                        "nombre_desc" -> "Nombre: Z-A"
+                        else -> "Ordenar por"
+                    }
+                )
+            }
+
+            DropdownMenu(
+                expanded = menuOrdenAbierto,
+                onDismissRequest = { menuOrdenAbierto = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Precio: menor a mayor") },
+                    onClick = {
+                        menuOrdenAbierto = false
+                        viewModel.cambiarOrden("precio_asc")
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Precio: mayor a menor") },
+                    onClick = {
+                        menuOrdenAbierto = false
+                        viewModel.cambiarOrden("precio_desc")
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Nombre: A-Z") },
+                    onClick = {
+                        menuOrdenAbierto = false
+                        viewModel.cambiarOrden("nombre_asc")
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Nombre: Z-A") },
+                    onClick = {
+                        menuOrdenAbierto = false
+                        viewModel.cambiarOrden("nombre_desc")
+                    }
+                )
+            }
+        }
+
         when (val state = viewModel.uiState) {
             BuscarProductosUiState.Initial -> Unit
 
@@ -91,7 +153,6 @@ fun BuscarProductosScreen(
                             key = { it.id ?: 0L }
                         ) { producto ->
                             Card(
-                                // HU 08 - la tarjeta abre el detalle (HU 07)
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(enabled = producto.id != null) {

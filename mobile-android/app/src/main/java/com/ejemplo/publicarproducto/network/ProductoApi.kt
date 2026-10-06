@@ -36,10 +36,11 @@ interface ProductoApi {
         @Query("vendedorId") vendedorId: Long
     ): Response<List<ProductoResponse>>
 
-    // HU 06 - GET /api/productos?nombre={texto}
+    // HU 06 / HU 09 - GET /api/productos?nombre={texto}&sort={criterio}
     @GET("api/productos")
     suspend fun buscarProductosPorNombre(
-        @Query("nombre") nombre: String
+        @Query("nombre") nombre: String,
+        @Query("sort") sort: String? = null
     ): Response<List<ProductoResponse>>
 
     // HU 07 - GET /api/productos/catalogo (solo productos DISPONIBLE)

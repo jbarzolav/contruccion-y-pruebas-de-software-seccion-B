@@ -21,6 +21,9 @@ class BuscarProductosViewModel : ViewModel() {
     var nombre by mutableStateOf("")
         private set
 
+    var criterioOrden by mutableStateOf("")
+        private set
+
     var productos by mutableStateOf<List<ProductoResponse>>(emptyList())
         private set
 
@@ -29,6 +32,14 @@ class BuscarProductosViewModel : ViewModel() {
 
     fun cambiarNombre(valor: String) {
         nombre = valor
+    }
+
+    fun cambiarOrden(valor: String) {
+        criterioOrden = valor
+
+        if (nombre.trim().isNotBlank()) {
+            buscarProductos()
+        }
     }
 
     fun buscarProductos() {
@@ -47,7 +58,10 @@ class BuscarProductosViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val respuesta =
-                    RetrofitClient.productoApi.buscarProductosPorNombre(criterio)
+                    RetrofitClient.productoApi.buscarProductosPorNombre(
+                        nombre = criterio,
+                        sort = criterioOrden.ifBlank { null }
+                    )
 
                 if (respuesta.isSuccessful) {
                     productos = respuesta.body().orEmpty()
