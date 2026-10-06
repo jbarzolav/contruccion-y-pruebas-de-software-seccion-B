@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { obtenerProducto, urlImagen } from '../api/productos.js'
+import {
+    obtenerDisponibilidadProducto,
+    obtenerProducto,
+    urlImagen,
+} from '../api/productos.js'
 
 const CLASES_ESTADO = {
     DISPONIBLE: 'badge-disponible',
@@ -9,12 +13,13 @@ const CLASES_ESTADO = {
     RETIRADO: 'badge-retirado',
 }
 
-// HU 07 - Visualizar el detalle de un producto
+// HU 07 / HU 10 - Visualizar detalle y disponibilidad de un producto
 export default function DetalleProducto() {
     const { idProducto } = useParams()
     const navigate = useNavigate()
 
     const [producto, setProducto] = useState(null)
+    const [disponibilidad, setDisponibilidad] = useState(null)
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
 
@@ -25,11 +30,19 @@ export default function DetalleProducto() {
             try {
                 setCargando(true)
                 setError('')
-                const data = await obtenerProducto(idProducto)
-                if (vigente) setProducto(data)
+
+                const [productoData, disponibilidadData] = await Promise.all([
+                    obtenerProducto(idProducto),
+                    obtenerDisponibilidadProducto(idProducto),
+                ])
+
+                if (vigente) {
+                    setProducto(productoData)
+                    setDisponibilidad(disponibilidadData)
+                }
             } catch (err) {
                 if (!vigente) return
-                // el backend responde {status, error, messages}
+
                 const mensajeBackend = err?.response?.data?.messages?.[0]
                 setError(mensajeBackend || 'No se pudo cargar el producto.')
             } finally {
@@ -38,6 +51,7 @@ export default function DetalleProducto() {
         }
 
         cargar()
+
         return () => {
             vigente = false
         }
@@ -65,6 +79,7 @@ export default function DetalleProducto() {
     }
 
     const imagen = urlImagen(producto.imagenUrl)
+    const disponible = disponibilidad?.disponible === true
 
     return (
         <section className="tarjeta detalle-producto">
@@ -76,13 +91,17 @@ export default function DetalleProducto() {
                 >
                     &larr; Volver
                 </button>
-                <span className={`badge ${CLASES_ESTADO[producto.estado] || ''}`}>
-                    {producto.estado}
+
+                <span
+                    className={`badge ${
+                        disponible ? 'badge-disponible' : 'badge-agotado'
+                    }`}
+                >
+                    {disponible ? 'Disponible' : 'Agotado'}
                 </span>
             </div>
 
             <div className="detalle-cuerpo">
-                {/* Galería de imágenes (hoy: 1 imagen por producto, HU 02) */}
                 <div className="galeria">
                     {imagen ? (
                         <img
@@ -99,13 +118,23 @@ export default function DetalleProducto() {
                 <div className="detalle-datos">
                     <p className="detalle-categoria">{producto.categoria}</p>
                     <h2>{producto.nombre}</h2>
+
                     <p className="detalle-precio">
                         S/ {Number(producto.precio).toFixed(2)}
                     </p>
 
                     <ul className="detalle-ficha">
                         <li>
-                            <strong>Stock:</strong> {producto.stock} unidades
+                            <strong>Disponibilidad:</strong>{' '}
+                            {disponible ? 'Disponible' : 'Agotado'}
+                        </li>
+                        <li>
+                            <strong>Stock:</strong>{' '}
+                            {disponibilidad?.stock ?? producto.stock} unidades
+                        </li>
+                        <li>
+                            <strong>Estado:</strong>{' '}
+                            {disponibilidad?.estado ?? producto.estado}
                         </li>
                         <li>
                             <strong>Categoría:</strong> {producto.categoria}
@@ -121,9 +150,9 @@ export default function DetalleProducto() {
                     <h3>Descripción</h3>
                     <p className="detalle-descripcion">{producto.descripcion}</p>
 
-                    {producto.estado === 'RETIRADO' && (
+                    {!disponible && (
                         <div className="alerta error">
-                            Este producto fue retirado del catálogo (baja lógica).
+                            Este producto no se encuentra disponible para compra.
                         </div>
                     )}
                 </div>
@@ -133,6 +162,19 @@ export default function DetalleProducto() {
                 <button
                     type="button"
                     className="btn-primario"
+                    disabled={!disponible}
+                    title={
+                        disponible
+                            ? 'Producto disponible para compra'
+                            : 'Producto agotado o no disponible'
+                    }
+                >
+                    Comprar
+                </button>
+
+                <button
+                    type="button"
+                    className="btn-secundario"
                     onClick={() => navigate('/')}
                 >
                     Seguir navegando

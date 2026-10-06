@@ -86,3 +86,9 @@ export function urlImagen(imagenUrl) {
   if (imagenUrl.startsWith('http')) return imagenUrl
   return `http://localhost:8080${imagenUrl}`
 }
+
+// HU 10 - GET /api/productos/{idProducto}/disponibilidad
+export async function obtenerDisponibilidadProducto(idProducto) {
+  const { data } = await api.get(`/${idProducto}/disponibilidad`)
+  return data
+}
