@@ -14,6 +14,13 @@ const apiArchivos = axios.create({
   timeout: 20000,
 })
 
+// Servicio del carrito de compras (HU 11 / HU 12) - vive en /api/carrito
+const apiCarrito = axios.create({
+  baseURL: 'http://localhost:8080/api/carrito',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
+
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
   const { data } = await api.post('', producto)
@@ -90,5 +97,23 @@ export function urlImagen(imagenUrl) {
 // HU 10 - GET /api/productos/{idProducto}/disponibilidad
 export async function obtenerDisponibilidadProducto(idProducto) {
   const { data } = await api.get(`/${idProducto}/disponibilidad`)
+  return data
+}
+
+// HU 11 - POST /api/carrito/items  { productoId, cantidad } → 201 (400 si excede stock)
+export async function agregarAlCarrito(productoId, cantidad) {
+  const { data } = await apiCarrito.post('/items', { productoId, cantidad })
+  return data
+}
+
+// HU 12 - GET /api/carrito/items → lista de ítems con su subtotal
+export async function obtenerCarrito() {
+  const { data } = await apiCarrito.get('/items')
+  return data
+}
+
+// HU 12 - PUT /api/carrito/items/{idItemCarrito} { cantidad } → 200 con subtotal recalculado
+export async function actualizarCantidadItem(idItemCarrito, cantidad) {
+  const { data } = await apiCarrito.put(`/items/${idItemCarrito}`, { cantidad })
   return data
 }

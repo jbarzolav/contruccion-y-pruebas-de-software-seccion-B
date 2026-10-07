@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
+    agregarAlCarrito,
     obtenerDisponibilidadProducto,
     obtenerProducto,
     urlImagen,
@@ -14,7 +15,8 @@ const CLASES_ESTADO = {
 }
 
 // HU 07 / HU 10 - Visualizar detalle y disponibilidad de un producto
-export default function DetalleProducto() {
+// HU 11 - Selector de cantidad y botón "Agregar al carrito"
+export default function DetalleProducto({ onCarritoActualizado }) {
     const { idProducto } = useParams()
     const navigate = useNavigate()
 
@@ -22,6 +24,12 @@ export default function DetalleProducto() {
     const [disponibilidad, setDisponibilidad] = useState(null)
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
+
+    // HU 11 - estado visual del carrito
+    const [cantidad, setCantidad] = useState(1)
+    const [agregando, setAgregando] = useState(false)
+    const [mensajeCarrito, setMensajeCarrito] = useState('')
+    const [errorCarrito, setErrorCarrito] = useState('')
 
     useEffect(() => {
         let vigente = true
@@ -56,6 +64,27 @@ export default function DetalleProducto() {
             vigente = false
         }
     }, [idProducto])
+
+    // HU 11 - POST /api/carrito/items y refresco visual del badge del carrito
+    async function handleAgregarAlCarrito() {
+        try {
+            setAgregando(true)
+            setMensajeCarrito('')
+            setErrorCarrito('')
+
+            await agregarAlCarrito(producto.id, cantidad)
+
+            setMensajeCarrito(
+                `Se agregó ${cantidad} unidad${cantidad > 1 ? 'es' : ''} de ${producto.nombre} al carrito.`
+            )
+            onCarritoActualizado?.()
+        } catch (err) {
+            const mensajeBackend = err?.response?.data?.messages?.[0]
+            setErrorCarrito(mensajeBackend || 'No se pudo agregar el producto al carrito.')
+        } finally {
+            setAgregando(false)
+        }
+    }
 
     if (cargando) {
         return <p>Cargando producto...</p>
@@ -156,6 +185,66 @@ export default function DetalleProducto() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* HU 11 - selector numérico de cantidad + agregar al carrito */}
+            <div className="detalle-carrito">
+                <div className="cantidad-selector">
+                    <span>Cantidad:</span>
+                    <button
+                        type="button"
+                        className="btn-cantidad"
+                        onClick={() => setCantidad((valor) => Math.max(1, valor - 1))}
+                        disabled={cantidad <= 1}
+                        aria-label="Restar una unidad"
+                    >
+                        &minus;
+                    </button>
+                    <input
+                        type="number"
+                        min="1"
+                        max={disponibilidad?.stock ?? producto.stock}
+                        value={cantidad}
+                        onChange={(evento) => {
+                            const valor = Number(evento.target.value)
+                            setCantidad(Number.isNaN(valor) ? 1 : Math.max(1, valor))
+                        }}
+                        aria-label="Cantidad a agregar"
+                    />
+                    <button
+                        type="button"
+                        className="btn-cantidad"
+                        onClick={() => setCantidad((valor) => valor + 1)}
+                        disabled={cantidad >= (disponibilidad?.stock ?? producto.stock)}
+                        aria-label="Sumar una unidad"
+                    >
+                        +
+                    </button>
+                    <span className="cantidad-stock">
+                        Stock: {disponibilidad?.stock ?? producto.stock}
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    className="btn-primario"
+                    onClick={handleAgregarAlCarrito}
+                    disabled={!disponible || agregando}
+                    title={
+                        disponible
+                            ? 'Agregar esta cantidad al carrito'
+                            : 'Producto agotado o no disponible'
+                    }
+                >
+                    {agregando ? 'Agregando...' : 'Agregar al carrito'}
+                </button>
+
+                {mensajeCarrito && (
+                    <div className="alerta exito">{mensajeCarrito}</div>
+                )}
+                {errorCarrito && (
+                    <div className="alerta error">{errorCarrito}</div>
+                )}
             </div>
 
             <div className="botones">
