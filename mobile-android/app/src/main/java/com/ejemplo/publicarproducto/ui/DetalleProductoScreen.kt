@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -99,7 +100,8 @@ fun DetalleProductoScreen(
                 if (producto != null && disponibilidad != null) {
                     DetalleContenido(
                         producto = producto,
-                        disponibilidad = disponibilidad
+                        disponibilidad = disponibilidad,
+                        viewModel = viewModel
                     )
                 }
             }
@@ -110,7 +112,8 @@ fun DetalleProductoScreen(
 @Composable
 private fun DetalleContenido(
     producto: ProductoResponse,
-    disponibilidad: DisponibilidadProductoResponse
+    disponibilidad: DisponibilidadProductoResponse,
+    viewModel: DetalleProductoViewModel
 ) {
     // Galería de imágenes (hoy: 1 imagen por producto, HU 02)
     val imagen = producto.imagenUrl?.takeIf { it.isNotBlank() }
@@ -238,12 +241,84 @@ private fun DetalleContenido(
         }
     }
 
+    // HU 11 - selector numérico de cantidad (- / +)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Cantidad",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 15.sp
+        )
+
+        Button(
+            onClick = { viewModel.cambiarCantidad(-1) },
+            enabled = viewModel.cantidad > 1,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+        ) {
+            Text("−")
+        }
+
+        Text(
+            text = "${viewModel.cantidad}",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
+
+        Button(
+            onClick = { viewModel.cambiarCantidad(1) },
+            enabled = viewModel.cantidad < (disponibilidad.stock ?: 0),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+        ) {
+            Text("+")
+        }
+
+        Text(
+            text = "Stock: ${disponibilidad.stock ?: 0}",
+            fontSize = 13.sp,
+            color = Color(0xFF616E7C)
+        )
+    }
+
     Button(
-        onClick = { },
-        enabled = disponibilidad.disponible,
+        onClick = { viewModel.agregarAlCarrito() },
+        enabled = disponibilidad.disponible && !viewModel.agregandoCarrito,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("Agregar al carrito")
+        Text(if (viewModel.agregandoCarrito) "Agregando..." else "Agregar al carrito")
+    }
+
+    // estado visual del carrito tras enviar la petición (HU 11)
+    viewModel.mensajeCarrito?.let { mensaje ->
+        Surface(
+            color = Color(0xFFDCFCE7),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = mensaje,
+                color = Color(0xFF166534),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(12.dp)
+            )
+        }
+    }
+
+    viewModel.errorCarrito?.let { error ->
+        Surface(
+            color = Color(0xFFFEE2E2),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = error,
+                color = Color(0xFF991B1B),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(12.dp)
+            )
+        }
     }
 }
 

@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
+import com.ejemplo.publicarproducto.ui.CarritoScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
@@ -30,7 +31,8 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
 
-                    // 0 = Publicar, 1 = Gestionar, 2 = Mis productos, 3 = Buscar
+                    // 0 = Publicar, 1 = Gestionar, 2 = Mis productos,
+                    // 3 = Buscar, 4 = Carrito (HU 12)
                     var pestana by remember { mutableStateOf(0) }
                     var productoIdSeleccionado by remember { mutableStateOf<Long?>(null) }
 
@@ -78,6 +80,15 @@ class MainActivity : ComponentActivity() {
                                         icon = {},
                                         label = { Text("Buscar") }
                                     )
+                                    NavigationBarItem(
+                                        selected = pestana == 4,
+                                        onClick = {
+                                            pestana = 4
+                                            productoIdSeleccionado = null
+                                        },
+                                        icon = {},
+                                        label = { Text("Carrito") }
+                                    )
                                 }
                             }
                         }
@@ -112,6 +123,11 @@ class MainActivity : ComponentActivity() {
                                     onVerDetalle = { id ->
                                         productoDetalleId = id
                                     }
+                                )
+
+                                4 -> CarritoScreen(
+                                    // HU 12 - carrito con cantidades y subtotales
+                                    modifier = Modifier.padding(padding)
                                 )
 
                                 else -> BuscarProductosScreen(

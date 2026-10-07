@@ -2,6 +2,9 @@ package com.ejemplo.publicarproducto.network
 
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
+import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
+import com.ejemplo.publicarproducto.model.ItemCarritoRequest
+import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import okhttp3.MultipartBody
@@ -84,4 +87,21 @@ interface ProductoApi {
         @Part file: MultipartBody.Part,
         @Part("vendedorId") vendedorId: RequestBody
     ): Response<ProductoResponse>
+
+    // HU 11 - POST /api/carrito/items  { productoId, cantidad } → 201 (400 si excede stock)
+    @POST("api/carrito/items")
+    suspend fun agregarAlCarrito(
+        @Body request: ItemCarritoRequest
+    ): Response<ItemCarritoResponse>
+
+    // HU 12 - PUT /api/carrito/items/{idItemCarrito}  { cantidad } → 200 subtotal recalculado
+    @PUT("api/carrito/items/{idItemCarrito}")
+    suspend fun actualizarCantidadItem(
+        @Path("idItemCarrito") idItemCarrito: Long,
+        @Body request: ItemCarritoCantidadRequest
+    ): Response<ItemCarritoResponse>
+
+    // HU 12 - GET /api/carrito/items → lista de ítems con sus subtotales
+    @GET("api/carrito/items")
+    suspend fun obtenerCarrito(): Response<List<ItemCarritoResponse>>
 }
