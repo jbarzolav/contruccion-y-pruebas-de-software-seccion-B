@@ -3,6 +3,8 @@ package com.ejemplo.backenduserapi.controller;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
+import com.ejemplo.backenduserapi.exception.ItemCarritoInvalidoException;
+import com.ejemplo.backenduserapi.exception.ItemCarritoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import org.springframework.http.HttpStatus;
@@ -71,6 +73,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CriterioOrdenInvalidoException.class)
     public ResponseEntity<Map<String, Object>> handleCriterioOrdenInvalido(CriterioOrdenInvalidoException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Criterio de ordenamiento inválido", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Regla del carrito violada: cantidad < 1 o superior al stock (HU 11 / HU 12) -> 400.
+     */
+    @ExceptionHandler(ItemCarritoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleItemCarritoInvalido(ItemCarritoInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Item de carrito inválido", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Ítem del carrito inexistente (HU 12) -> 404 Not Found.
+     */
+    @ExceptionHandler(ItemCarritoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleItemCarritoNoEncontrado(ItemCarritoNoEncontradoException ex) {
+        return responder(HttpStatus.NOT_FOUND, "Item de carrito no encontrado", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
