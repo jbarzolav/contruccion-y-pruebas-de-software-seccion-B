@@ -55,6 +55,14 @@ public class CarritoController {
     // Lectura - listar los ítems del carrito (vista de la HU 12)
     // GET /api/carrito/items -> 200 (lista vacía si no hay carrito)
     // ------------------------------------------------------------------
+    // HU 13 - Eliminar un producto del carrito
+    // DELETE /api/carrito/items/{idItemCarrito}
+    @DeleteMapping("/items/{idItemCarrito}")
+    public ResponseEntity<Void> eliminarItem(@PathVariable Long idItemCarrito) {
+        carritoService.eliminarItem(idItemCarrito);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/items")
     public ResponseEntity<List<ItemCarritoResponse>> listarItems(
             @RequestParam(value = "clienteId", required = false) Long clienteId) {

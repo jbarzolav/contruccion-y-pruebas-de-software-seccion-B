@@ -87,6 +87,16 @@ public class CarritoService {
     // Lectura del carrito (vista web/móvil del HU 12)
     // GET /api/carrito/items -> 200 con los ítems y sus subtotales
     // ------------------------------------------------------------------
+    // HU 13 - Eliminar un producto del carrito
+    public void eliminarItem(Long idItemCarrito) {
+
+        ItemCarrito item = itemCarritoRepository.findById(idItemCarrito)
+                .orElseThrow(() -> new ItemCarritoNoEncontradoException(
+                        "Ítem de carrito no encontrado con id " + idItemCarrito));
+
+        itemCarritoRepository.delete(item);
+    }
+
     public List<ItemCarritoResponse> listarItems(Long clienteId) {
 
         Carrito carrito = carritoRepository.findByClienteId(resolverCliente(clienteId))
