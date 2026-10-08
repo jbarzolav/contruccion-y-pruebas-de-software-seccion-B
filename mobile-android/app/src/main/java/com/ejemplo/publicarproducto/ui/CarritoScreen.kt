@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +20,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -134,6 +140,7 @@ private fun ItemCarritoFila(
 ) {
     val actualizando = viewModel.actualizandoId == item.id
     val cantidad = item.cantidad ?: 0
+    var confirmarEliminacion by remember { mutableStateOf(false) }
 
     Surface(
         color = Color(0xFFF8FAFC),
@@ -144,6 +151,14 @@ private fun ItemCarritoFila(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // HU 13 - Eliminar producto con confirmación
+            TextButton(
+                onClick = { confirmarEliminacion = true },
+                enabled = viewModel.actualizandoId == null
+            ) {
+                Text("Eliminar", color = MaterialTheme.colorScheme.error)
+            }
+
             Text(
                 text = item.nombreProducto.orEmpty(),
                 fontWeight = FontWeight.Bold,
@@ -194,4 +209,32 @@ private fun ItemCarritoFila(
             }
         }
     }
+
+    if (confirmarEliminacion) {
+        AlertDialog(
+            onDismissRequest = { confirmarEliminacion = false },
+            title = { Text("Eliminar producto") },
+            text = {
+                Text("¿Deseas eliminar ${item.nombreProducto.orEmpty()} del carrito?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmarEliminacion = false
+                        viewModel.eliminarProducto(item)
+                    }
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { confirmarEliminacion = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }

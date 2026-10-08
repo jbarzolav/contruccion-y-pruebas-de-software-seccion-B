@@ -100,6 +100,32 @@ class CarritoViewModel : ViewModel() {
         }
     }
 
+    // HU 13 - Eliminar producto del carrito
+    fun eliminarProducto(item: ItemCarritoResponse) {
+        val idItem = item.id ?: return
+        if (actualizandoId != null) return
+
+        actualizandoId = idItem
+        mensajeError = null
+
+        viewModelScope.launch {
+            try {
+                val respuesta = RetrofitClient.productoApi.eliminarItemCarrito(idItem)
+
+                if (respuesta.isSuccessful) {
+                    items = items.filter { it.id != idItem }
+                } else {
+                    mensajeError = mensajeDeError(respuesta)
+                }
+            } catch (e: Exception) {
+                mensajeError =
+                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+            } finally {
+                actualizandoId = null
+            }
+        }
+    }
+
     /** Lee {status, error, messages} del backend para mostrar la regla violada. */
     private fun mensajeDeError(respuesta: Response<*>): String {
         return try {

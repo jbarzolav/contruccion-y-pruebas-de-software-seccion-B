@@ -11,6 +11,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
@@ -104,4 +105,11 @@ interface ProductoApi {
     // HU 12 - GET /api/carrito/items → lista de ítems con sus subtotales
     @GET("api/carrito/items")
     suspend fun obtenerCarrito(): Response<List<ItemCarritoResponse>>
+
+    // HU 13 - DELETE /api/carrito/items/{idItemCarrito}
+    @DELETE("api/carrito/items/{idItemCarrito}")
+    suspend fun eliminarItemCarrito(
+        @Path("idItemCarrito") idItemCarrito: Long
+    ): Response<Void>
+
 }
