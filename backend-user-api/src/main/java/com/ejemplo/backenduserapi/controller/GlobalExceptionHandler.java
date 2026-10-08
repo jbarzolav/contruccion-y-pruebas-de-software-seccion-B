@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
@@ -107,6 +108,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<Map<String, Object>> handleStockInsuficiente(StockInsuficienteException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Stock insuficiente", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Consulta del chatbot vacía (HU 16) -> 400.
+     */
+    @ExceptionHandler(ChatbotInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleChatbotInvalido(ChatbotInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Consulta inválida", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
