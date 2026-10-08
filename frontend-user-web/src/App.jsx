@@ -8,6 +8,7 @@ import Catalogo from './components/Catalogo.jsx'
 import DetalleProducto from './components/DetalleProducto.jsx'
 import Carrito from './components/Carrito.jsx'
 import ConfirmarCompra from './components/ConfirmarCompra.jsx'
+import ChatbotRecomendaciones from './components/ChatbotRecomendaciones.jsx'
 import { obtenerCarrito } from './api/productos.js'
 
 export default function App() {
@@ -57,6 +58,8 @@ export default function App() {
                             <span className="badge-carrito">{itemsEnCarrito}</span>
                         )}
                     </Link>
+                    {/* HU 16 - chatbot de recomendaciones */}
+                    <Link to="/chatbot">Chatbot</Link>
                 </nav>
 
                 <Routes>
@@ -106,6 +109,9 @@ export default function App() {
                         path="/confirmar-compra"
                         element={<ConfirmarCompra onCarritoActualizado={recargarCarrito} />}
                     />
+
+                    {/* HU 16 - chatbot de recomendaciones */}
+                    <Route path="/chatbot" element={<ChatbotRecomendaciones />} />
                 </Routes>
             </main>
         </HashRouter>

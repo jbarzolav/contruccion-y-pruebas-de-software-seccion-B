@@ -28,6 +28,13 @@ const apiPedidos = axios.create({
   timeout: 10000,
 })
 
+// Servicio del chatbot (HU 16 - recomendaciones)
+const apiChatbot = axios.create({
+  baseURL: 'http://localhost:8080/api/chatbot',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
+
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
   const { data } = await api.post('', producto)
@@ -139,5 +146,11 @@ export async function obtenerTotalCarrito() {
 // HU 15 - POST /api/pedidos → 201 con el comprobante (idPedido, total, detalles)
 export async function confirmarCompra() {
   const { data } = await apiPedidos.post('')
+  return data
+}
+
+// HU 16 - POST /api/chatbot/recomendaciones → 200 {mensaje, productos}
+export async function consultarChatbot(consulta) {
+  const { data } = await apiChatbot.post('/recomendaciones', { consulta })
   return data
 }
