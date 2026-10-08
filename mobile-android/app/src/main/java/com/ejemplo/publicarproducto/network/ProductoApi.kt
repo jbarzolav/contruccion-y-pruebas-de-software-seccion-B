@@ -6,6 +6,7 @@ import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
+import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import okhttp3.MultipartBody
@@ -117,5 +118,9 @@ interface ProductoApi {
     // HU 14 - GET /api/carrito/total
     @GET("api/carrito/total")
     suspend fun obtenerTotalCarrito(): Response<CarritoTotalResponse>
+
+    // HU 15 - POST /api/pedidos → 201 comprobante (400 si el carrito está vacío o falta stock)
+    @POST("api/pedidos")
+    suspend fun confirmarCompra(): Response<PedidoResponse>
 
 }
