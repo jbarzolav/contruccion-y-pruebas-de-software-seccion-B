@@ -122,3 +122,9 @@ export async function actualizarCantidadItem(idItemCarrito, cantidad) {
 export async function eliminarItemCarrito(idItemCarrito) {
   await apiCarrito.delete(`/items/${idItemCarrito}`)
 }
+
+// HU 14 - GET /api/carrito/total
+export async function obtenerTotalCarrito() {
+  const { data } = await apiCarrito.get('/total')
+  return data
+}
