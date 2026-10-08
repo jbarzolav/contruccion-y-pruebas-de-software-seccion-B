@@ -108,7 +108,7 @@ fun CarritoScreen(
                         ItemCarritoFila(item = item, viewModel = viewModel)
                     }
 
-                    val total = viewModel.items.sumOf { it.subtotal ?: java.math.BigDecimal.ZERO }
+                    val total = viewModel.totalCarrito.setScale(2).toPlainString()
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

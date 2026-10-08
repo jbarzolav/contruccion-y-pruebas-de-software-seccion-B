@@ -1,5 +1,6 @@
 package com.ejemplo.publicarproducto.network
 
+import com.ejemplo.publicarproducto.model.CarritoTotalResponse
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
@@ -111,5 +112,10 @@ interface ProductoApi {
     suspend fun eliminarItemCarrito(
         @Path("idItemCarrito") idItemCarrito: Long
     ): Response<Void>
+
+
+    // HU 14 - GET /api/carrito/total
+    @GET("api/carrito/total")
+    suspend fun obtenerTotalCarrito(): Response<CarritoTotalResponse>
 
 }
