@@ -5,8 +5,10 @@ import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ItemCarritoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ItemCarritoNoEncontradoException;
+import com.ejemplo.backenduserapi.exception.PedidoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
+import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -89,6 +91,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ItemCarritoNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> handleItemCarritoNoEncontrado(ItemCarritoNoEncontradoException ex) {
         return responder(HttpStatus.NOT_FOUND, "Item de carrito no encontrado", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Regla del pedido violada (HU 15): carrito vacío o clienteId inválido -> 400.
+     */
+    @ExceptionHandler(PedidoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handlePedidoInvalido(PedidoInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Pedido inválido", List.of(ex.getMessage()));
+    }
+
+    /**
+     * El carrito pide más stock del disponible (HU 15) -> 400 (no se registra el pedido).
+     */
+    @ExceptionHandler(StockInsuficienteException.class)
+    public ResponseEntity<Map<String, Object>> handleStockInsuficiente(StockInsuficienteException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Stock insuficiente", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
