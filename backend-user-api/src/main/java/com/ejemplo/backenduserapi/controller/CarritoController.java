@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.dto.CarritoTotalResponse;
 import com.ejemplo.backenduserapi.dto.ItemCarritoCantidadRequest;
 import com.ejemplo.backenduserapi.dto.ItemCarritoRequest;
 import com.ejemplo.backenduserapi.dto.ItemCarritoResponse;
@@ -69,4 +70,16 @@ public class CarritoController {
 
         return ResponseEntity.ok(carritoService.listarItems(clienteId));
     }
+
+    // HU 14 - Visualizar el total del carrito
+    // GET /api/carrito/total
+    @GetMapping("/total")
+    public ResponseEntity<CarritoTotalResponse> obtenerTotal(
+            @RequestParam(value = "clienteId", required = false) Long clienteId) {
+
+        return ResponseEntity.ok(
+                new CarritoTotalResponse(carritoService.calcularTotal(clienteId)));
+    }
+
+
 }

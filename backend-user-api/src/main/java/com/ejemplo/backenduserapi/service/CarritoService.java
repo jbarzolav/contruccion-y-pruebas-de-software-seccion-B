@@ -111,6 +111,14 @@ public class CarritoService {
                 .toList();
     }
 
+
+    // HU 14 - Calcular el total del carrito
+    public BigDecimal calcularTotal(Long clienteId) {
+        return listarItems(clienteId).stream()
+                .map(ItemCarritoResponse::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     // ------------------------------------------------------------------
     // Reglas privadas
     // ------------------------------------------------------------------
