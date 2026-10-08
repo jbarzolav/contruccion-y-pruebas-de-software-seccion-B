@@ -21,6 +21,13 @@ const apiCarrito = axios.create({
   timeout: 10000,
 })
 
+// Servicio de pedidos (HU 15 - Confirmar mi compra)
+const apiPedidos = axios.create({
+  baseURL: 'http://localhost:8080/api/pedidos',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
+
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
   const { data } = await api.post('', producto)
@@ -126,5 +133,11 @@ export async function eliminarItemCarrito(idItemCarrito) {
 // HU 14 - GET /api/carrito/total
 export async function obtenerTotalCarrito() {
   const { data } = await apiCarrito.get('/total')
+  return data
+}
+
+// HU 15 - POST /api/pedidos → 201 con el comprobante (idPedido, total, detalles)
+export async function confirmarCompra() {
+  const { data } = await apiPedidos.post('')
   return data
 }

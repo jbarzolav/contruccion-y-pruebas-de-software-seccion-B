@@ -631,3 +631,13 @@ a.btn-secundario {
   color: #616e7c;
   margin: 16px 0;
 }
+
+/* ===================== HU 15 - Confirmar compra ===================== */
+.pedido-exito {
+  border: 2px solid #16a34a;
+}
+
+.pedido-exito-id {
+  font-size: 1.1rem;
+  margin: 12px 0;
+}

@@ -7,6 +7,7 @@ import BuscarProductos from './components/BuscarProductos.jsx'
 import Catalogo from './components/Catalogo.jsx'
 import DetalleProducto from './components/DetalleProducto.jsx'
 import Carrito from './components/Carrito.jsx'
+import ConfirmarCompra from './components/ConfirmarCompra.jsx'
 import { obtenerCarrito } from './api/productos.js'
 
 export default function App() {
@@ -98,6 +99,12 @@ export default function App() {
                     <Route
                         path="/carrito"
                         element={<Carrito onCarritoActualizado={recargarCarrito} />}
+                    />
+
+                    {/* HU 15 - checkout: resumen y registro del pedido */}
+                    <Route
+                        path="/confirmar-compra"
+                        element={<ConfirmarCompra onCarritoActualizado={recargarCarrito} />}
                     />
                 </Routes>
             </main>

@@ -179,6 +179,12 @@ export default function Carrito({ onCarritoActualizado }) {
                 <Link to="/" className="btn-secundario">
                     Seguir comprando
                 </Link>
+                {/* HU 15 - pasar al checkout cuando hay productos */}
+                {items.length > 0 && (
+                    <Link to="/confirmar-compra" className="btn-primario">
+                        Confirmar compra
+                    </Link>
+                )}
             </div>
         </section>
     )
