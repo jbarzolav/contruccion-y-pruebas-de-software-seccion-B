@@ -117,3 +117,8 @@ export async function actualizarCantidadItem(idItemCarrito, cantidad) {
   const { data } = await apiCarrito.put(`/items/${idItemCarrito}`, { cantidad })
   return data
 }
+
+// HU 13 - DELETE /api/carrito/items/{idItemCarrito}
+export async function eliminarItemCarrito(idItemCarrito) {
+  await apiCarrito.delete(`/items/${idItemCarrito}`)
+}

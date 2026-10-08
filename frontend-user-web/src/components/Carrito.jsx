@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { actualizarCantidadItem, obtenerCarrito } from '../api/productos.js'
+import { actualizarCantidadItem, eliminarItemCarrito, obtenerCarrito } from '../api/productos.js'
 
 // HU 12 - Modificar la cantidad de un producto en el carrito
 // Lista los ítems con controles [-] / [+] y subtotales recalculados por el servidor.
@@ -49,6 +49,35 @@ export default function Carrito({ onCarritoActualizado }) {
         } catch (err) {
             const mensajeBackend = err?.response?.data?.messages?.[0]
             setError(mensajeBackend || 'No se pudo actualizar la cantidad.')
+        } finally {
+            setActualizandoId(null)
+        }
+    }
+
+    // HU 13 - Eliminar producto del carrito con confirmación
+    async function eliminarProducto(item) {
+        if (actualizandoId !== null) return
+
+        const confirmado = window.confirm(
+            `¿Deseas eliminar "${item.nombreProducto}" del carrito?`
+        )
+
+        if (!confirmado) return
+
+        try {
+            setError('')
+            setActualizandoId(item.id)
+
+            await eliminarItemCarrito(item.id)
+
+            setItems(lista =>
+                lista.filter(elemento => elemento.id !== item.id)
+            )
+
+            onCarritoActualizado?.()
+        } catch (err) {
+            const mensajeBackend = err?.response?.data?.messages?.[0]
+            setError(mensajeBackend || 'No se pudo eliminar el producto.')
         } finally {
             setActualizandoId(null)
         }
@@ -124,6 +153,15 @@ export default function Carrito({ onCarritoActualizado }) {
                             Subtotal:{' '}
                             <strong>S/ {Number(item.subtotal).toFixed(2)}</strong>
                         </div>
+                        <button
+                            type="button"
+                            className="btn-secundario"
+                            onClick={() => eliminarProducto(item)}
+                            disabled={actualizandoId !== null}
+                            aria-label={`Eliminar ${item.nombreProducto} del carrito`}
+                        >
+                            Eliminar
+                        </button>
                     </li>
                 ))}
             </ul>
