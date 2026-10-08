@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
 import com.ejemplo.publicarproducto.ui.CarritoScreen
+import com.ejemplo.publicarproducto.ui.ChatbotScreen
 import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
@@ -34,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
                     // 0 = Publicar, 1 = Gestionar, 2 = Mis productos,
                     // 3 = Buscar, 4 = Carrito (HU 12),
-                    // 5 = Confirmar compra (HU 15)
+                    // 5 = Confirmar compra (HU 15), 6 = Chatbot (HU 16)
                     var pestana by remember { mutableStateOf(0) }
                     var productoIdSeleccionado by remember { mutableStateOf<Long?>(null) }
 
@@ -100,6 +101,15 @@ class MainActivity : ComponentActivity() {
                                         icon = {},
                                         label = { Text("Comprar") }
                                     )
+                                    NavigationBarItem(
+                                        selected = pestana == 6,
+                                        onClick = {
+                                            pestana = 6
+                                            productoIdSeleccionado = null
+                                        },
+                                        icon = {},
+                                        label = { Text("Chat") }
+                                    )
                                 }
                             }
                         }
@@ -143,6 +153,14 @@ class MainActivity : ComponentActivity() {
 
                                 5 -> ConfirmarCompraScreen(
                                     // HU 15 - resumen y registro del pedido
+                                    modifier = Modifier.padding(padding)
+                                )
+
+                                6 -> ChatbotScreen(
+                                    // HU 16 - chatbot -> detalle del producto sugerido
+                                    onSeleccionarProducto = { id ->
+                                        productoDetalleId = id
+                                    },
                                     modifier = Modifier.padding(padding)
                                 )
 

@@ -1,6 +1,8 @@
 package com.ejemplo.publicarproducto.network
 
 import com.ejemplo.publicarproducto.model.CarritoTotalResponse
+import com.ejemplo.publicarproducto.model.ChatbotRequest
+import com.ejemplo.publicarproducto.model.ChatbotResponse
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
@@ -122,5 +124,11 @@ interface ProductoApi {
     // HU 15 - POST /api/pedidos → 201 comprobante (400 si el carrito está vacío o falta stock)
     @POST("api/pedidos")
     suspend fun confirmarCompra(): Response<PedidoResponse>
+
+    // HU 16 - POST /api/chatbot/recomendaciones  { consulta } → 200 {mensaje, productos}
+    @POST("api/chatbot/recomendaciones")
+    suspend fun recomendarProductos(
+        @Body request: ChatbotRequest
+    ): Response<ChatbotResponse>
 
 }
