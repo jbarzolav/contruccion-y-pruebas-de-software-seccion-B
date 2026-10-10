@@ -1,3 +1,4 @@
+
 package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.client.GeminiClient;
@@ -14,70 +15,133 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * HU 16 - Chatbot de recomendaciones (refactor: Google AI Studio / Gemini 2.0 Flash).
- *
- * Flujo:
- *  1. Valida la consulta (no vacía → si no, 400).
- *  2. Recupera el catálogo ACTIVO de la BD: disponibles y con stock &gt; 0.
- *  3. Intenta Gemini: POST con System Prompt (catálogo + reglas) y la consulta;
- *     exige el JSON estructurado {"mensaje": "...", "productosIds": [...]}.
- *  4. FALLBACK: si Gemini falla, expira, no hay internet o el JSON es inválido,
- *     se ejecuta la búsqueda local por palabras clave sobre la BD (la original).
- *  5. La respuesta SIEMPRE es el mismo DTO ChatbotResponse {mensaje, productos[]}
- *     que ya consumen la web (React) y la app (Compose): interfaces intactas.
- *
- * Reglas de negocio (iguales a las de HU 16, incluso con Gemini):
- *  - Solo se sugieren productos disponibles: nada de RETIRADO, INACTIVO ni stock 0.
- *  - Máximo MAXIMO_SUGERENCIAS (5) sugerencias; los ids ajenos o repetidos se ignoran.
- *  - Sin coincidencias → lista vacía + mensaje (200, nunca 404).
+ * HU 16 - Recomendaciones asistidas por chatbot.
+ * HU 17 - Consultas técnicas sobre componentes electrónicos.
  */
 @Service
 public class ChatbotService {
 
     private static final int MAXIMO_SUGERENCIAS = 5;
 
+    private static final Set<String> PALABRAS_COMUNES = Set.of(
+            "busco", "buscar", "un", "una", "el", "la",
+            "los", "las", "quiero", "necesito", "comprar",
+            "producto", "productos", "por", "favor", "para",
+            "me", "puedes", "recomendar", "recomiendame",
+            "tienes", "hay", "alguno", "alguna", "que"
+    );
+
     private final ProductoRepository productoRepository;
     private final GeminiClient geminiClient;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ChatbotService(ProductoRepository productoRepository, GeminiClient geminiClient) {
+    public ChatbotService(
+            ProductoRepository productoRepository,
+            GeminiClient geminiClient
+    ) {
         this.productoRepository = productoRepository;
         this.geminiClient = geminiClient;
     }
 
+    // ============================================================
+    // HU 16 - RECOMENDACIONES DE PRODUCTOS
+    // ============================================================
+
     public ChatbotResponse recomendar(ChatbotRequest request) {
 
-        if (request == null || request.getConsulta() == null || request.getConsulta().isBlank()) {
-            throw new ChatbotInvalidoException("La consulta no puede estar vacía");
+        if (request == null
+                || request.getConsulta() == null
+                || request.getConsulta().isBlank()) {
+            throw new ChatbotInvalidoException(
+                    "La consulta no puede estar vacía"
+            );
         }
 
         String texto = request.getConsulta().trim();
 
-        // Catálogo activo de la BD (H2 en memoria; MySQL con el perfil "mysql")
+        // Solo productos disponibles y con stock positivo.
         List<Producto> disponibles = catalogoDisponible();
 
-        // 1) Intento con Gemini 2.0 Flash…
-        ChatbotResponse respuestaGemini = intentarConGemini(texto, disponibles);
-        if (respuestaGemini != null) {
-            return respuestaGemini;
+        // Primero intenta obtener recomendaciones de Gemini.
+        Optional<String> jsonGemini;
+
+        try {
+            jsonGemini = geminiClient.generarContenidoJson(
+                    construirSystemPrompt(disponibles),
+                    texto
+            );
+        } catch (Exception e) {
+            jsonGemini = Optional.empty();
         }
 
-        // 2) …y si no está disponible, fallback local por palabras clave (HU 16 original)
+        if (jsonGemini.isPresent()) {
+            try {
+                JsonNode raiz = mapper.readTree(jsonGemini.get());
+                JsonNode mensaje = raiz.get("mensaje");
+                JsonNode ids = raiz.get("productosIds");
+
+                if (mensaje != null
+                        && mensaje.isTextual()
+                        && !mensaje.asText().isBlank()
+                        && ids != null
+                        && ids.isArray()) {
+
+                    List<ProductoResumenResponse> productos =
+                            mapearIdsAProductos(ids, disponibles);
+
+                    // Gemini seleccionó productos válidos.
+                    if (!productos.isEmpty()) {
+                        return new ChatbotResponse(
+                                mensaje.asText().trim(),
+                                productos
+                        );
+                    }
+
+                    // Gemini no seleccionó ningún ID.
+                    // Intentamos recuperar coincidencias locales.
+                    if (ids.isEmpty()) {
+                        ChatbotResponse local =
+                                buscarLocal(texto, disponibles);
+
+                        if (!local.getProductos().isEmpty()) {
+                            return local;
+                        }
+                    }
+
+                    // Si Gemini envió IDs no disponibles, se descartan.
+                    // No se reemplazan por otros productos.
+                    return new ChatbotResponse(
+                            mensaje.asText().trim(),
+                            productos
+                    );
+                }
+
+            } catch (Exception e) {
+                // JSON inválido: se utiliza búsqueda local.
+            }
+        }
+
+        // Gemini no responde o devuelve formato inválido.
         return buscarLocal(texto, disponibles);
     }
-    /**
-     * HU 17 - Responde consultas técnicas sobre componentes electrónicos.
-     * Reutiliza Gemini y mantiene separada la lógica de recomendaciones.
-     */
+
+    // ============================================================
+    // HU 17 - CONSULTAS TÉCNICAS
+    // ============================================================
+
     public ChatbotResponse consultarTecnica(ChatbotRequest request) {
 
-        if (request == null || request.getConsulta() == null
+        if (request == null
+                || request.getConsulta() == null
                 || request.getConsulta().isBlank()) {
-            throw new ChatbotInvalidoException("La consulta no puede estar vacía");
+            throw new ChatbotInvalidoException(
+                    "La consulta no puede estar vacía"
+            );
         }
 
         String consulta = request.getConsulta().trim();
@@ -106,14 +170,18 @@ public class ChatbotService {
             """;
 
         try {
-            Optional<String> respuesta = geminiClient.generarContenidoJson(
-                    instrucciones, consulta);
+            Optional<String> respuesta =
+                    geminiClient.generarContenidoJson(
+                            instrucciones,
+                            consulta
+                    );
 
             if (respuesta.isPresent()) {
                 JsonNode raiz = mapper.readTree(respuesta.get());
                 JsonNode mensaje = raiz.path("mensaje");
 
-                if (mensaje.isTextual() && !mensaje.asText().isBlank()) {
+                if (mensaje.isTextual()
+                        && !mensaje.asText().isBlank()) {
                     return new ChatbotResponse(
                             mensaje.asText().trim(),
                             List.of()
@@ -122,7 +190,7 @@ public class ChatbotService {
             }
 
         } catch (Exception e) {
-            // Si Gemini devuelve JSON inválido, se usa el mensaje alternativo.
+            // Si Gemini falla, se muestra el mensaje alternativo.
         }
 
         return new ChatbotResponse(
@@ -132,45 +200,14 @@ public class ChatbotService {
         );
     }
 
-    // ------------------------------------------------------------------
-    // Ruta con Gemini
-    // ------------------------------------------------------------------
+    // ============================================================
+    // CONVERTIR IDS DE GEMINI EN PRODUCTOS DISPONIBLES
+    // ============================================================
 
-    /**
-     * @return la respuesta armada con Gemini, o null si hay que usar el
-     *         respaldo local (sin conexión, timeout, HTTP de error o JSON inválido).
-     */
-    private ChatbotResponse intentarConGemini(String texto, List<Producto> disponibles) {
-        try {
-            Optional<String> json = geminiClient.generarContenidoJson(
-                    construirSystemPrompt(disponibles), texto);
-
-            if (json.isEmpty()) {
-                return null;
-            }
-
-            JsonNode raiz = mapper.readTree(json.get());
-            JsonNode mensaje = raiz.get("mensaje");
-            if (mensaje == null || mensaje.asText("").isBlank()) {
-                return null; // formato no conforme → respaldo local
-            }
-
-            List<ProductoResumenResponse> productos =
-                    mapearIdsAProductos(raiz.get("productosIds"), disponibles);
-
-            return new ChatbotResponse(mensaje.asText().trim(), productos);
-
-        } catch (Exception e) {
-            return null; // JSON inválido u otro fallo → respaldo local
-        }
-    }
-
-    /**
-     * Convierte productosIds del modelo en el DTO de producto que consumen
-     * web/móvil. Solo traduce ids que existan en el catálogo ACTIVO de la BD:
-     * ids inexistentes, retirados, inactivos o sin stock quedan fuera.
-     */
-    private List<ProductoResumenResponse> mapearIdsAProductos(JsonNode ids, List<Producto> disponibles) {
+    private List<ProductoResumenResponse> mapearIdsAProductos(
+            JsonNode ids,
+            List<Producto> disponibles
+    ) {
         if (ids == null || !ids.isArray()) {
             return List.of();
         }
@@ -179,12 +216,18 @@ public class ChatbotService {
         Set<Long> vistos = new HashSet<>();
 
         for (JsonNode nodo : ids) {
+
             long id = nodo.asLong(-1);
+
             if (id < 0 || !vistos.add(id)) {
                 continue;
             }
+
             disponibles.stream()
-                    .filter(producto -> producto.getId() != null && producto.getId() == id)
+                    .filter(producto ->
+                            producto.getId() != null
+                                    && producto.getId() == id
+                    )
                     .findFirst()
                     .map(this::toResumen)
                     .ifPresent(resultado::add);
@@ -193,90 +236,162 @@ public class ChatbotService {
                 break;
             }
         }
+
         return resultado;
     }
 
-    /** System Prompt: catálogo activo + formato JSON obligatorio de la respuesta. */
+    // ============================================================
+    // PROMPT DE GEMINI CON EL CATÁLOGO REAL
+    // ============================================================
+
     private String construirSystemPrompt(List<Producto> disponibles) {
+
         StringBuilder catalogo = new StringBuilder();
+
         for (Producto producto : disponibles) {
-            catalogo.append("- id=").append(producto.getId())
-                    .append(" | ").append(producto.getNombre())
-                    .append(" | S/ ").append(producto.getPrecio())
-                    .append(" | stock ").append(producto.getStock())
-                    .append(" | ").append(
-                            producto.getCategoria() == null ? "sin categoría" : producto.getCategoria())
+            catalogo.append("- id=")
+                    .append(producto.getId())
+                    .append(" | ")
+                    .append(producto.getNombre())
+                    .append(" | S/ ")
+                    .append(producto.getPrecio())
+                    .append(" | stock ")
+                    .append(producto.getStock())
+                    .append(" | ")
+                    .append(
+                            producto.getCategoria() == null
+                                    ? "sin categoría"
+                                    : producto.getCategoria()
+                    )
                     .append('\n');
         }
 
-        return "Eres el asistente de compras de PulgaTec. Responde siempre en español.\n"
+        return "Eres el asistente de compras de PulgaTec. "
+                + "Responde siempre en español.\n"
                 + "Devuelve EXCLUSIVAMENTE un JSON válido con esta forma exacta:\n"
                 + "{\"mensaje\": \"...\", \"productosIds\": []}\n"
                 + "- mensaje: texto breve y amigable para el usuario.\n"
                 + "- productosIds: ids enteros de los productos que recomiendas; "
                 + "usa [] si no hay coincidencias.\n"
-                + "IMPORTANTE: solo puedes usar ids de este catálogo (productos disponibles "
-                + "con stock mayor que 0) y como máximo " + MAXIMO_SUGERENCIAS + " ids.\n"
+                + "IMPORTANTE: solo puedes usar ids de este catálogo "
+                + "(productos disponibles con stock mayor que 0) "
+                + "y como máximo " + MAXIMO_SUGERENCIAS + " ids.\n"
                 + "Catálogo activo:\n"
                 + catalogo;
     }
 
-    // ------------------------------------------------------------------
-    // Ruta local (fallback de HU 16, byte a byte igual a la original)
-    // ------------------------------------------------------------------
+    // ============================================================
+    // BÚSQUEDA LOCAL DE PRODUCTOS
+    // ============================================================
 
-    private ChatbotResponse buscarLocal(String texto, List<Producto> disponibles) {
+    private ChatbotResponse buscarLocal(
+            String texto,
+            List<Producto> disponibles
+    ) {
 
-        List<ProductoResumenResponse> sugerencias = disponibles.stream()
-                .filter(producto -> coincide(texto, producto))
-                .limit(MAXIMO_SUGERENCIAS)
-                .map(this::toResumen)
-                .toList();
+        List<ProductoResumenResponse> sugerencias =
+                disponibles.stream()
+                        .filter(producto -> coincide(texto, producto))
+                        .limit(MAXIMO_SUGERENCIAS)
+                        .map(this::toResumen)
+                        .toList();
 
         String mensaje;
+
         if (sugerencias.isEmpty()) {
             mensaje = "No encontré productos para \"" + texto
                     + "\". Prueba con otro nombre o categoría.";
         } else {
             mensaje = "Encontré " + sugerencias.size()
-                    + (sugerencias.size() == 1 ? " producto" : " productos")
+                    + (sugerencias.size() == 1
+                    ? " producto"
+                    : " productos")
                     + " para \"" + texto + "\":";
         }
 
         return new ChatbotResponse(mensaje, sugerencias);
     }
 
-    // ------------------------------------------------------------------
-    // Comunes
-    // ------------------------------------------------------------------
+    // ============================================================
+    // CATÁLOGO DISPONIBLE
+    // ============================================================
 
-    /** Catálogo ACTIVO: solo productos comprables (BD). */
     private List<Producto> catalogoDisponible() {
-        return productoRepository.findAll().stream()
+
+        return productoRepository.findAll()
+                .stream()
                 .filter(this::estaDisponible)
                 .toList();
     }
 
-    /** Solo productos comprables: nada retirado, inactivo ni agotado (stock 0). */
     private boolean estaDisponible(Producto producto) {
-        boolean sinRetiro = !"RETIRADO".equals(producto.getEstado())
-                && !"INACTIVO".equals(producto.getEstado());
-        boolean conStock = producto.getStock() != null && producto.getStock() > 0;
-        return sinRetiro && conStock;
+
+        boolean estadoDisponible =
+                "DISPONIBLE".equalsIgnoreCase(producto.getEstado());
+
+        boolean conStock =
+                producto.getStock() != null
+                        && producto.getStock() > 0;
+
+        return estadoDisponible && conStock;
     }
+
+    // ============================================================
+    // COINCIDENCIA DE NOMBRE O CATEGORÍA
+    // ============================================================
 
     private boolean coincide(String texto, Producto producto) {
-        String objetivo = texto.toLowerCase();
-        boolean porNombre = producto.getNombre() != null
-                && producto.getNombre().toLowerCase().contains(objetivo);
-        boolean porCategoria = producto.getCategoria() != null
-                && producto.getCategoria().toLowerCase().contains(objetivo);
-        return porNombre || porCategoria;
+
+        String consulta = texto.toLowerCase(Locale.ROOT).trim();
+
+        String nombre = producto.getNombre() == null
+                ? ""
+                : producto.getNombre().toLowerCase(Locale.ROOT);
+
+        String categoria = producto.getCategoria() == null
+                ? ""
+                : producto.getCategoria().toLowerCase(Locale.ROOT);
+
+        // Coincidencia directa.
+        if (nombre.contains(consulta) || categoria.contains(consulta)) {
+            return true;
+        }
+
+        // Ejemplo: "Busco un Arduino Uno" contiene "Arduino Uno".
+        if (!nombre.isBlank() && consulta.contains(nombre)) {
+            return true;
+        }
+
+        // Buscar por palabras importantes de la consulta.
+        for (String palabra : consulta.split("[^\\p{L}\\p{N}]+")) {
+
+            if (palabra.length() < 3
+                    || PALABRAS_COMUNES.contains(palabra)) {
+                continue;
+            }
+
+            if (nombre.contains(palabra)
+                    || categoria.contains(palabra)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
+    // ============================================================
+    // CONVERTIR PRODUCTO A DTO
+    // ============================================================
+
     private ProductoResumenResponse toResumen(Producto producto) {
+
         return new ProductoResumenResponse(
-                producto.getId(), producto.getNombre(), producto.getPrecio(),
-                producto.getStock(), producto.getCategoria(), producto.getImagenUrl());
+                producto.getId(),
+                producto.getNombre(),
+                producto.getPrecio(),
+                producto.getStock(),
+                producto.getCategoria(),
+                producto.getImagenUrl()
+        );
     }
 }

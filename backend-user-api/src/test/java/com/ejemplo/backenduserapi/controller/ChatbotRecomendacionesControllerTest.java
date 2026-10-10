@@ -256,4 +256,45 @@ class ChatbotRecomendacionesControllerTest {
                 .andExpect(jsonPath("$.mensaje").value("Solo puedo ofrecerte productos activos"))
                 .andExpect(jsonPath("$.productos.length()").value(0));
     }
+
+    // HU 16 - Reconocer un producto dentro de una frase completa.
+    @Test
+    void consultaConFraseEncuentraArduinoUno() throws Exception {
+        crearProducto(
+                "Arduino Uno", "Microcontroladores",
+                "20.00", 4, "DISPONIBLE"
+        );
+
+        mockMvc.perform(post("/api/chatbot/recomendaciones")
+                        .contentType("application/json")
+                        .content("{\"consulta\":\"Busco un Arduino Uno\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productos.length()").value(1))
+                .andExpect(jsonPath("$.productos[0].nombre").value("Arduino Uno"))
+                .andExpect(jsonPath("$.productos[0].stock").value(4));
+    }
+
+    // HU 16 - Si Gemini no selecciona productos, recuperar
+    // coincidencias locales disponibles.
+    @Test
+    void geminiSinSugerenciasRecuperaArduinoDisponible() throws Exception {
+        crearProducto(
+                "Arduino Uno", "Microcontroladores",
+                "20.00", 4, "DISPONIBLE"
+        );
+
+        when(geminiClient.generarContenidoJson(anyString(), anyString()))
+                .thenReturn(Optional.of(
+                        "{\"mensaje\":\"No encontré productos\","
+                                + "\"productosIds\":[]}"
+                ));
+
+        mockMvc.perform(post("/api/chatbot/recomendaciones")
+                        .contentType("application/json")
+                        .content("{\"consulta\":\"Busco un Arduino\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productos.length()").value(1))
+                .andExpect(jsonPath("$.productos[0].nombre").value("Arduino Uno"));
+    }
+
 }
