@@ -161,3 +161,12 @@ export async function consultarChatbotTecnico(consulta) {
   const { data } = await apiChatbot.post('/consultas-tecnicas', { consulta })
   return data
 }
+
+// HU 18 - GET /api/planes/premium
+export async function consultarPlanPremium() {
+  const { data } = await axios.get(
+    'http://localhost:8080/api/planes/premium',
+    { timeout: 10000 }
+  )
+  return data
+}

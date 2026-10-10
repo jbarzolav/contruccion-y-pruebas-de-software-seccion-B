@@ -9,6 +9,7 @@ import DetalleProducto from './components/DetalleProducto.jsx'
 import Carrito from './components/Carrito.jsx'
 import ConfirmarCompra from './components/ConfirmarCompra.jsx'
 import ChatbotRecomendaciones from './components/ChatbotRecomendaciones.jsx'
+import PlanPremium from './components/PlanPremium.jsx'
 import { obtenerCarrito } from './api/productos.js'
 
 export default function App() {
@@ -60,6 +61,7 @@ export default function App() {
                     </Link>
                     {/* HU 16 - chatbot de recomendaciones */}
                     <Link to="/chatbot">Chatbot</Link>
+                     <Link to="/premium">Premium</Link>
                 </nav>
 
                 <Routes>
@@ -112,6 +114,8 @@ export default function App() {
 
                     {/* HU 16 - chatbot de recomendaciones */}
                     <Route path="/chatbot" element={<ChatbotRecomendaciones />} />
+                     {/* HU 18 - Beneficios Premium */}
+                     <Route path="/premium" element={<PlanPremium />} />
                 </Routes>
             </main>
         </HashRouter>
