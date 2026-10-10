@@ -11,6 +11,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,8 +26,10 @@ import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
+import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +48,21 @@ class MainActivity : ComponentActivity() {
                     var productoDetalleId by remember { mutableStateOf<Long?>(null) }
 
                     Scaffold(
+                        topBar = {
+                            if (productoDetalleId == null) {
+                                TopAppBar(
+                                    title = { Text("PulgaTec") },
+                                    actions = {
+                                        TextButton(onClick = {
+                                            pestana = 7
+                                            productoIdSeleccionado = null
+                                        }) {
+                                            Text("Premium")
+                                        }
+                                    }
+                                )
+                            }
+                        },
                         bottomBar = {
                             // en el detalle se oculta la barra de pestañas
                             if (productoDetalleId == null) {
@@ -163,6 +183,8 @@ class MainActivity : ComponentActivity() {
                                     },
                                     modifier = Modifier.padding(padding)
                                 )
+
+                                7 -> PlanPremiumScreen(modifier = Modifier.padding(padding))
 
                                 else -> BuscarProductosScreen(
                                     modifier = Modifier.padding(padding),

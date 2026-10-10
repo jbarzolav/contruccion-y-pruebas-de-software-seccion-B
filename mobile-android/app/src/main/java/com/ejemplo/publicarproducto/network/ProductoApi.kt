@@ -9,6 +9,7 @@ import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.PlanPremiumResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import okhttp3.MultipartBody
@@ -138,5 +139,10 @@ interface ProductoApi {
         @Body request: ChatbotRequest
     ): Response<ChatbotResponse>
 
+
+
+    // HU 18 - GET /api/planes/premium
+    @GET("api/planes/premium")
+    suspend fun consultarPlanPremium(): Response<PlanPremiumResponse>
 
 }
