@@ -69,6 +69,68 @@ public class ChatbotService {
         // 2) …y si no está disponible, fallback local por palabras clave (HU 16 original)
         return buscarLocal(texto, disponibles);
     }
+    /**
+     * HU 17 - Responde consultas técnicas sobre componentes electrónicos.
+     * Reutiliza Gemini y mantiene separada la lógica de recomendaciones.
+     */
+    public ChatbotResponse consultarTecnica(ChatbotRequest request) {
+
+        if (request == null || request.getConsulta() == null
+                || request.getConsulta().isBlank()) {
+            throw new ChatbotInvalidoException("La consulta no puede estar vacía");
+        }
+
+        String consulta = request.getConsulta().trim();
+
+        String instrucciones = """
+            Eres un asistente técnico educativo de PulgaTec,
+            una plataforma para estudiantes de Tecsup.
+
+            Responde en español preguntas relacionadas con:
+            - Componentes electrónicos.
+            - Arduino, ESP32 y microcontroladores.
+            - Sensores, resistencias, LEDs y protoboards.
+            - Circuitos electrónicos y herramientas de laboratorio.
+            - Uso y características de materiales académicos tecnológicos.
+
+            Explica los conceptos de manera clara, sencilla y educativa.
+            Si la pregunta está fuera de estos temas, indica amablemente
+            que tu función es resolver consultas técnicas relacionadas
+            con electrónica y componentes tecnológicos.
+
+            Devuelve exclusivamente un JSON con este formato:
+            {"mensaje": "explicación técnica", "productosIds": []}
+
+            No recomiendes productos del catálogo.
+            El arreglo productosIds debe estar vacío.
+            """;
+
+        try {
+            Optional<String> respuesta = geminiClient.generarContenidoJson(
+                    instrucciones, consulta);
+
+            if (respuesta.isPresent()) {
+                JsonNode raiz = mapper.readTree(respuesta.get());
+                JsonNode mensaje = raiz.path("mensaje");
+
+                if (mensaje.isTextual() && !mensaje.asText().isBlank()) {
+                    return new ChatbotResponse(
+                            mensaje.asText().trim(),
+                            List.of()
+                    );
+                }
+            }
+
+        } catch (Exception e) {
+            // Si Gemini devuelve JSON inválido, se usa el mensaje alternativo.
+        }
+
+        return new ChatbotResponse(
+                "En este momento no puedo responder consultas técnicas. "
+                        + "Por favor, intenta nuevamente más tarde.",
+                List.of()
+        );
+    }
 
     // ------------------------------------------------------------------
     // Ruta con Gemini

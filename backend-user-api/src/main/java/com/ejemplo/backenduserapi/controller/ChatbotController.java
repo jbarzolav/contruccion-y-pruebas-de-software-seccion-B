@@ -27,4 +27,14 @@ public class ChatbotController {
     public ResponseEntity<ChatbotResponse> recomendar(@RequestBody ChatbotRequest request) {
         return ResponseEntity.ok(chatbotService.recomendar(request));
     }
+    /**
+     * HU 17 - Consultas técnicas sobre componentes electrónicos.
+     * POST /api/chatbot/consultas-tecnicas
+     * Body: { "consulta": "¿Para qué sirve una protoboard?" }
+     */
+    @PostMapping("/consultas-tecnicas")
+    public ResponseEntity<ChatbotResponse> consultarTecnica(
+            @RequestBody ChatbotRequest request) {
+        return ResponseEntity.ok(chatbotService.consultarTecnica(request));
+    }
 }
