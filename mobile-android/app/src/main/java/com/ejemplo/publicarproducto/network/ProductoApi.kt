@@ -131,4 +131,12 @@ interface ProductoApi {
         @Body request: ChatbotRequest
     ): Response<ChatbotResponse>
 
+    // HU 17 - POST /api/chatbot/consultas-tecnicas
+    // Responde preguntas técnicas sobre componentes electrónicos.
+    @POST("api/chatbot/consultas-tecnicas")
+    suspend fun consultarComponenteTecnico(
+        @Body request: ChatbotRequest
+    ): Response<ChatbotResponse>
+
+
 }

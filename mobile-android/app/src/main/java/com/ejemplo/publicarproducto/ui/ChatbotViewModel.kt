@@ -1,3 +1,4 @@
+
 package com.ejemplo.publicarproducto.ui
 
 import androidx.compose.runtime.getValue
@@ -13,26 +14,32 @@ import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
-/** Mensaje del chatbot: del usuario o del bot (con sus productos sugeridos). */
+/**
+ * HU 16 - Recomendaciones de productos.
+ * HU 17 - Consultas técnicas sobre componentes electrónicos.
+ */
+enum class ModoChatbot {
+    RECOMENDACIONES,
+    CONSULTAS_TECNICAS
+}
+
 data class ChatbotMensaje(
     val esUsuario: Boolean,
     val texto: String,
     val productos: List<ProductoResumenResponse> = emptyList()
 )
 
-/**
- * HU 16 - Chatbot de recomendaciones: envía la consulta al backend
- * (POST /api/chatbot/recomendaciones) y guarda el mensaje de respuesta
- * con las tarjetas de productos sugeridos (solo disponibles).
- */
 class ChatbotViewModel : ViewModel() {
+
+    var modo by mutableStateOf(ModoChatbot.RECOMENDACIONES)
+        private set
 
     var mensajes by mutableStateOf<List<ChatbotMensaje>>(
         listOf(
             ChatbotMensaje(
                 esUsuario = false,
-                texto = "¡Hola! 👋 Pregúntame por productos, por ejemplo: " +
-                        "\"notebook\", \"mouse\" o \"Computadoras\"."
+                texto = "¡Hola! 👋 Puedo recomendarte productos " +
+                        "y responder consultas técnicas sobre componentes electrónicos."
             )
         )
     )
@@ -44,31 +51,62 @@ class ChatbotViewModel : ViewModel() {
     var mensajeError by mutableStateOf<String?>(null)
         private set
 
-    /** HU 16 - POST /api/chatbot/recomendaciones con la consulta del usuario. */
+    fun cambiarModo(nuevoModo: ModoChatbot) {
+        if (!enviando) {
+            modo = nuevoModo
+        }
+    }
+
+    /**
+     * Envía la consulta al endpoint correspondiente.
+     * HU 16: /api/chatbot/recomendaciones
+     * HU 17: /api/chatbot/consultas-tecnicas
+     */
     fun enviarConsulta(consulta: String) {
         val texto = consulta.trim()
         if (texto.isEmpty() || enviando) return
 
+        val modoConsulta = modo
+
         enviando = true
         mensajeError = null
-        mensajes = mensajes + ChatbotMensaje(esUsuario = true, texto = texto)
+
+        mensajes = mensajes + ChatbotMensaje(
+            esUsuario = true,
+            texto = texto
+        )
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.recomendarProductos(
-                    ChatbotRequest(consulta = texto)
-                )
+                val request = ChatbotRequest(consulta = texto)
+
+                val respuesta = when (modoConsulta) {
+                    ModoChatbot.RECOMENDACIONES ->
+                        RetrofitClient.productoApi.recomendarProductos(request)
+
+                    ModoChatbot.CONSULTAS_TECNICAS ->
+                        RetrofitClient.productoApi.consultarComponenteTecnico(request)
+                }
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     val cuerpo = respuesta.body()!!
+
                     mensajes = mensajes + ChatbotMensaje(
                         esUsuario = false,
-                        texto = cuerpo.mensaje ?: "No hay sugerencias disponibles.",
-                        productos = cuerpo.productos ?: emptyList()
+                        texto = cuerpo.mensaje
+                            ?: "No hay una respuesta disponible.",
+                        productos = if (
+                            modoConsulta == ModoChatbot.CONSULTAS_TECNICAS
+                        ) {
+                            emptyList()
+                        } else {
+                            cuerpo.productos ?: emptyList()
+                        }
                     )
                 } else {
                     val errorTexto = mensajeDeError(respuesta)
                     mensajeError = errorTexto
+
                     mensajes = mensajes + ChatbotMensaje(
                         esUsuario = false,
                         texto = "⚠️ $errorTexto"
@@ -77,7 +115,9 @@ class ChatbotViewModel : ViewModel() {
             } catch (e: Exception) {
                 val errorTexto =
                     "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+
                 mensajeError = errorTexto
+
                 mensajes = mensajes + ChatbotMensaje(
                     esUsuario = false,
                     texto = "⚠️ $errorTexto"
@@ -88,12 +128,15 @@ class ChatbotViewModel : ViewModel() {
         }
     }
 
-    /** Lee {status, error, messages} del backend para mostrar la regla violada. */
     private fun mensajeDeError(respuesta: Response<*>): String {
         return try {
             val cuerpo = respuesta.errorBody()?.string()
-            val error = cuerpo?.let { Gson().fromJson(it, ErrorResponse::class.java) }
-            error?.messages?.firstOrNull() ?: "Error ${respuesta.code()}: no se pudo consultar."
+            val error = cuerpo?.let {
+                Gson().fromJson(it, ErrorResponse::class.java)
+            }
+
+            error?.messages?.firstOrNull()
+                ?: "Error ${respuesta.code()}: no se pudo consultar."
         } catch (e: Exception) {
             "Error ${respuesta.code()}: no se pudo consultar."
         }

@@ -1,10 +1,10 @@
+
 package com.ejemplo.publicarproducto.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -36,9 +37,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ejemplo.publicarproducto.model.ProductoResumenResponse
 
 /**
- * HU 16 - Pantalla del chatbot: área de mensajes, input de texto,
- * botón Enviar y tarjetas de los productos recomendados
- * (solo disponibles) que abren el detalle del producto.
+ * HU 16 - Chatbot de recomendaciones.
+ * HU 17 - Consultas técnicas sobre componentes electrónicos.
  */
 @Composable
 fun ChatbotScreen(
@@ -49,7 +49,6 @@ fun ChatbotScreen(
     var consulta by remember { mutableStateOf("") }
     val listaState = rememberLazyListState()
 
-    // auto-scroll al último mensaje cuando llega uno nuevo
     LaunchedEffect(viewModel.mensajes.size) {
         val ultimo = viewModel.mensajes.indices.lastOrNull() ?: 0
         listaState.animateScrollToItem(ultimo)
@@ -62,12 +61,42 @@ fun ChatbotScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "🤖 Chatbot de recomendaciones",
+            text = "🤖 Asistente PulgaTec",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
 
-        // Área de mensajes
+        Text(
+            text = "Busca productos o resuelve dudas sobre componentes electrónicos.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        // HU 16 y HU 17 - Selección del modo del chatbot.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = viewModel.modo == ModoChatbot.RECOMENDACIONES,
+                onClick = {
+                    viewModel.cambiarModo(ModoChatbot.RECOMENDACIONES)
+                },
+                label = { Text("🛒 Recomendaciones") },
+                enabled = !viewModel.enviando,
+                modifier = Modifier.weight(1f)
+            )
+
+            FilterChip(
+                selected = viewModel.modo == ModoChatbot.CONSULTAS_TECNICAS,
+                onClick = {
+                    viewModel.cambiarModo(ModoChatbot.CONSULTAS_TECNICAS)
+                },
+                label = { Text("🔧 Consultas técnicas") },
+                enabled = !viewModel.enviando,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
         LazyColumn(
             state = listaState,
             modifier = Modifier
@@ -83,7 +112,6 @@ fun ChatbotScreen(
             }
         }
 
-        // Input + botón Enviar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -92,7 +120,15 @@ fun ChatbotScreen(
             OutlinedTextField(
                 value = consulta,
                 onValueChange = { consulta = it },
-                placeholder = { Text("Escribe qué producto buscas...") },
+                placeholder = {
+                    Text(
+                        if (viewModel.modo == ModoChatbot.CONSULTAS_TECNICAS) {
+                            "¿Para qué sirve una protoboard?"
+                        } else {
+                            "Escribe qué producto buscas..."
+                        }
+                    )
+                },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -120,7 +156,6 @@ fun ChatbotScreen(
     }
 }
 
-/** Burbuja del mensaje (usuario a la derecha, bot a la izquierda) con tarjetas. */
 @Composable
 private fun BurbujaMensaje(
     mensaje: ChatbotMensaje,
@@ -128,10 +163,18 @@ private fun BurbujaMensaje(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (mensaje.esUsuario) Alignment.End else Alignment.Start
+        horizontalAlignment = if (mensaje.esUsuario) {
+            Alignment.End
+        } else {
+            Alignment.Start
+        }
     ) {
         Surface(
-            color = if (mensaje.esUsuario) Color(0xFF2563EB) else Color(0xFFEEF2F7),
+            color = if (mensaje.esUsuario) {
+                Color(0xFF2563EB)
+            } else {
+                Color(0xFFEEF2F7)
+            },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
@@ -141,11 +184,15 @@ private fun BurbujaMensaje(
             ) {
                 Text(
                     text = mensaje.texto,
-                    color = if (mensaje.esUsuario) Color.White else Color(0xFF1F2937),
+                    color = if (mensaje.esUsuario) {
+                        Color.White
+                    } else {
+                        Color(0xFF1F2937)
+                    },
                     fontSize = 14.sp
                 )
 
-                // Tarjetas de productos recomendados → detalle del producto
+                // HU 16 - Tarjetas de productos recomendados.
                 mensaje.productos.forEach { producto ->
                     TarjetaProducto(
                         producto = producto,
@@ -159,7 +206,6 @@ private fun BurbujaMensaje(
     }
 }
 
-/** Tarjeta del producto sugerido: nombre, precio y categoría. */
 @Composable
 private fun TarjetaProducto(
     producto: ProductoResumenResponse,
@@ -168,7 +214,10 @@ private fun TarjetaProducto(
     Surface(
         color = Color.White,
         shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE4E7EB)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color(0xFFE4E7EB)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -182,12 +231,14 @@ private fun TarjetaProducto(
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
+
             Text(
                 text = "S/ ${producto.precio ?: "0.00"}",
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF166534),
                 fontSize = 14.sp
             )
+
             producto.categoria?.let { categoria ->
                 Text(
                     text = categoria,
@@ -195,6 +246,7 @@ private fun TarjetaProducto(
                     color = Color(0xFF616E7C)
                 )
             }
+
             Text(
                 text = "Tocar para ver el detalle →",
                 fontSize = 11.sp,
