@@ -1,21 +1,27 @@
+
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { consultarChatbot, urlImagen } from '../api/productos.js'
+import {
+    consultarChatbot,
+    consultarChatbotTecnico,
+    urlImagen
+} from '../api/productos.js'
 
 /**
- * HU 16 - Chatbot de recomendaciones.
- * Área de mensajes + input de texto + botón Enviar.
- * El backend responde con un mensaje y tarjetas de productos
- * sugeridos (solo disponibles) que enlazan a su detalle.
+ * HU 16 - Recomendaciones de productos.
+ * HU 17 - Consultas técnicas sobre componentes electrónicos.
  */
 export default function ChatbotRecomendaciones() {
+    const [modo, setModo] = useState('recomendaciones')
+
     const [mensajes, setMensajes] = useState([
         {
             rol: 'bot',
-            texto: '¡Hola! 👋 Pregúntame por productos, por ejemplo: "notebook", "mouse" o "Computadoras".',
+            texto: '¡Hola! 👋 Puedo recomendarte productos y responder consultas técnicas sobre componentes electrónicos.',
             productos: []
         }
     ])
+
     const [consulta, setConsulta] = useState('')
     const [enviando, setEnviando] = useState(false)
     const finMensajesRef = useRef(null)
@@ -26,45 +32,99 @@ export default function ChatbotRecomendaciones() {
         const texto = consulta.trim()
         if (!texto || enviando) return
 
-        try {
-            setEnviando(true)
+        const modoConsulta = modo
+        setEnviando(true)
 
-            const respuesta = await consultarChatbot(texto)
+        // Mostrar la pregunta inmediatamente.
+        setMensajes((lista) => [
+            ...lista,
+            {
+                rol: 'usuario',
+                texto,
+                productos: []
+            }
+        ])
+        setConsulta('')
+
+        try {
+            const respuesta = modoConsulta === 'tecnico'
+                ? await consultarChatbotTecnico(texto)
+                : await consultarChatbot(texto)
 
             setMensajes((lista) => [
                 ...lista,
-                { rol: 'usuario', texto, productos: [] },
                 {
                     rol: 'bot',
                     texto: respuesta.mensaje,
-                    productos: respuesta.productos || []
+                    productos: modoConsulta === 'tecnico'
+                        ? []
+                        : (respuesta.productos || [])
                 }
             ])
-            setConsulta('')
         } catch (err) {
             const mensajeError =
-                err?.response?.data?.messages?.[0] || 'No se pudo consultar el chatbot.'
+                err?.response?.data?.messages?.[0] ||
+                'No se pudo consultar el chatbot.'
+
             setMensajes((lista) => [
                 ...lista,
-                { rol: 'usuario', texto, productos: [] },
-                { rol: 'bot', texto: `⚠️ ${mensajeError}`, productos: [] }
+                {
+                    rol: 'bot',
+                    texto: `⚠️ ${mensajeError}`,
+                    productos: []
+                }
             ])
-            setConsulta('')
         } finally {
             setEnviando(false)
-            finMensajesRef.current?.scrollIntoView({ behavior: 'smooth' })
+            setTimeout(() => {
+                finMensajesRef.current?.scrollIntoView({
+                    behavior: 'smooth'
+                })
+            }, 0)
         }
     }
 
     return (
         <section className="tarjeta chatbot">
-            <h2>🤖 Chatbot de recomendaciones</h2>
+            <h2>🤖 Asistente PulgaTec</h2>
 
-            <div className="chatbot-mensajes">
+            <p>
+                Busca productos disponibles o resuelve dudas
+                sobre componentes electrónicos.
+            </p>
+
+            {/* HU 16 y HU 17 - Selección de funcionalidad */}
+            <div className="chatbot-modos">
+                <button
+                    type="button"
+                    className={modo === 'recomendaciones' ? 'activo' : ''}
+                    onClick={() => setModo('recomendaciones')}
+                    disabled={enviando}
+                    aria-pressed={modo === 'recomendaciones'}
+                >
+                    🛒 Recomendaciones
+                </button>
+
+                <button
+                    type="button"
+                    className={modo === 'tecnico' ? 'activo' : ''}
+                    onClick={() => setModo('tecnico')}
+                    disabled={enviando}
+                    aria-pressed={modo === 'tecnico'}
+                >
+                    🔧 Consultas técnicas
+                </button>
+            </div>
+
+            <div className="chatbot-mensajes" aria-live="polite">
                 {mensajes.map((mensaje, indice) => (
                     <div
                         key={indice}
-                        className={`chatbot-mensaje ${mensaje.rol === 'usuario' ? 'chatbot-usuario' : 'chatbot-bot'}`}
+                        className={`chatbot-mensaje ${
+                            mensaje.rol === 'usuario'
+                                ? 'chatbot-usuario'
+                                : 'chatbot-bot'
+                        }`}
                     >
                         <p>{mensaje.texto}</p>
 
@@ -82,8 +142,11 @@ export default function ChatbotRecomendaciones() {
                                                 alt={producto.nombre}
                                             />
                                         )}
+
                                         <strong>{producto.nombre}</strong>
-                                        <span>S/ {Number(producto.precio).toFixed(2)}</span>
+                                        <span>
+                                            S/ {Number(producto.precio).toFixed(2)}
+                                        </span>
                                         <small>{producto.categoria}</small>
                                     </Link>
                                 ))}
@@ -91,18 +154,36 @@ export default function ChatbotRecomendaciones() {
                         )}
                     </div>
                 ))}
+
+                {enviando && (
+                    <div className="chatbot-mensaje chatbot-bot">
+                        <p>🤖 Estoy preparando mi respuesta...</p>
+                    </div>
+                )}
+
                 <div ref={finMensajesRef} />
             </div>
 
-            <form className="chatbot-formulario" onSubmit={manejarEnvio}>
+            <form
+                className="chatbot-formulario"
+                onSubmit={manejarEnvio}
+            >
                 <input
                     type="text"
                     value={consulta}
                     onChange={(evento) => setConsulta(evento.target.value)}
-                    placeholder="Escribe qué producto buscas..."
+                    placeholder={
+                        modo === 'tecnico'
+                            ? 'Ejemplo: ¿Para qué sirve una protoboard?'
+                            : 'Escribe qué producto buscas...'
+                    }
                     aria-label="Consulta para el chatbot"
                 />
-                <button type="submit" disabled={enviando || !consulta.trim()}>
+
+                <button
+                    type="submit"
+                    disabled={enviando || !consulta.trim()}
+                >
                     {enviando ? 'Pensando...' : 'Enviar'}
                 </button>
             </form>

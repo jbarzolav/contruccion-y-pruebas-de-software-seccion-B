@@ -154,3 +154,10 @@ export async function consultarChatbot(consulta) {
   const { data } = await apiChatbot.post('/recomendaciones', { consulta })
   return data
 }
+
+// HU 17 - POST /api/chatbot/consultas-tecnicas
+// Responde preguntas técnicas sobre componentes electrónicos.
+export async function consultarChatbotTecnico(consulta) {
+  const { data } = await apiChatbot.post('/consultas-tecnicas', { consulta })
+  return data
+}

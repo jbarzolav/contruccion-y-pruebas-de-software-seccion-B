@@ -709,3 +709,43 @@ a.btn-secundario {
   border: 1px solid #c7ced6;
   border-radius: 8px;
 }
+
+/* ===================== HU 17 - Consultas técnicas ===================== */
+
+.chatbot-modos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.chatbot-modos button {
+  padding: 10px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.chatbot-modos button:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.chatbot-modos button.activo {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.chatbot-modos button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chatbot-mensaje p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
