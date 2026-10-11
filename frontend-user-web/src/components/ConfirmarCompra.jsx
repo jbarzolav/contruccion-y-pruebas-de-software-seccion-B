@@ -105,9 +105,6 @@ export default function ConfirmarCompra({ onCarritoActualizado }) {
                     <button type="button" onClick={() => navigate('/')}>
                         Seguir comprando
                     </button>
-                    <Link to="/carrito" className="btn-secundario">
-                        Ver mi carrito
-                    </Link>
                 </div>
             </section>
         )
@@ -160,8 +157,8 @@ export default function ConfirmarCompra({ onCarritoActualizado }) {
                         >
                             {enviando ? 'Registrando pedido...' : 'Confirmar compra'}
                         </button>
-                        <Link to="/carrito" className="btn-secundario">
-                            Volver al carrito
+                        <Link to="/" className="btn-secundario">
+                            Seguir comprando
                         </Link>
                     </div>
                 </>

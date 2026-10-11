@@ -44,7 +44,7 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
 
     return (
         <section className="tarjeta mis-productos">
-            <h2>Mis productos</h2>
+            <h2>Mis Publicaciones</h2>
 
             {cargando && <p>Cargando productos...</p>}
 
