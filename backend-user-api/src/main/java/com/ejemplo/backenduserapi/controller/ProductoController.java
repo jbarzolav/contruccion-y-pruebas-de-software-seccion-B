@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.dto.DestacarRequest;
 import com.ejemplo.backenduserapi.dto.DisponibilidadProductoResponse;
 import com.ejemplo.backenduserapi.dto.EstadoProductoRequest;
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
@@ -96,16 +97,23 @@ public class ProductoController {
     }
 
     // ------------------------------------------------------------------
-    // HU 19 - Destacar publicación (solo vendedores con plan Premium)
-    // PATCH /api/productos/{idProducto}/destacar?vendedorId=1
-    // 200 con el producto actualizado; 403 si el vendedor no tiene el beneficio.
+    // HU 19 - Destacado (solo vendedores con plan Premium activo en BD)
+    // PATCH /api/productos/{idProducto}/destacado?vendedorId=1
+    //   body {"destacado": true}  -> activar
+    //   body {"destacado": false} -> desactivar
+    //   sin body                  -> alterna el estado actual
+    // 200 con el producto actualizado (solo cambia el indicador);
+    // 403 si no es el dueño o sin plan Premium; 404 si no existe.
     // ------------------------------------------------------------------
-    @PatchMapping("/{idProducto}/destacar")
-    public ResponseEntity<Producto> destacar(
+    @PatchMapping("/{idProducto}/destacado")
+    public ResponseEntity<Producto> gestionarDestacado(
             @PathVariable Long idProducto,
-            @RequestParam("vendedorId") Long vendedorId) {
+            @RequestParam("vendedorId") Long vendedorId,
+            @RequestBody(required = false) DestacarRequest request) {
 
-        return ResponseEntity.ok(productoService.destacar(idProducto, vendedorId));
+        Boolean destacado = (request == null) ? null : request.getDestacado();
+
+        return ResponseEntity.ok(productoService.gestionarDestacado(idProducto, vendedorId, destacado));
     }
 
     // ------------------------------------------------------------------

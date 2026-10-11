@@ -10,14 +10,16 @@ const CLASES_ESTADO = {
 }
 
 // Catálogo público (HU 07 + HU 08): tarjetas clickeables hacia el detalle
-export default function Catalogo() {
+// HU 19: el prop "actualizar" refresca el catálogo cuando cambia algo
+// (publicar, editar o activar/desactivar el destacado en Mis productos).
+export default function Catalogo({ actualizar }) {
     const [productos, setProductos] = useState([])
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
 
     useEffect(() => {
         cargarCatalogo()
-    }, [])
+    }, [actualizar])
 
     async function cargarCatalogo() {
         try {

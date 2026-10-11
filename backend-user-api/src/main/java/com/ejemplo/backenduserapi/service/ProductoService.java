@@ -201,20 +201,21 @@ public class ProductoService {
     }
 
     // ------------------------------------------------------------------
-    // HU 19 - Destacar publicación (beneficio del vendedor Premium)
+    // HU 19 - Activar o desactivar el destacado (plan Premium activo)
     // ------------------------------------------------------------------
 
     /**
-     * Marca un producto como destacado para que encabece el catálogo
-     * y la búsqueda por defecto. Solo el dueño con plan Premium activo
-     * puede hacerlo.
+     * Activa o desactiva el indicador de publicación destacada SIN tocar
+     * los demás datos del producto (HU 19, tarea 3). Solo el dueño con
+     * plan Premium activo (verificado en BD) puede hacerlo.
      *
+     * @param destacado true = activar · false = desactivar · null = alterna
      * @throws ProductoNoEncontradoException         -> 404
      * @throws PropietarioInvalidoException          -> 403
      * @throws BeneficioPremiumNoDisponibleException -> 403 (sin plan Premium)
      */
     @Transactional
-    public Producto destacar(Long idProducto, Long vendedorId) {
+    public Producto gestionarDestacado(Long idProducto, Long vendedorId, Boolean destacado) {
 
         Producto producto = obtenerProductoDelVendedor(idProducto, vendedorId);
 
@@ -223,8 +224,11 @@ public class ProductoService {
                     "El vendedor no cuenta con el plan Premium para destacar publicaciones");
         }
 
-        producto.setEsDestacado(true);
-        producto.setFechaDestacado(Timestamp.from(Instant.now()));
+        boolean activar = (destacado != null) ? destacado : !producto.isEsDestacado();
+
+        // Tarea 3: solo cambia el indicador; el resto de los datos queda igual.
+        producto.setEsDestacado(activar);
+        producto.setFechaDestacado(activar ? Timestamp.from(Instant.now()) : null);
 
         return productoRepository.save(producto);
     }

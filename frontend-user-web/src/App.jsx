@@ -79,13 +79,19 @@ export default function App() {
                                     onCancelar={() => setProductoEnEdicion(null)}
                                 />
 
-                                {/* HU 07 + HU 08 - catálogo con tarjetas clickeables */}
-                                <Catalogo />
+                                {/* HU 07 + HU 08 - catálogo con tarjetas clickeables
+                                    (HU 19: se refresca al publicar, editar o cambiar el destacado) */}
+                                <Catalogo actualizar={actualizarMisProductos} />
 
                                 {/* HU 05 */}
                                 <MisProductos
                                     actualizar={actualizarMisProductos}
                                     onEditar={setProductoEnEdicion}
+                                    onActualizado={() =>
+                                        setActualizarMisProductos(
+                                            (valor) => valor + 1
+                                        )
+                                    }
                                 />
 
                                 {/* HU 06 */}

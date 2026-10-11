@@ -256,8 +256,10 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 19 - Destacar con el vendedor Premium y priorizar en catálogo
         // ============================================================
-        mockMvc.perform(patch("/api/productos/" + idProducto + "/destacar")
-                        .param("vendedorId", String.valueOf(VENDEDOR)))
+        mockMvc.perform(patch("/api/productos/" + idProducto + "/destacado")
+                        .param("vendedorId", String.valueOf(VENDEDOR))
+                        .contentType("application/json")
+                        .content("{\"destacado\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.esDestacado").value(true))
                 .andExpect(jsonPath("$.fechaDestacado").exists());

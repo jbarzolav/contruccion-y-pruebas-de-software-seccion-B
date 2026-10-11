@@ -81,9 +81,11 @@ fun MisProductosScreen(
                                 onVerDetalle = {
                                     producto.id?.let(onVerDetalle)
                                 },
-                                // HU 19 - destacar publicación (Premium)
-                                onDestacar = {
-                                    producto.id?.let(viewModel::destacarProducto)
+                                // HU 19 - gestionar destacado (Premium)
+                                onDestacar = { activar ->
+                                    producto.id?.let {
+                                        viewModel.gestionarDestacado(it, activar)
+                                    }
                                 }
                             )
                         }
@@ -111,7 +113,7 @@ private fun ProductoItem(
     producto: ProductoResponse,
     onEditar: () -> Unit,
     onVerDetalle: () -> Unit,
-    onDestacar: () -> Unit = {}
+    onDestacar: (Boolean) -> Unit = {}
 ) {
     Card(
         // HU 08 - la tarjeta abre el detalle (HU 07)
@@ -171,13 +173,13 @@ private fun ProductoItem(
                 Text("Editar")
             }
 
-            // HU 19 - accion de destacar (solo vendedores Premium)
+            // HU 19 - gestionar el destacado: activar o desactivar (Premium)
             OutlinedButton(
-                onClick = onDestacar,
-                enabled = producto.id != null && !producto.esDestacado,
+                onClick = { onDestacar(!producto.esDestacado) },
+                enabled = producto.id != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (producto.esDestacado) "Ya está destacado" else "Destacar (Premium)")
+                Text(if (producto.esDestacado) "Quitar destacado" else "Destacar (Premium)")
             }
         }
     }

@@ -3,6 +3,7 @@ package com.ejemplo.publicarproducto.network
 import com.ejemplo.publicarproducto.model.CarritoTotalResponse
 import com.ejemplo.publicarproducto.model.ChatbotRequest
 import com.ejemplo.publicarproducto.model.ChatbotResponse
+import com.ejemplo.publicarproducto.model.DestacarRequest
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
@@ -79,11 +80,13 @@ interface ProductoApi {
         @Query("vendedorId") vendedorId: Long
     ): Response<ProductoResponse>
 
-    // HU 19 - PATCH /api/productos/{idProducto}/destacar?vendedorId=1
-    // Destaca la publicación (solo vendedores con plan Premium activo).
-    @PATCH("api/productos/{idProducto}/destacar")
-    suspend fun destacarProducto(
+    // HU 19 - PATCH /api/productos/{idProducto}/destacado?vendedorId=1
+    // Activa (true) o desactiva (false) el destacado; solo cambia el
+    // indicador. Solo vendedores con plan Premium activo.
+    @PATCH("api/productos/{idProducto}/destacado")
+    suspend fun gestionarDestacado(
         @Path("idProducto") idProducto: Long,
+        @Body request: DestacarRequest,
         @Query("vendedorId") vendedorId: Long
     ): Response<ProductoResponse>
 

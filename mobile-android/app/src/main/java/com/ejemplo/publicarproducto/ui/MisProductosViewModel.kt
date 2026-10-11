@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ejemplo.publicarproducto.model.DestacarRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -50,18 +51,18 @@ class MisProductosViewModel : ViewModel() {
         }
     }
 
-    // HU 19 - Destacar una publicación (beneficio del vendedor Premium).
-    fun destacarProducto(idProducto: Long) {
+    // HU 19 - Activar o desactivar el destacado (plan Premium activo).
+    fun gestionarDestacado(idProducto: Long, destacado: Boolean) {
         viewModelScope.launch {
             try {
                 val respuesta = RetrofitClient.productoApi
-                    .destacarProducto(idProducto, VENDEDOR_ID)
+                    .gestionarDestacado(idProducto, DestacarRequest(destacado), VENDEDOR_ID)
 
                 if (respuesta.isSuccessful) {
                     cargarProductos()
                 } else {
                     uiState = MisProductosUiState.Error(
-                        "Error ${respuesta.code()}: no se pudo destacar la publicación."
+                        "Error ${respuesta.code()}: no se pudo actualizar el destacado."
                     )
                 }
             } catch (e: Exception) {

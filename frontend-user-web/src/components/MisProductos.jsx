@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { obtenerMisProductos, destacarProducto } from '../api/productos.js'
+import { obtenerMisProductos, gestionarDestacado } from '../api/productos.js'
 
-export default function MisProductos({ actualizar, onEditar }) {
+export default function MisProductos({ actualizar, onEditar, onActualizado }) {
     const [productos, setProductos] = useState([])
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
@@ -25,15 +25,20 @@ export default function MisProductos({ actualizar, onEditar }) {
         }
     }
 
-    // HU 19 - Destacar una publicación (beneficio del vendedor Premium).
-    async function destacar(producto) {
+    // HU 19 - Activar o desactivar el destacado (plan Premium activo).
+    async function alternarDestacado(producto, activar) {
         try {
             setAviso('')
-            await destacarProducto(producto.id, 1)
-            await cargarProductos()
+            await gestionarDestacado(producto.id, 1, activar)
+            // Avisa al padre para refrescar "Mis productos" y el Catálogo.
+            if (onActualizado) {
+                onActualizado()
+            } else {
+                await cargarProductos()
+            }
         } catch (e) {
             const mensaje = e?.response?.data?.messages?.[0]
-            setAviso(mensaje || 'No se pudo destacar la publicación.')
+            setAviso(mensaje || 'No se pudo actualizar el destacado.')
         }
     }
 
@@ -89,20 +94,18 @@ export default function MisProductos({ actualizar, onEditar }) {
                         >
                             Editar
                         </button>
-                        {/* HU 19 - accion de destacar (solo Premium) */}
-                        {producto.esDestacado ? (
-                            <span className="badge badge-destacado">
-                                Ya destacado
-                            </span>
-                        ) : (
-                            <button
-                                type="button"
-                                className="btn-secundario"
-                                onClick={() => destacar(producto)}
-                            >
-                                Destacar
-                            </button>
-                        )}
+                        {/* HU 19 - gestionar el destacado: activar o desactivar */}
+                        <button
+                            type="button"
+                            className="btn-secundario"
+                            onClick={() =>
+                                alternarDestacado(producto, !producto.esDestacado)
+                            }
+                        >
+                            {producto.esDestacado
+                                ? 'Quitar destacado'
+                                : 'Destacar'}
+                        </button>
                         <Link
                             to={`/producto/${producto.id}`}
                             className="btn-secundario"
