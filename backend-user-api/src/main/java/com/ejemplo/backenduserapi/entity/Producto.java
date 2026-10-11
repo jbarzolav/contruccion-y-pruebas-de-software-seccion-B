@@ -3,6 +3,7 @@ package com.ejemplo.backenduserapi.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "productos")
@@ -31,6 +32,13 @@ public class Producto {
     private String imagenUrl;
 
     private Long vendedorId;
+
+    // HU 19 - Publicación destacada (beneficio del vendedor Premium).
+    @Column(nullable = false)
+    private boolean esDestacado = false;
+
+    /** Momento en que se destacó la publicación (HU 19). */
+    private Timestamp fechaDestacado;
 
     public Producto() {
     }
@@ -118,5 +126,21 @@ public class Producto {
 
     public void setVendedorId(Long vendedorId) {
         this.vendedorId = vendedorId;
+    }
+
+    public boolean isEsDestacado() {
+        return esDestacado;
+    }
+
+    public void setEsDestacado(boolean esDestacado) {
+        this.esDestacado = esDestacado;
+    }
+
+    public Timestamp getFechaDestacado() {
+        return fechaDestacado;
+    }
+
+    public void setFechaDestacado(Timestamp fechaDestacado) {
+        this.fechaDestacado = fechaDestacado;
     }
 }

@@ -25,6 +25,10 @@ class ProductoServiceTest {
     @Mock
     private ProductoRepository productoRepository;
 
+    /** HU 19 - dependencia nueva de ProductoService (registro Premium). */
+    @Mock
+    private PlanPremiumService planPremiumService;
+
     @InjectMocks
     private ProductoService productoService;
 

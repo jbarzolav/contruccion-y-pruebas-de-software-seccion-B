@@ -3,6 +3,7 @@ package com.ejemplo.backenduserapi.service;
 import com.ejemplo.backenduserapi.dto.DisponibilidadProductoResponse;
 import com.ejemplo.backenduserapi.dto.ProductoRequest;
 import com.ejemplo.backenduserapi.entity.Producto;
+import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
@@ -17,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +39,9 @@ public class ProductoService {
 
     private final ProductoRepository productoRepository;
 
+    /** HU 19 - Consulta del beneficio Premium del vendedor. */
+    private final PlanPremiumService planPremiumService;
+
     /**
      * Carpeta donde se guardan las imágenes reales.
      * Por defecto usa una carpeta temporal del sistema.
@@ -43,8 +49,10 @@ public class ProductoService {
     private final Path carpetaImagenes;
 
     public ProductoService(ProductoRepository productoRepository,
+                           PlanPremiumService planPremiumService,
                            @Value("${app.upload.dir:${java.io.tmpdir}/producto-imagenes}") Path carpetaImagenes) {
         this.productoRepository = productoRepository;
+        this.planPremiumService = planPremiumService;
         this.carpetaImagenes = carpetaImagenes;
     }
 
@@ -193,6 +201,35 @@ public class ProductoService {
     }
 
     // ------------------------------------------------------------------
+    // HU 19 - Destacar publicación (beneficio del vendedor Premium)
+    // ------------------------------------------------------------------
+
+    /**
+     * Marca un producto como destacado para que encabece el catálogo
+     * y la búsqueda por defecto. Solo el dueño con plan Premium activo
+     * puede hacerlo.
+     *
+     * @throws ProductoNoEncontradoException         -> 404
+     * @throws PropietarioInvalidoException          -> 403
+     * @throws BeneficioPremiumNoDisponibleException -> 403 (sin plan Premium)
+     */
+    @Transactional
+    public Producto destacar(Long idProducto, Long vendedorId) {
+
+        Producto producto = obtenerProductoDelVendedor(idProducto, vendedorId);
+
+        if (!planPremiumService.esVendedorPremium(vendedorId)) {
+            throw new BeneficioPremiumNoDisponibleException(
+                    "El vendedor no cuenta con el plan Premium para destacar publicaciones");
+        }
+
+        producto.setEsDestacado(true);
+        producto.setFechaDestacado(Timestamp.from(Instant.now()));
+
+        return productoRepository.save(producto);
+    }
+
+    // ------------------------------------------------------------------
     // HU 05 - Mis productos
     // ------------------------------------------------------------------
     @Transactional(readOnly = true)
@@ -226,8 +263,12 @@ public class ProductoService {
 
     private List<Producto> ordenarProductos(List<Producto> productos, String sort) {
 
+        // HU 19 - Orden por defecto: los destacados encabezan los resultados
+        // (orden estable: los no destacados conservan su orden original).
         if (sort == null || sort.isBlank()) {
-            return productos;
+            return productos.stream()
+                    .sorted(Comparator.comparing(Producto::isEsDestacado).reversed())
+                    .toList();
         }
 
         Comparator<Producto> comparador = switch (sort.trim().toLowerCase(Locale.ROOT)) {
@@ -270,10 +311,14 @@ public class ProductoService {
      *
      * Solo incluye productos DISPONIBLE: los RETIRADO quedan fuera
      * por regla de negocio (baja lógica, HU 04).
+     *
+     * HU 19 - Los productos destacados encabezan el listado.
      */
     @Transactional(readOnly = true)
     public List<Producto> listarDisponibles() {
-        return productoRepository.findByEstado("DISPONIBLE");
+        return productoRepository.findByEstado("DISPONIBLE").stream()
+                .sorted(Comparator.comparing(Producto::isEsDestacado).reversed())
+                .toList();
     }
 
     // ------------------------------------------------------------------

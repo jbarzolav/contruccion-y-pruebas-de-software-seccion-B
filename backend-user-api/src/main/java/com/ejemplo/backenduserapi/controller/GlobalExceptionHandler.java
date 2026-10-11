@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
 import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
@@ -52,6 +53,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PropietarioInvalidoException.class)
     public ResponseEntity<Map<String, Object>> handlePropietarioInvalido(PropietarioInvalidoException ex) {
         return responder(HttpStatus.FORBIDDEN, "Acceso denegado", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Vendedor sin plan Premium activo que intenta destacar (HU 19) -> 403.
+     */
+    @ExceptionHandler(BeneficioPremiumNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> handleBeneficioPremiumNoDisponible(
+            BeneficioPremiumNoDisponibleException ex) {
+        return responder(HttpStatus.FORBIDDEN, "Beneficio premium no disponible", List.of(ex.getMessage()));
     }
 
     /**

@@ -96,6 +96,19 @@ public class ProductoController {
     }
 
     // ------------------------------------------------------------------
+    // HU 19 - Destacar publicación (solo vendedores con plan Premium)
+    // PATCH /api/productos/{idProducto}/destacar?vendedorId=1
+    // 200 con el producto actualizado; 403 si el vendedor no tiene el beneficio.
+    // ------------------------------------------------------------------
+    @PatchMapping("/{idProducto}/destacar")
+    public ResponseEntity<Producto> destacar(
+            @PathVariable Long idProducto,
+            @RequestParam("vendedorId") Long vendedorId) {
+
+        return ResponseEntity.ok(productoService.destacar(idProducto, vendedorId));
+    }
+
+    // ------------------------------------------------------------------
     // HU 06 / HU 09 - Buscar productos por nombre y ordenar resultados
     // GET /api/productos?nombre={texto}&sort={criterio}
     // ------------------------------------------------------------------
