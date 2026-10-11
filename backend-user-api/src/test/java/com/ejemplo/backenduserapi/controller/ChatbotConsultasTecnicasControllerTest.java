@@ -82,4 +82,21 @@ class ChatbotConsultasTecnicasControllerTest {
                 .andExpect(jsonPath("$.mensaje").isNotEmpty())
                 .andExpect(jsonPath("$.productos.length()").value(0));
     }
+
+    // HU 17 - El cliente lanza excepción (timeout / sin internet)
+    // → mensaje alternativo, jamás error 500.
+    @Test
+    void geminiLanzaExcepcionDevuelveMensajeAlternativo() throws Exception {
+        when(geminiClient.generarContenidoJson(anyString(), anyString()))
+                .thenThrow(new RuntimeException("timeout simulado (sin internet)"));
+
+        mockMvc.perform(post("/api/chatbot/consultas-tecnicas")
+                        .contentType("application/json")
+                        .content("{\"consulta\":\"¿Qué es un sensor ultrasónico?\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensaje").value(
+                        "En este momento no puedo responder consultas técnicas. "
+                                + "Por favor, intenta nuevamente más tarde."))
+                .andExpect(jsonPath("$.productos.length()").value(0));
+    }
 }
