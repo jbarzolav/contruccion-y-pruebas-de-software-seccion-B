@@ -79,6 +79,14 @@ interface ProductoApi {
         @Query("vendedorId") vendedorId: Long
     ): Response<ProductoResponse>
 
+    // HU 19 - PATCH /api/productos/{idProducto}/destacar?vendedorId=1
+    // Destaca la publicación (solo vendedores con plan Premium activo).
+    @PATCH("api/productos/{idProducto}/destacar")
+    suspend fun destacarProducto(
+        @Path("idProducto") idProducto: Long,
+        @Query("vendedorId") vendedorId: Long
+    ): Response<ProductoResponse>
+
     /**
      * HU 02 - Asocia la imagen real del producto.
      * POST /api/productos/{idProducto}/imagenes (multipart/form-data)

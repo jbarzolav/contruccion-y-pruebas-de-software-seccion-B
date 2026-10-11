@@ -49,4 +49,26 @@ class MisProductosViewModel : ViewModel() {
             }
         }
     }
+
+    // HU 19 - Destacar una publicación (beneficio del vendedor Premium).
+    fun destacarProducto(idProducto: Long) {
+        viewModelScope.launch {
+            try {
+                val respuesta = RetrofitClient.productoApi
+                    .destacarProducto(idProducto, VENDEDOR_ID)
+
+                if (respuesta.isSuccessful) {
+                    cargarProductos()
+                } else {
+                    uiState = MisProductosUiState.Error(
+                        "Error ${respuesta.code()}: no se pudo destacar la publicación."
+                    )
+                }
+            } catch (e: Exception) {
+                uiState = MisProductosUiState.Error(
+                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                )
+            }
+        }
+    }
 }

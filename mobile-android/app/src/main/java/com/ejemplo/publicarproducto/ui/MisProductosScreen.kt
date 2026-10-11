@@ -80,6 +80,10 @@ fun MisProductosScreen(
                                 // HU 08 - ver detalle del producto propio
                                 onVerDetalle = {
                                     producto.id?.let(onVerDetalle)
+                                },
+                                // HU 19 - destacar publicación (Premium)
+                                onDestacar = {
+                                    producto.id?.let(viewModel::destacarProducto)
                                 }
                             )
                         }
@@ -106,7 +110,8 @@ fun MisProductosScreen(
 private fun ProductoItem(
     producto: ProductoResponse,
     onEditar: () -> Unit,
-    onVerDetalle: () -> Unit
+    onVerDetalle: () -> Unit,
+    onDestacar: () -> Unit = {}
 ) {
     Card(
         // HU 08 - la tarjeta abre el detalle (HU 07)
@@ -137,6 +142,15 @@ private fun ProductoItem(
                 fontWeight = FontWeight.Bold
             )
 
+            // HU 19 - distintivo de publicación destacada
+            if (producto.esDestacado) {
+                Text(
+                    text = "★ Destacado",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
             Text("Precio: S/ ${producto.precio ?: "0.00"}")
             Text("Stock: ${producto.stock ?: 0}")
             Text("Estado: ${producto.estado.orEmpty()}")
@@ -155,6 +169,15 @@ private fun ProductoItem(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Editar")
+            }
+
+            // HU 19 - accion de destacar (solo vendedores Premium)
+            OutlinedButton(
+                onClick = onDestacar,
+                enabled = producto.id != null && !producto.esDestacado,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (producto.esDestacado) "Ya está destacado" else "Destacar (Premium)")
             }
         }
     }

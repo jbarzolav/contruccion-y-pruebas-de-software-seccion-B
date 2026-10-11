@@ -14,7 +14,9 @@ data class ProductoResponse(
     val categoria: String?,
     val estado: String?,
     val imagenUrl: String?,
-    val vendedorId: Long?
+    val vendedorId: Long?,
+    /** HU 19 - true si la publicación está destacada (vendedor Premium). */
+    val esDestacado: Boolean = false
 )
 
 /**

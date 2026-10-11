@@ -182,6 +182,15 @@ fun BuscarProductosScreen(
                                         fontWeight = FontWeight.Bold
                                     )
 
+                                    // HU 19 - distintivo de publicación destacada
+                                    if (producto.esDestacado) {
+                                        Text(
+                                            text = "★ Destacado",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+
                                     Text("Precio: S/ ${producto.precio ?: "0.00"}")
                                     Text("Disponibilidad: ${producto.estado.orEmpty()}")
                                 }
