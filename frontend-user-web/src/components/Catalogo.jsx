@@ -70,6 +70,12 @@ export default function Catalogo() {
                             )}
 
                             <div className="catalogo-datos">
+                                {/* HU 19 - distintivo de publicación destacada */}
+                                {producto.esDestacado && (
+                                    <span className="badge badge-destacado">
+                                        Destacado
+                                    </span>
+                                )}
                                 <h3>{producto.nombre}</h3>
                                 <p className="catalogo-precio">
                                     S/ {Number(producto.precio).toFixed(2)}

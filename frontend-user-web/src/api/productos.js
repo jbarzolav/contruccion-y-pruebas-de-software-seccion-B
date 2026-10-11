@@ -170,3 +170,12 @@ export async function consultarPlanPremium() {
   )
   return data
 }
+
+// HU 19 - PATCH /api/productos/{id}/destacar (solo vendedores Premium)
+// 200 con el producto destacado; 403 si el vendedor no tiene el beneficio.
+export async function destacarProducto(idProducto, vendedorId = 1) {
+  const { data } = await api.patch(`/${idProducto}/destacar`, null, {
+    params: { vendedorId },
+  })
+  return data
+}

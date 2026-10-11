@@ -793,3 +793,24 @@ a.btn-secundario {
   background: #ecfdf5;
   color: #166534;
 }
+
+/* ===================== HU 19 - Productos destacados ===================== */
+
+.badge-destacado {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.catalogo-datos .badge-destacado {
+  margin-bottom: 4px;
+}
+
+.producto-acciones .badge-destacado {
+  margin-bottom: 0;
+  align-self: center;
+}
