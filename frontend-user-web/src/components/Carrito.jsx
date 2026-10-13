@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ImagenCarrito from './ImagenCarrito.jsx'
 import {
     actualizarCantidadItem,
     eliminarItemCarrito,
@@ -119,6 +120,7 @@ export default function Carrito({ onCarritoActualizado }) {
                     <ul className="carrito-lista">
                         {items.map(item => (
                             <li key={item.id} className="carrito-item">
+                                <ImagenCarrito productoId={item.productoId} nombre={item.nombreProducto} />
                                 <div className="carrito-item-datos">
                                     <strong>{item.nombreProducto}</strong>
                                     <span>

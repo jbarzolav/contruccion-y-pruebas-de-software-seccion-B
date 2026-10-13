@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,12 +28,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
+import com.ejemplo.publicarproducto.ui.theme.RojoErrorFondo
+import com.ejemplo.publicarproducto.ui.theme.RojoTextoOscuro
+import com.ejemplo.publicarproducto.ui.theme.VerdeExitoFondo
+import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 
 /**
  * HU 15 - "Confirmar mi compra": resumen final del carrito (lista de
@@ -40,6 +46,7 @@ import com.ejemplo.publicarproducto.model.ItemCarritoResponse
  */
 @Composable
 fun ConfirmarCompraScreen(
+    onVolver: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ConfirmarCompraViewModel = viewModel()
 ) {
@@ -57,21 +64,34 @@ fun ConfirmarCompraScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Confirmar compra",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onVolver) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver"
+                )
+            }
+
+            Text(
+                text = "Confirmar compra",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         viewModel.mensajeError?.let { error ->
             Surface(
-                color = Color(0xFFFEE2E2),
-                shape = RoundedCornerShape(10.dp),
+                color = RojoErrorFondo,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = error,
-                    color = Color(0xFF991B1B),
+                    color = RojoTextoOscuro,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(12.dp)
                 )
@@ -81,7 +101,7 @@ fun ConfirmarCompraScreen(
         // Comprobante: pedido registrado con su ID
         val pedidoActual = viewModel.pedido
         if (pedidoActual != null) {
-            ComprobantePedido(viewModel = viewModel)
+            ComprobantePedido(viewModel = viewModel, onVolver = onVolver)
             return@Column
         }
 
@@ -111,7 +131,7 @@ fun ConfirmarCompraScreen(
                 if (viewModel.items.isEmpty()) {
                     Text(
                         text = "Tu carrito está vacío: agrega productos antes de confirmar la compra.",
-                        color = Color(0xFF616E7C)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     ResumenCompra(viewModel = viewModel)
@@ -128,7 +148,7 @@ private fun ResumenCompra(viewModel: ConfirmarCompraViewModel) {
 
     viewModel.items.forEach { item ->
         ResumenFila(item = item)
-        HorizontalDivider(color = Color(0xFFE4E7EB))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 
     val total = viewModel.totalCarrito.setScale(2).toPlainString()
@@ -147,7 +167,7 @@ private fun ResumenCompra(viewModel: ConfirmarCompraViewModel) {
             text = "S/ $total",
             fontWeight = FontWeight.ExtraBold,
             fontSize = 18.sp,
-            color = Color(0xFF166534)
+            color = VerdePrecio
         )
     }
 
@@ -192,8 +212,8 @@ private fun ResumenCompra(viewModel: ConfirmarCompraViewModel) {
 @Composable
 private fun ResumenFila(item: ItemCarritoResponse) {
     Surface(
-        color = Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -212,7 +232,7 @@ private fun ResumenFila(item: ItemCarritoResponse) {
                 Text(
                     text = "${item.cantidad ?: 0} × S/ ${item.precioUnitario ?: "0.00"}",
                     fontSize = 13.sp,
-                    color = Color(0xFF616E7C)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -227,12 +247,15 @@ private fun ResumenFila(item: ItemCarritoResponse) {
 
 /** Comprobante del pedido registrado (ID, fecha, detalle y total). */
 @Composable
-private fun ComprobantePedido(viewModel: ConfirmarCompraViewModel) {
+private fun ComprobantePedido(
+    viewModel: ConfirmarCompraViewModel,
+    onVolver: () -> Unit
+) {
     val pedido = viewModel.pedido ?: return
 
     Surface(
-        color = Color(0xFFDCFCE7),
-        shape = RoundedCornerShape(12.dp),
+        color = VerdeExitoFondo,
+        shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -245,7 +268,7 @@ private fun ComprobantePedido(viewModel: ConfirmarCompraViewModel) {
                 text = "✅ Pedido registrado",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                color = Color(0xFF166534)
+                color = VerdePrecio
             )
 
             Text(
@@ -257,11 +280,11 @@ private fun ComprobantePedido(viewModel: ConfirmarCompraViewModel) {
                 Text(
                     text = "Fecha: $fecha",
                     fontSize = 13.sp,
-                    color = Color(0xFF616E7C)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            HorizontalDivider(color = Color(0xFF86EFAC))
+            HorizontalDivider(color = VerdePrecio.copy(alpha = 0.25f))
 
             pedido.detalles.orEmpty().forEach { detalle ->
                 Row(
@@ -280,7 +303,7 @@ private fun ComprobantePedido(viewModel: ConfirmarCompraViewModel) {
                 }
             }
 
-            HorizontalDivider(color = Color(0xFF86EFAC))
+            HorizontalDivider(color = VerdePrecio.copy(alpha = 0.25f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -295,12 +318,15 @@ private fun ComprobantePedido(viewModel: ConfirmarCompraViewModel) {
                     text = "S/ ${pedido.total?.setScale(2)?.toPlainString() ?: "0.00"}",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp,
-                    color = Color(0xFF166534)
+                    color = VerdePrecio
                 )
             }
 
             Button(
-                onClick = { viewModel.reiniciar() },
+                onClick = {
+                    viewModel.reiniciar()
+                    onVolver()
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Seguir comprando")

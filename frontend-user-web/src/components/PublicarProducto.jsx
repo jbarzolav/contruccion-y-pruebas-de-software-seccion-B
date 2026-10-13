@@ -257,14 +257,17 @@ export default function PublicarProducto({ onProductoCreado }) {
 
             <div className="campo">
               <label htmlFor="categoria">Categoría *</label>
-              <input
+              <select
                   id="categoria"
                   name="categoria"
-                  type="text"
                   value={formulario.categoria}
                   onChange={handleChange}
-                  placeholder="Ej. Computadoras"
-              />
+              >
+                <option value="" disabled>Selecciona una categoría</option>
+                {['Computadoras', 'Celulares y tablets', 'Componentes de PC', 'Periféricos', 'Audio y video', 'Electrónica', 'Accesorios', 'Otros'].map(categoria => (
+                  <option key={categoria} value={categoria}>{categoria}</option>
+                ))}
+              </select>
               {errores.categoria && (
                   <span className="error">{errores.categoria}</span>
               )}

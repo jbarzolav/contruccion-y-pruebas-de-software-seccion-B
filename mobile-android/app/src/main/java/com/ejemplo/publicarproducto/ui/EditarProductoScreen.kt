@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -23,21 +27,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 
 /**
  * HU 03 - Editar la información de mis productos.
  * HU 04 - Retirar publicación con diálogo de confirmación (baja lógica).
+ * Rediseño: el producto llega precargado desde "Mis productos"
+ * (sin digitar el ID) y la pantalla tiene botón "Volver".
  */
 @Composable
 fun EditarProductoScreen(
+    productoId: Long?,
+    onVolver: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: EditarProductoViewModel = viewModel(),
-    productoId: Long? = null
+    viewModel: EditarProductoViewModel = viewModel()
 ) {
     LaunchedEffect(productoId) {
         productoId?.let {
@@ -53,38 +60,30 @@ fun EditarProductoScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "Editar / Retirar producto",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        // --------------------------------------------------------------
-        // Carga del producto por ID
-        // --------------------------------------------------------------
         Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = viewModel.idTexto,
-                onValueChange = viewModel::onIdChange,
-                label = { Text("ID del producto *") },
-                isError = viewModel.erroresCampo.containsKey("id"),
-                supportingText = {
-                    viewModel.erroresCampo["id"]?.let { Text(it) }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-
-            Button(
-                onClick = viewModel::cargarProducto,
-                enabled = viewModel.uiState != EditarUiState.Loading
-            ) {
-                Text("Cargar")
+            IconButton(onClick = onVolver) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver"
+                )
             }
+
+            Text(
+                text = "Editar / Retirar producto",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        if (productoId == null) {
+            Text(
+                text = "Selecciona un producto desde \"Mis productos\" para editarla.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         // --------------------------------------------------------------
@@ -99,7 +98,7 @@ fun EditarProductoScreen(
                     "Estado actual: ${viewModel.estado}"
                 },
                 fontWeight = FontWeight.SemiBold,
-                color = if (viewModel.estaRetirado) Color(0xFFB91C1C)
+                color = if (viewModel.estaRetirado) MaterialTheme.colorScheme.error
                 else MaterialTheme.colorScheme.primary
             )
 
@@ -206,7 +205,9 @@ fun EditarProductoScreen(
             Button(
                 onClick = viewModel::pedirConfirmacionRetiro,
                 enabled = viewModel.uiState != EditarUiState.Loading && !viewModel.estaRetirado,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB91C1C)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
@@ -235,7 +236,7 @@ fun EditarProductoScreen(
             is EditarUiState.Success -> {
                 Text(
                     text = state.mensaje,
-                    color = Color(0xFF166534),
+                    color = VerdePrecio,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -246,7 +247,7 @@ fun EditarProductoScreen(
             is EditarUiState.Error -> {
                 Text(
                     text = state.mensaje,
-                    color = Color(0xFFB91C1C),
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -278,7 +279,7 @@ fun EditarProductoScreen(
                 TextButton(onClick = viewModel::retirar) {
                     Text(
                         "Sí, retirar",
-                        color = Color(0xFFB91C1C),
+                        color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.SemiBold
                     )
                 }

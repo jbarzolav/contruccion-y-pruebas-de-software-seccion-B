@@ -837,11 +837,36 @@ body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
+.carrito-producto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.carrito-miniatura {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.carrito-sin-imagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #616e7c;
+}
+
 .app-marca {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #1f2933;
-  letter-spacing: 0.3px;
+  display: block;
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .app-header .nav-principal {

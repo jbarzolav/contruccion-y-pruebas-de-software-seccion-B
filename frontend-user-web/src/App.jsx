@@ -82,7 +82,7 @@ export default function App() {
             <main className="contenedor">
                 {/* ===== Header: 3 accesos principales + acciones ===== */}
                 <header className="app-header">
-                    <span className="app-marca">PulgaTec</span>
+                    <img className="app-marca" src={`${import.meta.env.BASE_URL}logo-pulgatec.png`} alt="PulgaTec" width="88" height="88" />
 
                     <nav className="nav-principal" aria-label="Navegación principal">
                         <Link to="/">Inicio</Link>

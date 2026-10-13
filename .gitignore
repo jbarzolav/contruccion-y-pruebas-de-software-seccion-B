@@ -16,6 +16,7 @@ env/
 
 # Android
 .gradle/
+.kotlin/
 build/
 *.apk
 local.properties

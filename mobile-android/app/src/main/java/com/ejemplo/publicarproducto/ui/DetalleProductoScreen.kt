@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +31,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.ProductoResponse
+import com.ejemplo.publicarproducto.ui.theme.AmbarFondo
+import com.ejemplo.publicarproducto.ui.theme.AmbarTexto
+import com.ejemplo.publicarproducto.ui.theme.RojoErrorFondo
+import com.ejemplo.publicarproducto.ui.theme.RojoTextoOscuro
+import com.ejemplo.publicarproducto.ui.theme.VerdeExitoFondo
+import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 
 /**
  * HU 07 - Pantalla de detalle de producto.
@@ -138,12 +143,12 @@ private fun DetalleContenido(
                 .fillMaxWidth()
                 .height(240.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFE4E7EB)),
+                .background(MaterialTheme.colorScheme.outlineVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Sin imagen disponible",
-                color = Color(0xFF52606D),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -152,21 +157,21 @@ private fun DetalleContenido(
     Text(
         text = "Imagen 1 de 1",
         fontSize = 12.sp,
-        color = Color(0xFF7B8794),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth(),
         fontWeight = FontWeight.Medium
     )
 
     producto.categoria?.takeIf { it.isNotBlank() }?.let { categoria ->
         Surface(
-            color = Color(0xFFE4E7EB),
+            color = MaterialTheme.colorScheme.outlineVariant,
             shape = RoundedCornerShape(999.dp)
         ) {
             Text(
                 text = categoria.uppercase(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF3E4C59),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
@@ -182,12 +187,12 @@ private fun DetalleContenido(
         text = "S/ ${producto.precio ?: "0.00"}",
         fontSize = 30.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = Color(0xFF166534)
+        color = VerdePrecio
     )
 
     // Ficha técnica
     Surface(
-        color = Color(0xFFF8FAFC),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -214,13 +219,13 @@ private fun DetalleContenido(
     )
 
     Surface(
-        color = Color(0xFFF8FAFC),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
             text = producto.descripcion.orEmpty(),
-            color = Color(0xFF3E4C59),
+            color = MaterialTheme.colorScheme.onSurface,
             lineHeight = 22.sp,
             modifier = Modifier.padding(12.dp)
         )
@@ -228,13 +233,13 @@ private fun DetalleContenido(
 
     if (!disponibilidad.disponible) {
         Surface(
-            color = Color(0xFFFEE2E2),
+            color = RojoErrorFondo,
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = "Este producto no se encuentra disponible para compra.",
-                color = Color(0xFF991B1B),
+                color = RojoTextoOscuro,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
             )
@@ -278,7 +283,7 @@ private fun DetalleContenido(
         Text(
             text = "Stock: ${disponibilidad.stock ?: 0}",
             fontSize = 13.sp,
-            color = Color(0xFF616E7C)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
@@ -293,13 +298,13 @@ private fun DetalleContenido(
     // estado visual del carrito tras enviar la petición (HU 11)
     viewModel.mensajeCarrito?.let { mensaje ->
         Surface(
-            color = Color(0xFFDCFCE7),
+            color = VerdeExitoFondo,
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = mensaje,
-                color = Color(0xFF166534),
+                color = VerdePrecio,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
             )
@@ -308,13 +313,13 @@ private fun DetalleContenido(
 
     viewModel.errorCarrito?.let { error ->
         Surface(
-            color = Color(0xFFFEE2E2),
+            color = RojoErrorFondo,
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = error,
-                color = Color(0xFF991B1B),
+                color = RojoTextoOscuro,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
             )
@@ -326,7 +331,7 @@ private fun DetalleContenido(
 private fun FilaDetalle(etiqueta: String, valor: String) {
     Text(
         text = "$etiqueta: $valor",
-        color = Color(0xFF1F2933),
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 15.sp
     )
 }
@@ -334,10 +339,10 @@ private fun FilaDetalle(etiqueta: String, valor: String) {
 @Composable
 private fun EstadoBadge(estado: String) {
     val (colorFondo, colorTexto) = when (estado.uppercase()) {
-        "DISPONIBLE" -> Color(0xFFDCFCE7) to Color(0xFF166534)
-        "AGOTADO" -> Color(0xFFFEF3C7) to Color(0xFF92400E)
-        "RETIRADO" -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
-        else -> Color(0xFFE4E7EB) to Color(0xFF3E4C59)
+        "DISPONIBLE" -> VerdeExitoFondo to VerdePrecio
+        "AGOTADO" -> AmbarFondo to AmbarTexto
+        "RETIRADO" -> RojoErrorFondo to RojoTextoOscuro
+        else -> MaterialTheme.colorScheme.outlineVariant to MaterialTheme.colorScheme.onSurface
     }
 
     Surface(

@@ -29,12 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ejemplo.publicarproducto.model.ProductoResumenResponse
+import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 
 /**
  * HU 16 - Chatbot de recomendaciones.
@@ -146,7 +146,7 @@ fun ChatbotScreen(
                             .height(18.dp)
                             .width(18.dp),
                         strokeWidth = 2.dp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
                     Text("Enviar")
@@ -171,9 +171,9 @@ private fun BurbujaMensaje(
     ) {
         Surface(
             color = if (mensaje.esUsuario) {
-                Color(0xFF2563EB)
+                MaterialTheme.colorScheme.primary
             } else {
-                Color(0xFFEEF2F7)
+                MaterialTheme.colorScheme.surfaceVariant
             },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(0.9f)
@@ -185,9 +185,9 @@ private fun BurbujaMensaje(
                 Text(
                     text = mensaje.texto,
                     color = if (mensaje.esUsuario) {
-                        Color.White
+                        MaterialTheme.colorScheme.onPrimary
                     } else {
-                        Color(0xFF1F2937)
+                        MaterialTheme.colorScheme.onSurface
                     },
                     fontSize = 14.sp
                 )
@@ -212,11 +212,11 @@ private fun TarjetaProducto(
     onClick: () -> Unit
 ) {
     Surface(
-        color = Color.White,
-        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.medium,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            Color(0xFFE4E7EB)
+            MaterialTheme.colorScheme.outlineVariant
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -235,7 +235,7 @@ private fun TarjetaProducto(
             Text(
                 text = "S/ ${producto.precio ?: "0.00"}",
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF166534),
+                color = VerdePrecio,
                 fontSize = 14.sp
             )
 
@@ -243,7 +243,7 @@ private fun TarjetaProducto(
                 Text(
                     text = categoria,
                     fontSize = 12.sp,
-                    color = Color(0xFF616E7C)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ImagenCarrito from './ImagenCarrito.jsx'
 import {
     actualizarCantidadItem,
     eliminarItemCarrito,
@@ -151,11 +152,14 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
                     <ul className="carrito-lista">
                         {items.map((item) => (
                             <li key={item.id} className="carrito-item">
+                                <div className="carrito-producto">
+                                    <ImagenCarrito productoId={item.productoId} nombre={item.nombreProducto} />
                                 <div className="carrito-item-datos">
                                     <strong>{item.nombreProducto}</strong>
                                     <span>
                                         S/ {Number(item.precioUnitario).toFixed(2)} c/u
                                     </span>
+                                </div>
                                 </div>
 
                                 <div className="drawer-item-pie">

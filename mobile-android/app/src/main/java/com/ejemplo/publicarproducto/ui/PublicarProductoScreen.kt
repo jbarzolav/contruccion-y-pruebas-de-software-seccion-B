@@ -14,12 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -31,13 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 
 private val ESTADOS = listOf(
     "DISPONIBLE",
@@ -47,6 +51,7 @@ private val ESTADOS = listOf(
 
 @Composable
 fun PublicarProductoScreen(
+    onVolver: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PublicarProductoViewModel = viewModel()
 ) {
@@ -68,11 +73,24 @@ fun PublicarProductoScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "Publicar producto",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onVolver) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver"
+                )
+            }
+
+            Text(
+                text = "Publicar producto",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         OutlinedTextField(
             value = viewModel.nombre,
@@ -148,20 +166,10 @@ fun PublicarProductoScreen(
             )
         }
 
-        OutlinedTextField(
-            value = viewModel.categoria,
-            onValueChange = viewModel::onCategoriaChange,
-            label = {
-                Text("Categoría *")
-            },
-            isError = viewModel.erroresCampo.containsKey("categoria"),
-            supportingText = {
-                viewModel.erroresCampo["categoria"]?.let {
-                    Text(it)
-                }
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+        CategoriaDropdown(
+            seleccionado = viewModel.categoria,
+            onSeleccionado = viewModel::onCategoriaChange,
+            error = viewModel.erroresCampo["categoria"]
         )
 
         EstadoDropdown(
@@ -236,7 +244,10 @@ fun PublicarProductoScreen(
             }
 
             OutlinedButton(
-                onClick = viewModel::cancelar,
+                onClick = {
+                    viewModel.cancelar()
+                    onVolver()
+                },
                 enabled = viewModel.uiState != PublicarUiState.Loading,
                 modifier = Modifier.weight(1f)
             ) {
@@ -261,7 +272,7 @@ fun PublicarProductoScreen(
             is PublicarUiState.Success -> {
                 Text(
                     text = state.mensaje,
-                    color = Color(0xFF166534),
+                    color = VerdePrecio,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -272,7 +283,7 @@ fun PublicarProductoScreen(
             is PublicarUiState.Error -> {
                 Text(
                     text = state.mensaje,
-                    color = Color(0xFFB91C1C),
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -281,6 +292,47 @@ fun PublicarProductoScreen(
             }
 
             PublicarUiState.Idle -> Unit
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoriaDropdown(
+    seleccionado: String,
+    onSeleccionado: (String) -> Unit,
+    error: String?
+) {
+    val categorias = listOf(
+        "Computadoras", "Celulares y tablets", "Componentes de PC", "Periféricos",
+        "Audio y video", "Electrónica", "Accesorios", "Otros"
+    )
+    var expandido by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expandido,
+        onExpandedChange = { expandido = it }
+    ) {
+        OutlinedTextField(
+            value = seleccionado,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Categoría *") },
+            placeholder = { Text("Selecciona una categoría") },
+            isError = error != null,
+            supportingText = { error?.let { Text(it) } },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
+            categorias.forEach { categoria ->
+                DropdownMenuItem(
+                    text = { Text(categoria) },
+                    onClick = {
+                        onSeleccionado(categoria)
+                        expandido = false
+                    }
+                )
+            }
         }
     }
 }
