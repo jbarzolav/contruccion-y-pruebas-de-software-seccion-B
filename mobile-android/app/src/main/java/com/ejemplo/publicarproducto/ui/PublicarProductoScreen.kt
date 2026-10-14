@@ -304,8 +304,8 @@ private fun CategoriaDropdown(
     error: String?
 ) {
     val categorias = listOf(
-        "Computadoras", "Celulares y tablets", "Componentes de PC", "Periféricos",
-        "Audio y video", "Electrónica", "Accesorios", "Otros"
+        "Accesorios", "Audio y video", "Celulares y tablets", "Componentes de PC",
+        "Computadoras", "Electrónica", "Otros", "Periféricos"
     )
     var expandido by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(

@@ -264,7 +264,7 @@ export default function PublicarProducto({ onProductoCreado }) {
                   onChange={handleChange}
               >
                 <option value="" disabled>Selecciona una categoría</option>
-                {['Computadoras', 'Celulares y tablets', 'Componentes de PC', 'Periféricos', 'Audio y video', 'Electrónica', 'Accesorios', 'Otros'].map(categoria => (
+                {['Accesorios', 'Audio y video', 'Celulares y tablets', 'Componentes de PC', 'Computadoras', 'Electrónica', 'Otros', 'Periféricos'].map(categoria => (
                   <option key={categoria} value={categoria}>{categoria}</option>
                 ))}
               </select>
