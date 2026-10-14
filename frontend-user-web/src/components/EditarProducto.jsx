@@ -332,16 +332,43 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
 
       {/* HU 04 - Diálogo de confirmación antes de retirar */}
       {confirmarRetiro && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal">
-            <h3>¿Retirar esta publicación?</h3>
-            <p>
+        <div
+          className="modal-overlay modal-confirmacion"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => {
+            if (!retirando) setConfirmarRetiro(false)
+          }}
+        >
+          <div
+            className="modal"
+            onClick={(evento) => evento.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-cerrar"
+              onClick={() => setConfirmarRetiro(false)}
+              disabled={retirando}
+              aria-label="Cerrar la confirmación"
+            >
+              ✕
+            </button>
+
+            <span className="confirmacion-icono" aria-hidden="true">
+              ⚠
+            </span>
+
+            <h3 className="confirmacion-titulo">
+              ¿Retirar esta publicación?
+            </h3>
+
+            <p className="confirmacion-texto">
               El producto <strong>{producto.nombre}</strong> (ID {producto.id})
-              quedará con estado <strong>RETIRADO</strong>. No se eliminará de
-              la base de datos: es una <strong>baja lógica</strong>.
+              quedará en estado <strong>RETIRADO</strong>. Es una{' '}
+              <strong>baja lógica</strong>: no se elimina de la base de datos.
             </p>
 
-            <div className="botones">
+            <div className="confirmacion-botones">
               <button
                 type="button"
                 className="btn-secundario"

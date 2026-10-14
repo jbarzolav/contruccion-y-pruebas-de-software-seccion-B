@@ -152,6 +152,79 @@ button:disabled {
   justify-content: flex-end;
 }
 
+/* HU 04 - Confirmación de retiro: diálogo compacto centrado con icono.
+   z-index 1100 para verse SOBRE el modal de edición (z-index 1000).
+   Specificidad .modal-overlay.modal-confirmacion gana a .modal-formulario .modal */
+.modal-confirmacion {
+  z-index: 1100;
+  backdrop-filter: blur(2px);
+}
+
+.modal-overlay.modal-confirmacion .modal {
+  position: relative;
+  width: min(92vw, 430px);
+  padding: 38px 34px 30px;
+  text-align: center;
+  animation: confirmacion-entra 0.18s ease-out;
+}
+
+.modal-confirmacion .modal-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.confirmacion-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 1.7rem;
+}
+
+.confirmacion-titulo {
+  margin: 0 0 8px;
+  font-size: 1.12rem;
+  color: #1f2933;
+}
+
+.confirmacion-texto {
+  margin: 0 0 20px;
+  color: #52606d;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.confirmacion-botones {
+  display: flex;
+  gap: 10px;
+}
+
+.confirmacion-botones button {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmacion-botones button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@keyframes confirmacion-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
 .badge-retirado {
   display: inline-block;
   background: #fee2e2;
