@@ -155,6 +155,10 @@ class MainActivity : ComponentActivity() {
                                 DetalleProductoScreen(
                                     productoId = detalleId,
                                     onVolver = { productoDetalleId = null },
+                                    onIrACarrito = {
+                                        productoDetalleId = null
+                                        pestana = 2
+                                    },
                                     modifier = Modifier.padding(padding)
                                 )
                             }

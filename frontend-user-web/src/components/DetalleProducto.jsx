@@ -19,7 +19,7 @@ const CLASES_ESTADO = {
 // HU 10 - Mostrar disponibilidad y bloquear compra sin stock
 // HU 11 / HU 12 - Seleccionar cantidad y agregar al carrito
 // HU 15 - Comprar y navegar a la confirmación de compra
-export default function DetalleProducto({ onCarritoActualizado }) {
+export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) {
     const { idProducto } = useParams()
     const navigate = useNavigate()
 
@@ -288,6 +288,17 @@ export default function DetalleProducto({ onCarritoActualizado }) {
 
                 {mensajeCarrito && (
                     <div className="alerta exito">{mensajeCarrito}</div>
+                )}
+
+                {/* HU 11 - Atajo: ir al carrito sin volver al catálogo */}
+                {mensajeCarrito && onVerCarrito && (
+                    <button
+                        type="button"
+                        className="btn-primario"
+                        onClick={onVerCarrito}
+                    >
+                        Ir al carrito
+                    </button>
                 )}
 
                 {errorCarrito && (

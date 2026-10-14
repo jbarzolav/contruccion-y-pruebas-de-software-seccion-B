@@ -138,7 +138,10 @@ export default function App() {
                     <Route
                         path="/producto/:idProducto"
                         element={
-                            <DetalleProducto onCarritoActualizado={recargarCarrito} />
+                            <DetalleProducto
+                                onCarritoActualizado={recargarCarrito}
+                                onVerCarrito={() => setDrawerCarritoAbierto(true)}
+                            />
                         }
                     />
 

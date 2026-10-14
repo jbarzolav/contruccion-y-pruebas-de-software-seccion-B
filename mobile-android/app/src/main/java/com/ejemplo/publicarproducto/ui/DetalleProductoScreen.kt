@@ -46,6 +46,7 @@ import com.ejemplo.publicarproducto.ui.theme.VerdePrecio
 fun DetalleProductoScreen(
     productoId: Long,
     onVolver: () -> Unit,
+    onIrACarrito: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DetalleProductoViewModel = viewModel()
 ) {
@@ -106,7 +107,8 @@ fun DetalleProductoScreen(
                     DetalleContenido(
                         producto = producto,
                         disponibilidad = disponibilidad,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        onIrACarrito = onIrACarrito
                     )
                 }
             }
@@ -118,7 +120,8 @@ fun DetalleProductoScreen(
 private fun DetalleContenido(
     producto: ProductoResponse,
     disponibilidad: DisponibilidadProductoResponse,
-    viewModel: DetalleProductoViewModel
+    viewModel: DetalleProductoViewModel,
+    onIrACarrito: () -> Unit = {}
 ) {
     // Galería de imágenes (hoy: 1 imagen por producto, HU 02)
     val imagen = producto.imagenUrl?.takeIf { it.isNotBlank() }
@@ -308,6 +311,14 @@ private fun DetalleContenido(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
             )
+        }
+
+        // HU 11 - Atajo: ir al carrito sin volver al catálogo
+        Button(
+            onClick = onIrACarrito,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Ir a carrito")
         }
     }
 
