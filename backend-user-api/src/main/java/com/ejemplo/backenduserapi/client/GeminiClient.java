@@ -46,7 +46,7 @@ public class GeminiClient {
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final Duration TIMEOUT_CONEXION = Duration.ofSeconds(3);
-    private static final Duration TIMEOUT_RESPUESTA = Duration.ofSeconds(8);
+    private static final Duration TIMEOUT_RESPUESTA = Duration.ofSeconds(15);
 
     /** Cascada por defecto: modelo principal y luego el más liviano. */
     private static final String MODELOS_POR_DEFECTO =
@@ -211,6 +211,8 @@ public class GeminiClient {
         // Respuesta obligatoria en JSON estructurado
         ObjectNode generationConfig = raiz.putObject("generationConfig");
         generationConfig.put("responseMimeType", "application/json");
+        // Tope de tokens de salida: evita respuestas largas y ahorra tokens.
+        generationConfig.put("maxOutputTokens", 500);
         ObjectNode esquema = generationConfig.putObject("responseSchema");
         esquema.put("type", "OBJECT");
         ObjectNode propiedades = esquema.putObject("properties");

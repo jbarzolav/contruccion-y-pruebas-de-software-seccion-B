@@ -157,7 +157,14 @@ public class ChatbotService {
             - Circuitos electrónicos y herramientas de laboratorio.
             - Uso y características de materiales académicos tecnológicos.
 
-            Explica los conceptos de manera clara, sencilla y educativa.
+            Conoces los productos que tenemos en nuestra base de datos:
+            %s
+            Si la consulta técnica se relaciona con un producto de nuestro
+            catálogo, respóndela mencionando el nombre del producto y sus datos
+            (categoría, precio, descripción) además de la explicación.
+
+            Explica los conceptos de manera clara, sencilla y educativa,
+            en un máximo de 5 líneas.
             Si la pregunta está fuera de estos temas, indica amablemente
             que tu función es resolver consultas técnicas relacionadas
             con electrónica y componentes tecnológicos.
@@ -167,7 +174,7 @@ public class ChatbotService {
 
             No recomiendes productos del catálogo.
             El arreglo productosIds debe estar vacío.
-            """;
+            """.formatted(construirCatalogoTecnico());
 
         try {
             Optional<String> respuesta =
@@ -262,15 +269,26 @@ public class ChatbotService {
                             producto.getCategoria() == null
                                     ? "sin categoría"
                                     : producto.getCategoria()
-                    )
-                    .append('\n');
+                    );
+
+            // Descripción corta: sirve para comparar y ahorra tokens.
+            String descripcion = resumir(producto.getDescripcion(), 60);
+            if (!descripcion.isEmpty()) {
+                catalogo.append(" | ").append(descripcion);
+            }
+
+            catalogo.append('\n');
         }
 
         return "Eres el asistente de compras de PulgaTec. "
                 + "Responde siempre en español.\n"
                 + "Devuelve EXCLUSIVAMENTE un JSON válido con esta forma exacta:\n"
                 + "{\"mensaje\": \"...\", \"productosIds\": []}\n"
-                + "- mensaje: texto breve y amigable para el usuario.\n"
+                + "- mensaje: recomendación breve, máximo 4 líneas. "
+                + "Cuando haya más de un producto, compara los productos entre sí "
+                + "(precio, stock, categoría y características): por ejemplo "
+                + "\"el A es más económico\", \"el B tiene más stock\" o "
+                + "\"el C es mejor para tu caso porque...\".\n"
                 + "- productosIds: ids enteros de los productos que recomiendas; "
                 + "usa [] si no hay coincidencias.\n"
                 + "IMPORTANTE: solo puedes usar ids de este catálogo "
@@ -278,6 +296,51 @@ public class ChatbotService {
                 + "y como máximo " + MAXIMO_SUGERENCIAS + " ids.\n"
                 + "Catálogo activo:\n"
                 + catalogo;
+    }
+
+    /**
+     * Texto en una sola línea y recortado: mantiene el prompt compacto
+     * para que la API de Gemini no consuma tokens de más.
+     */
+    private static String resumir(String texto, int maximo) {
+
+        if (texto == null || texto.isBlank()) {
+            return "";
+        }
+
+        String limpio = texto.replace('\n', ' ').replace('\r', ' ').trim();
+
+        return limpio.length() <= maximo
+                ? limpio
+                : limpio.substring(0, maximo).trim() + "…";
+    }
+
+    /** Catálogo compacto de la BD (nombre, categoría, precio y descripción). */
+    private String construirCatalogoTecnico() {
+
+        StringBuilder catalogo = new StringBuilder();
+
+        for (Producto producto : productoRepository.findAll()) {
+            catalogo.append("- ")
+                    .append(producto.getNombre())
+                    .append(" | ")
+                    .append(
+                            producto.getCategoria() == null
+                                    ? "sin categoría"
+                                    : producto.getCategoria()
+                    )
+                    .append(" | S/ ")
+                    .append(producto.getPrecio());
+
+            String descripcion = resumir(producto.getDescripcion(), 80);
+            if (!descripcion.isEmpty()) {
+                catalogo.append(" | ").append(descripcion);
+            }
+
+            catalogo.append('\n');
+        }
+
+        return catalogo.toString();
     }
 
     // ============================================================
