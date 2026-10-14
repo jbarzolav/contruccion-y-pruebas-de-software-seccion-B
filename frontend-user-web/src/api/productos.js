@@ -1,8 +1,8 @@
 import axios from 'axios'
 
-// Servicio JSON (HU 01 / HU 03) - Spring Boot en el puerto 8080
+// Servicio JSON (HU 01 / HU 03) - Spring Boot en el puerto 9000
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/productos',
+  baseURL: 'http://localhost:9000/api/productos',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
@@ -10,27 +10,27 @@ const api = axios.create({
 // Servicio para subir archivos (HU 02).
 // NO se fija Content-Type: el navegador debe poner el boundary del multipart.
 const apiArchivos = axios.create({
-  baseURL: 'http://localhost:8080/api/productos',
+  baseURL: 'http://localhost:9000/api/productos',
   timeout: 20000,
 })
 
 // Servicio del carrito de compras (HU 11 / HU 12) - vive en /api/carrito
 const apiCarrito = axios.create({
-  baseURL: 'http://localhost:8080/api/carrito',
+  baseURL: 'http://localhost:9000/api/carrito',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
 // Servicio de pedidos (HU 15 - Confirmar mi compra)
 const apiPedidos = axios.create({
-  baseURL: 'http://localhost:8080/api/pedidos',
+  baseURL: 'http://localhost:9000/api/pedidos',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
 // Servicio del chatbot (HU 16 - recomendaciones)
 const apiChatbot = axios.create({
-  baseURL: 'http://localhost:8080/api/chatbot',
+  baseURL: 'http://localhost:9000/api/chatbot',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
@@ -71,7 +71,7 @@ export async function retirarProducto(idProducto, vendedorId = 1) {
 
 // HU 05 - GET /api/vendedores/me/productos?vendedorId=1
 export async function obtenerMisProductos(vendedorId = 1) {
-  const { data } = await axios.get('http://localhost:8080/api/vendedores/me/productos', {
+  const { data } = await axios.get('http://localhost:9000/api/vendedores/me/productos', {
     params: { vendedorId },
   })
   return data
@@ -101,11 +101,11 @@ export async function obtenerCatalogo() {
   return data
 }
 
-// HU 07 - ruta de la imagen: las locales van contra el backend (:8080)
+// HU 07 - ruta de la imagen: las locales van contra el backend (:9000)
 export function urlImagen(imagenUrl) {
   if (!imagenUrl) return null
   if (imagenUrl.startsWith('http')) return imagenUrl
-  return `http://localhost:8080${imagenUrl}`
+  return `http://localhost:9000${imagenUrl}`
 }
 
 // HU 10 - GET /api/productos/{idProducto}/disponibilidad
@@ -165,7 +165,7 @@ export async function consultarChatbotTecnico(consulta) {
 // HU 18 - GET /api/planes/premium
 export async function consultarPlanPremium() {
   const { data } = await axios.get(
-    'http://localhost:8080/api/planes/premium',
+    'http://localhost:9000/api/planes/premium',
     { timeout: 10000 }
   )
   return data

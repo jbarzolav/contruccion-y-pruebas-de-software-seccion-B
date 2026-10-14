@@ -114,7 +114,7 @@ class ChatbotViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 val errorTexto =
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
 
                 mensajeError = errorTexto
 

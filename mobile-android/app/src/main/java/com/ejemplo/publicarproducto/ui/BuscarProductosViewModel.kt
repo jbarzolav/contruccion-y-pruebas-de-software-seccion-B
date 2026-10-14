@@ -75,7 +75,7 @@ class BuscarProductosViewModel : ViewModel() {
             } catch (e: Exception) {
                 productos = emptyList()
                 uiState = BuscarProductosUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }
@@ -105,7 +105,7 @@ class BuscarProductosViewModel : ViewModel() {
             } catch (e: Exception) {
                 productos = emptyList()
                 uiState = BuscarProductosUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }

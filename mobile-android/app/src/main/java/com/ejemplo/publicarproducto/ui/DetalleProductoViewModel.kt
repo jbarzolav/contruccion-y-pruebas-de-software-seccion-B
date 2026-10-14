@@ -83,7 +83,7 @@ class DetalleProductoViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 errorCarrito =
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
             } finally {
                 agregandoCarrito = false
             }
@@ -148,7 +148,7 @@ class DetalleProductoViewModel : ViewModel() {
                 disponibilidad = null
 
                 uiState = DetalleProductoUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }

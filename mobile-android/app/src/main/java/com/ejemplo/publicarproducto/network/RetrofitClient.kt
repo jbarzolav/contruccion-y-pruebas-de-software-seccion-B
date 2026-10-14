@@ -10,11 +10,11 @@ import java.util.concurrent.TimeUnit
  * Cliente Retrofit.
  *
  * IMPORTANTE: desde el emulador de Android, el localhost de la PC es 10.0.2.2
- * (http://10.0.2.2:8080). Desde un dispositivo físico se debe usar la IP de la LAN.
+ * (http://10.0.2.2:9000). Desde un dispositivo físico se debe usar la IP de la LAN.
  */
 object RetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "http://10.0.2.2:9000/"
     private const val TIMEOUT_SEGUNDOS = 15L
 
     private val httpClient: OkHttpClient by lazy {

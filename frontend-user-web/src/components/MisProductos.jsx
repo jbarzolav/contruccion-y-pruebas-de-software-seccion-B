@@ -67,7 +67,7 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
                         {producto.imagenUrl && (
                             <img
                                 className="producto-imagen"
-                                src={`http://localhost:8080${producto.imagenUrl}`}
+                                src={`http://localhost:9000${producto.imagenUrl}`}
                                 alt={producto.nombre}
                             />
                         )}

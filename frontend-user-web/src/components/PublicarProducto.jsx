@@ -172,7 +172,7 @@ export default function PublicarProducto({ onProductoCreado }) {
       } else {
         setMensaje({
           tipo: 'error',
-          texto: 'No hay conexión con el backend. Verifica que esté corriendo en el puerto 8080.',
+          texto: 'No hay conexión con el backend. Verifica que esté corriendo en el puerto 9000.',
         })
       }
     } finally {

@@ -45,7 +45,7 @@ class MisProductosViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 uiState = MisProductosUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }
@@ -67,7 +67,7 @@ class MisProductosViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 uiState = MisProductosUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }

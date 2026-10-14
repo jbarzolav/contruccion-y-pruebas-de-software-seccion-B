@@ -104,7 +104,7 @@ export default function BuscarProductos() {
               >
                 {producto.imagenUrl && (
                     <img
-                        src={`http://localhost:8080${producto.imagenUrl}`}
+                        src={`http://localhost:9000${producto.imagenUrl}`}
                         alt={producto.nombre}
                         width="150"
                     />

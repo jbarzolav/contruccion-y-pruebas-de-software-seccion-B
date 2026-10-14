@@ -128,7 +128,7 @@ private fun DetalleContenido(
             model = if (imagen.startsWith("http")) {
                 imagen
             } else {
-                "http://10.0.2.2:8080$imagen"
+                "http://10.0.2.2:9000$imagen"
             },
             contentDescription = "Imagen de ${producto.nombre.orEmpty()}",
             contentScale = ContentScale.Crop,

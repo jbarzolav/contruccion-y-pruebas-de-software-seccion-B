@@ -167,7 +167,7 @@ fun BuscarProductosScreen(
                                 ) {
                                     if (!producto.imagenUrl.isNullOrBlank()) {
                                         AsyncImage(
-                                            model = "http://10.0.2.2:8080${producto.imagenUrl}",
+                                            model = "http://10.0.2.2:9000${producto.imagenUrl}",
                                             contentDescription = "Imagen de ${producto.nombre.orEmpty()}",
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier

@@ -72,7 +72,7 @@ class ConfirmarCompraViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 uiState = ConfirmarCompraUiState.Error(
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
             }
         }
@@ -98,7 +98,7 @@ class ConfirmarCompraViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 mensajeError =
-                    "No hay conexión con el backend (10.0.2.2:8080): ${e.message}"
+                    "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
             } finally {
                 confirmando = false
             }
