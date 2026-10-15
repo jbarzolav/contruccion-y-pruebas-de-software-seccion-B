@@ -13,4 +13,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     // HU 07 - Catálogo: listado por estado (el service solo pide DISPONIBLE)
     List<Producto> findByEstado(String estado);
+
+    // HU 20 - Recomendaciones: coincidencia de categoría (solo DISPONIBLE)
+    List<Producto> findByCategoriaContainingIgnoreCaseAndEstado(
+            String categoria, String estado);
 }
