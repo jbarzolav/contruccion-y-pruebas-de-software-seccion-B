@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.network.RetrofitClient
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 sealed interface BuscarProductosUiState {
@@ -14,6 +16,18 @@ sealed interface BuscarProductosUiState {
     data object Loading : BuscarProductosUiState
     data object Success : BuscarProductosUiState
     data class Error(val mensaje: String) : BuscarProductosUiState
+}
+
+/**
+ * HU 20 - estados de la sección de recomendaciones.
+ * Mismo patrón que BuscarProductosUiState: Success con la lista
+ * vacía equivale al estado Empty ("no hay recomendaciones").
+ */
+sealed interface RecomendacionesUiState {
+    data object Initial : RecomendacionesUiState
+    data object Loading : RecomendacionesUiState
+    data object Success : RecomendacionesUiState
+    data class Error(val mensaje: String) : RecomendacionesUiState
 }
 
 class BuscarProductosViewModel : ViewModel() {
@@ -29,6 +43,22 @@ class BuscarProductosViewModel : ViewModel() {
 
     var uiState by mutableStateOf<BuscarProductosUiState>(BuscarProductosUiState.Initial)
         private set
+
+    /** HU 20 - recomendaciones relacionadas con la última búsqueda. */
+    var uiStateRecomendaciones by mutableStateOf<RecomendacionesUiState>(
+        RecomendacionesUiState.Initial
+    )
+        private set
+
+    var recomendaciones by mutableStateOf<List<ProductoResponse>>(emptyList())
+        private set
+
+    /** Término realmente consultado (títula la sección en la UI). */
+    var terminoRecomendaciones by mutableStateOf("")
+        private set
+
+    /** HU 20 - evita que una respuesta vieja pise la de un término nuevo. */
+    private var jobRecomendaciones: Job? = null
 
     fun cambiarNombre(valor: String) {
         nombre = valor
@@ -55,6 +85,9 @@ class BuscarProductosViewModel : ViewModel() {
 
         uiState = BuscarProductosUiState.Loading
 
+        // HU 20 - recomendaciones en paralelo con la búsqueda (sin await)
+        buscarRecomendaciones(criterio)
+
         viewModelScope.launch {
             try {
                 val respuesta =
@@ -76,6 +109,48 @@ class BuscarProductosViewModel : ViewModel() {
                 productos = emptyList()
                 uiState = BuscarProductosUiState.Error(
                     "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * HU 20 - GET /api/recomendaciones?termino={texto}.
+     *
+     * El Job anterior se cancela antes de lanzar el nuevo: si el usuario
+     * cambia rápido de término, la respuesta vieja jamás pisa los
+     * estados del término actual (se relanza la CancellationException).
+     * Mismo criterio que el frontend web: término en blanco -> no se
+     * consulta y la sección queda oculta.
+     */
+    private fun buscarRecomendaciones(criterio: String) {
+        jobRecomendaciones?.cancel()
+
+        terminoRecomendaciones = criterio
+        recomendaciones = emptyList()
+        uiStateRecomendaciones = RecomendacionesUiState.Loading
+
+        jobRecomendaciones = viewModelScope.launch {
+            try {
+                val respuesta =
+                    RetrofitClient.productoApi.obtenerRecomendaciones(criterio)
+
+                if (respuesta.isSuccessful) {
+                    recomendaciones = respuesta.body().orEmpty()
+                    uiStateRecomendaciones = RecomendacionesUiState.Success
+                } else {
+                    recomendaciones = emptyList()
+                    uiStateRecomendaciones = RecomendacionesUiState.Error(
+                        "Error ${respuesta.code()}: no se pudieron cargar las recomendaciones."
+                    )
+                }
+            } catch (e: CancellationException) {
+                // Cancelada por un término más nuevo: no tocar los estados
+                throw e
+            } catch (e: Exception) {
+                recomendaciones = emptyList()
+                uiStateRecomendaciones = RecomendacionesUiState.Error(
+                    "No se pudieron cargar las recomendaciones (10.0.2.2:9000): ${e.message}"
                 )
             }
         }

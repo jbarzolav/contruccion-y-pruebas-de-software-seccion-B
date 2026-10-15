@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.ejemplo.publicarproducto.model.ProductoResponse
 
 /**
  * HU 06 - Búsqueda de productos por nombre.
@@ -136,63 +137,90 @@ fun BuscarProductosScreen(
             }
 
             BuscarProductosUiState.Success -> {
-                if (viewModel.productos.isEmpty()) {
-                    Text("No se encontraron productos disponibles.")
-                } else {
-                    Text(
-                        text = "Toca un producto para ver su detalle.",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium
-                    )
+                // HU 20 - la sección usa el término realmente consultado y
+                // descarta las recomendaciones que ya están en los resultados
+                val terminoBuscado = viewModel.terminoRecomendaciones
+                val idsResultados =
+                    viewModel.productos.mapNotNull { it.id }.toSet()
+                val recomendacionesVisibles = viewModel.recomendaciones.filter {
+                    it.id != null && it.id !in idsResultados
+                }
+                val hayTermino = viewModel.nombre.trim().isNotBlank()
 
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (viewModel.productos.isEmpty()) {
+                        item(key = "sin-resultados") {
+                            Text("No se encontraron productos disponibles.")
+                        }
+                    } else {
+                        item(key = "ayuda-busqueda") {
+                            Text(
+                                text = "Toca un producto para ver su detalle.",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
                         items(
                             items = viewModel.productos,
                             key = { it.id ?: 0L }
                         ) { producto ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = producto.id != null) {
-                                        producto.id?.let(onSeleccionarProducto)
-                                    }
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    if (!producto.imagenUrl.isNullOrBlank()) {
-                                        AsyncImage(
-                                            model = "http://10.0.2.2:9000${producto.imagenUrl}",
-                                            contentDescription = "Imagen de ${producto.nombre.orEmpty()}",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(180.dp)
-                                        )
-                                    }
+                            TarjetaProductoListado(
+                                producto = producto,
+                                onSeleccionarProducto = onSeleccionarProducto
+                            )
+                        }
+                    }
 
+                    // ===== HU 20 - recomendaciones de la búsqueda actual =====
+                    if (hayTermino && terminoBuscado.isNotBlank()) {
+                        item(key = "recomendaciones-titulo") {
+                            Text(
+                                text = "Recomendaciones para “$terminoBuscado”",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        when (val recState = viewModel.uiStateRecomendaciones) {
+                            RecomendacionesUiState.Initial -> Unit
+
+                            RecomendacionesUiState.Loading -> {
+                                item(key = "recomendaciones-cargando") {
+                                    Text("Buscando recomendaciones...")
+                                }
+                            }
+
+                            is RecomendacionesUiState.Error -> {
+                                item(key = "recomendaciones-error") {
                                     Text(
-                                        text = producto.nombre.orEmpty(),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
+                                        text = recState.mensaje,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.SemiBold
                                     )
+                                }
+                            }
 
-                                    // HU 19 - distintivo de publicación destacada
-                                    if (producto.esDestacado) {
+                            RecomendacionesUiState.Success -> {
+                                if (recomendacionesVisibles.isEmpty()) {
+                                    item(key = "recomendaciones-vacio") {
                                         Text(
-                                            text = "★ Destacado",
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
+                                            "No hay recomendaciones relacionadas " +
+                                                "con esta búsqueda."
                                         )
                                     }
-
-                                    Text("Precio: S/ ${producto.precio ?: "0.00"}")
-                                    Text("Disponibilidad: ${producto.estado.orEmpty()}")
+                                } else {
+                                    items(
+                                        items = recomendacionesVisibles,
+                                        key = { "rec-${it.id ?: 0L}" }
+                                    ) { producto ->
+                                        TarjetaProductoListado(
+                                            producto = producto,
+                                            onSeleccionarProducto = onSeleccionarProducto
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -206,6 +234,67 @@ fun BuscarProductosScreen(
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.SemiBold
                 )
+            }
+        }
+    }
+}
+
+/**
+ * HU 07/HU 08 + HU 20 - tarjeta compartida del listado: los resultados
+ * de búsqueda y las recomendaciones usan exactamente el mismo diseño y
+ * navegan al detalle con el mismo mecanismo (onSeleccionarProducto),
+ * sin crear una segunda pantalla de detalle.
+ */
+@Composable
+private fun TarjetaProductoListado(
+    producto: ProductoResponse,
+    onSeleccionarProducto: (Long) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = producto.id != null) {
+                producto.id?.let(onSeleccionarProducto)
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (!producto.imagenUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = "http://10.0.2.2:9000${producto.imagenUrl}",
+                    contentDescription = "Imagen de ${producto.nombre.orEmpty()}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                )
+            }
+
+            Text(
+                text = producto.nombre.orEmpty(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            // HU 19 - distintivo de publicación destacada
+            if (producto.esDestacado) {
+                Text(
+                    text = "★ Destacado",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Text("Precio: S/ ${producto.precio ?: "0.00"}")
+
+            // HU 20 - el DTO de recomendaciones no trae estado: solo se
+            // muestra la disponibilidad cuando el producto la informa
+            if (!producto.estado.isNullOrBlank()) {
+                Text("Disponibilidad: ${producto.estado}")
             }
         }
     }

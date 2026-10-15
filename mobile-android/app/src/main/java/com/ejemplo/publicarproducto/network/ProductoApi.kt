@@ -54,6 +54,15 @@ interface ProductoApi {
         @Query("sort") sort: String? = null
     ): Response<List<ProductoResponse>>
 
+    // HU 20 - GET /api/recomendaciones?termino={texto}
+    // Productos DISPONIBLES relacionados con el término por nombre o
+    // categoría, sin duplicados; lista vacía si no hay coincidencias.
+    // Devuelve el mismo formato que ProductoResponse (sin duplicar DTO).
+    @GET("api/recomendaciones")
+    suspend fun obtenerRecomendaciones(
+        @Query("termino") termino: String
+    ): Response<List<ProductoResponse>>
+
     // HU 10 - GET /api/productos/{idProducto}/disponibilidad
     @GET("api/productos/{idProducto}/disponibilidad")
     suspend fun obtenerDisponibilidadProducto(

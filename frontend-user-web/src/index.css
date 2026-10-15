@@ -469,6 +469,19 @@ button:disabled {
   color: #166534;
 }
 
+/* ===== HU 20 - Recomendaciones relacionadas con la búsqueda ===== */
+.recomendaciones {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed #cbd2d9;
+}
+
+.recomendaciones-titulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #334e68;
+}
+
 /* ===== HU 08 - Tarjetas clickeables (búsqueda y Mis productos) ===== */
 .resultados-busqueda {
   display: grid;

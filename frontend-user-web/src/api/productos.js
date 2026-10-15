@@ -35,6 +35,13 @@ const apiChatbot = axios.create({
   timeout: 10000,
 })
 
+// Servicio de recomendaciones por búsqueda (HU 20)
+const apiRecomendaciones = axios.create({
+  baseURL: 'http://localhost:9000/api/recomendaciones',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
+
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
   const { data } = await api.post('', producto)
@@ -179,5 +186,13 @@ export async function gestionarDestacado(idProducto, vendedorId = 1, destacado =
   const { data } = await api.patch(`/${idProducto}/destacado`, cuerpo, {
     params: { vendedorId },
   })
+  return data
+}
+
+// HU 20 - GET /api/recomendaciones?termino={texto}
+// Devuelve productos DISPONIBLES relacionados por nombre o categoría,
+// sin duplicados; lista vacía si el término no coincide.
+export async function obtenerRecomendaciones(termino) {
+  const { data } = await apiRecomendaciones.get('', { params: { termino } })
   return data
 }
