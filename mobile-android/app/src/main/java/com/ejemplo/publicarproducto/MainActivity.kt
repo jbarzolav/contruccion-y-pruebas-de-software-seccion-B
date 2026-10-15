@@ -31,12 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import com.ejemplo.publicarproducto.session.SessionManager
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
 import com.ejemplo.publicarproducto.ui.CarritoScreen
 import com.ejemplo.publicarproducto.ui.ChatbotScreen
 import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
+import com.ejemplo.publicarproducto.ui.LoginScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
@@ -62,6 +64,9 @@ private val PESTANAS = listOf(
  * - Barra inferior de 5 pestañas con íconos (sin textos truncados).
  * - Publicar (FAB +), Editar y Confirmar compra como sub-pantallas
  *   con botón "Volver" (la funcionalidad HU 01-19 no cambia).
+ * - HU 21: sin token guardado la entrada es LoginScreen; con token se
+ *   entra directo al flujo principal (control de UI local, sin
+ *   validación remota del token).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -74,6 +79,21 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+
+                    // HU 21 - control de UI local de sesión
+                    val sesion = remember {
+                        SessionManager(this@MainActivity.applicationContext)
+                    }
+                    var sesionIniciada by remember {
+                        mutableStateOf(sesion.haySesion())
+                    }
+
+                    if (!sesionIniciada) {
+                        // Entrada de la app sin token
+                        LoginScreen(
+                            onLoginExitoso = { sesionIniciada = true }
+                        )
+                    } else {
 
                     // 0 = Inicio (catálogo/búsqueda), 1 = Mis productos,
                     // 2 = Carrito (HU 12), 3 = Chatbot (HU 16/17), 4 = Premium (HU 18)
@@ -229,6 +249,8 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+
+                    } // fin del flujo principal (sesión iniciada)
                 }
             }
         }

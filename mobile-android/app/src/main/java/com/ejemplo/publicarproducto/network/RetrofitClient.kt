@@ -28,6 +28,15 @@ object RetrofitClient {
             .build()
     }
 
+    // HU 21 - cliente SIN logging para autenticación: el body del login
+    // contiene la contraseña y jamás debe aparecer en Logcat.
+    private val httpClientSinLog: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+            .build()
+    }
+
     val productoApi: ProductoApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -35,5 +44,14 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ProductoApi::class.java)
+    }
+
+    val authApi: AuthApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(httpClientSinLog)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AuthApi::class.java)
     }
 }

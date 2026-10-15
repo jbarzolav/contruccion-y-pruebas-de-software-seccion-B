@@ -10,6 +10,7 @@ import PlanPremium from './components/PlanPremium.jsx'
 import ProductoModal from './components/ProductoModal.jsx'
 import CarritoDrawer from './components/CarritoDrawer.jsx'
 import ChatbotFab from './components/ChatbotFab.jsx'
+import Login from './components/Login.jsx'
 import { obtenerCarrito } from './api/productos.js'
 
 /**
@@ -155,6 +156,9 @@ export default function App() {
 
                     {/* HU 18 - Beneficios Premium */}
                     <Route path="/premium" element={<PlanPremium />} />
+
+                    {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
+                    <Route path="/login" element={<Login />} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}

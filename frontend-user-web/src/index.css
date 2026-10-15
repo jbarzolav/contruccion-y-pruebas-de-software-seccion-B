@@ -482,6 +482,12 @@ button:disabled {
   color: #334e68;
 }
 
+/* ===== HU 21 - Tarjeta de inicio de sesión, centrada ===== */
+.login-tarjeta {
+  max-width: 420px;
+  margin: 40px auto;
+}
+
 /* ===== HU 08 - Tarjetas clickeables (búsqueda y Mis productos) ===== */
 .resultados-busqueda {
   display: grid;
