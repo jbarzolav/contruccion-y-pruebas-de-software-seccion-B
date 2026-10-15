@@ -1,6 +1,7 @@
 package com.ejemplo.backenduserapi.controller;
 
 import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
+import com.ejemplo.backenduserapi.exception.RecuperacionInvalidaException;
 import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
 import com.ejemplo.backenduserapi.exception.CredencialesInvalidasException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
@@ -136,6 +137,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
         return responder(HttpStatus.UNAUTHORIZED, "No autorizado", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Recuperación de acceso: token inválido o vencido y contraseñas inválidas (HU 22) -> 400.
+     */
+    @ExceptionHandler(RecuperacionInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleRecuperacionInvalida(RecuperacionInvalidaException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Recuperación inválida", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
