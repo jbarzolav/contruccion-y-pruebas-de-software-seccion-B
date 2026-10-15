@@ -38,6 +38,14 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- Spring Security Crypto (HU 21) - SOLO BCrypt para hash de
+		     contraseñas; no es el starter completo: sin filtros
+		     automáticos ni autorización global -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+
 		<!-- Base de datos H2 (por defecto, en memoria) -->
 		<dependency>
 			<groupId>com.h2database</groupId>

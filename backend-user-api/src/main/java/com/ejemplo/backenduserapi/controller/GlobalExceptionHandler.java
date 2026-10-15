@@ -2,6 +2,7 @@ package com.ejemplo.backenduserapi.controller;
 
 import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
 import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
+import com.ejemplo.backenduserapi.exception.CredencialesInvalidasException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
 import com.ejemplo.backenduserapi.exception.EstadoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
@@ -126,6 +127,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ChatbotInvalidoException.class)
     public ResponseEntity<Map<String, Object>> handleChatbotInvalido(ChatbotInvalidoException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Consulta inválida", List.of(ex.getMessage()));
+    }
+
+    /**
+     * Login con correo inexistente o contraseña incorrecta (HU 21) -> 401.
+     * El mismo mensaje cubre ambos casos para no revelar si la cuenta existe.
+     */
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
+        return responder(HttpStatus.UNAUTHORIZED, "No autorizado", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
