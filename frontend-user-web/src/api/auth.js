@@ -14,3 +14,14 @@ export async function login(correo, password) {
   const { data } = await apiAuth.post('/login', { correo, password })
   return data
 }
+
+// HU 22 - Recuperación mediante enlace temporal de un solo uso.
+export async function solicitarRecuperacion(correo) {
+  const { data } = await apiAuth.post('/recuperacion', { correo })
+  return data
+}
+
+export async function restablecerPassword(token, password, confirmacionPassword) {
+  const { data } = await apiAuth.post('/restablecer', { token, password, confirmacionPassword })
+  return data
+}

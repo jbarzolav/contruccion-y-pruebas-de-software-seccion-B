@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../api/auth.js'
 
 /**
@@ -142,6 +142,9 @@ export default function Login() {
           </button>
         </div>
       </form>
+
+      {/* HU 22 - Acceso a la recuperación de contraseña. */}
+      <p><Link to="/recuperacion">Olvidé mi contraseña</Link></p>
 
       {mensaje && (
         <div

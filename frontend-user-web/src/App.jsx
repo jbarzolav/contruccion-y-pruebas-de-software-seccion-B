@@ -11,6 +11,7 @@ import ProductoModal from './components/ProductoModal.jsx'
 import CarritoDrawer from './components/CarritoDrawer.jsx'
 import ChatbotFab from './components/ChatbotFab.jsx'
 import Login from './components/Login.jsx'
+import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import { obtenerCarrito } from './api/productos.js'
 
 /**
@@ -159,6 +160,10 @@ export default function App() {
 
                     {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
                     <Route path="/login" element={<Login />} />
+
+                    {/* HU 22 - Solicitud y restablecimiento mediante enlace temporal. */}
+                    <Route path="/recuperacion" element={<RecuperarAcceso key="solicitar" />} />
+                    <Route path="/restablecer" element={<RecuperarAcceso key="restablecer" restablecer />} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}

@@ -14,7 +14,7 @@ public class CorreoRecuperacionService {
 
     public CorreoRecuperacionService(
             @Value("${app.recuperacion.directorio:${java.io.tmpdir}/pulgatec-correos}") String directorio,
-            @Value("${app.recuperacion.url:http://localhost:3000/restablecer}") String url) {
+            @Value("${app.recuperacion.url:http://localhost:3000/#/restablecer}") String url) {
         this.directorio = Path.of(directorio);
         this.url = url;
     }
