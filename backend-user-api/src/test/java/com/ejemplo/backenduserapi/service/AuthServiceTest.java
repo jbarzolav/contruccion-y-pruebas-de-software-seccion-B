@@ -35,13 +35,16 @@ class AuthServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Mock
+    private AuditService auditoria;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private AuthService authService;
 
     @BeforeEach
     void configurar() {
-        authService = new AuthService(usuarioRepository, passwordEncoder, new TokenService());
+        authService = new AuthService(usuarioRepository, passwordEncoder, new TokenService(), auditoria);
     }
 
     // ============================================================

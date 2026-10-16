@@ -2,6 +2,7 @@ package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.RestablecerRequest;
 import com.ejemplo.backenduserapi.entity.TokenRecuperacion;
+import com.ejemplo.backenduserapi.entity.AccionAuditoria;
 import com.ejemplo.backenduserapi.exception.RecuperacionInvalidaException;
 import com.ejemplo.backenduserapi.repository.TokenRecuperacionRepository;
 import com.ejemplo.backenduserapi.repository.UsuarioRepository;
@@ -21,15 +22,17 @@ public class RecuperacionService {
     private final TokenRecuperacionRepository tokens;
     private final PasswordEncoder encoder;
     private final CorreoRecuperacionService correoService;
+    private final AuditService auditoria;
     private final long minutosVigencia;
 
     public RecuperacionService(UsuarioRepository usuarios, TokenRecuperacionRepository tokens,
-            PasswordEncoder encoder, CorreoRecuperacionService correoService,
+            PasswordEncoder encoder, CorreoRecuperacionService correoService, AuditService auditoria,
             @Value("${app.recuperacion.minutos-vigencia:15}") long minutosVigencia) {
         this.usuarios = usuarios;
         this.tokens = tokens;
         this.encoder = encoder;
         this.correoService = correoService;
+        this.auditoria = auditoria;
         this.minutosVigencia = minutosVigencia;
     }
 
@@ -59,5 +62,6 @@ public class RecuperacionService {
         usuario.setPasswordHash(encoder.encode(solicitud.getPassword()));
         usuarios.save(usuario);
         tokens.deleteByUsuarioId(usuario.getId());
+        auditoria.registrar(usuario, AccionAuditoria.RESTABLECIMIENTO_CONTRASENA);
     }
 }

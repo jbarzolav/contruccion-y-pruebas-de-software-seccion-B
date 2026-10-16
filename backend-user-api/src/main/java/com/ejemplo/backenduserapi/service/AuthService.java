@@ -3,6 +3,7 @@ package com.ejemplo.backenduserapi.service;
 import com.ejemplo.backenduserapi.dto.LoginRequest;
 import com.ejemplo.backenduserapi.dto.LoginResponse;
 import com.ejemplo.backenduserapi.entity.Usuario;
+import com.ejemplo.backenduserapi.entity.AccionAuditoria;
 import com.ejemplo.backenduserapi.exception.CredencialesInvalidasException;
 import com.ejemplo.backenduserapi.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,13 +28,16 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final AuditService auditoria;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        PasswordEncoder passwordEncoder,
-                       TokenService tokenService) {
+                       TokenService tokenService,
+                       AuditService auditoria) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.auditoria = auditoria;
     }
 
     public LoginResponse login(LoginRequest solicitud) {
@@ -52,6 +56,7 @@ public class AuthService {
 
         Usuario existente = usuario.get();
         String token = tokenService.generarToken(existente.getId());
+        auditoria.registrar(existente, AccionAuditoria.LOGIN);
 
         LoginResponse respuesta = new LoginResponse(token, existente.getId(), existente.getCorreo());
         respuesta.setRol(existente.getRol());

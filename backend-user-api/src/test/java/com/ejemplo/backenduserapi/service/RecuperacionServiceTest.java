@@ -25,13 +25,14 @@ class RecuperacionServiceTest {
     @Mock private UsuarioRepository usuarios;
     @Mock private TokenRecuperacionRepository tokens;
     @Mock private CorreoRecuperacionService correo;
+    @Mock private AuditService auditoria;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private RecuperacionService servicio;
     private Usuario usuario;
 
     @BeforeEach
     void configurar() {
-        servicio = new RecuperacionService(usuarios, tokens, encoder, correo, 15);
+        servicio = new RecuperacionService(usuarios, tokens, encoder, correo, auditoria, 15);
         usuario = new Usuario("hu22@pulgatec.com", encoder.encode("Anterior123*"));
         usuario.setId(22L);
     }

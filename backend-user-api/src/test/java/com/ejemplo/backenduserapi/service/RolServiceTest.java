@@ -19,13 +19,14 @@ import static org.mockito.ArgumentMatchers.any;
 @ExtendWith(MockitoExtension.class)
 class RolServiceTest {
     @Mock private UsuarioRepository usuarios;
+    @Mock private AuditService auditoria;
     private RolService servicio;
     private Usuario administrador;
     private Usuario cliente;
 
     @BeforeEach
     void configurar() {
-        servicio = new RolService(usuarios, new AutorizacionService(new TokenService(), usuarios));
+        servicio = new RolService(usuarios, new AutorizacionService(new TokenService(), usuarios), auditoria);
         administrador = new Usuario("admin@prueba.com", "hash-admin");
         administrador.setId(1L);
         administrador.setRol(Rol.ADMINISTRADOR);

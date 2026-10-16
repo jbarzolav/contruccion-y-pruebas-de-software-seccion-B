@@ -20,6 +20,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -152,6 +153,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AutorizacionException.class)
     public ResponseEntity<Map<String, Object>> handleAutorizacion(AutorizacionException ex) {
         return responder(ex.getEstado(), "Autorización", List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleParametroInvalido(MethodArgumentTypeMismatchException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Parámetro inválido", List.of("Los parámetros de consulta deben ser válidos."));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {
