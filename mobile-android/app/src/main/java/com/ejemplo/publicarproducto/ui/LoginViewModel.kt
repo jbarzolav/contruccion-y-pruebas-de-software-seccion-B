@@ -69,6 +69,9 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+    // HU 23 - Limpiar el resultado al entrar al flujo principal.
+    fun consumirExito() { password = ""; uiState = LoginUiState.Initial }
+
     fun iniciarSesion() {
         if (enviando) return
 

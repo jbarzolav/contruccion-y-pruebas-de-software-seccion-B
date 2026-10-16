@@ -27,7 +27,8 @@ sealed interface EditarUiState {
 class EditarProductoViewModel : ViewModel() {
 
     companion object {
-        private const val VENDEDOR_ID = 1L
+        // HU 23 - Propietario obtenido de la sesión autenticada.
+        private val VENDEDOR_ID get() = RetrofitClient.usuarioActualId()
         private const val ESTADO_RETIRADO = "RETIRADO"
     }
 

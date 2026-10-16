@@ -54,8 +54,11 @@ fun LoginScreen(
             sesion.guardarSesion(
                 token = estado.respuesta.token,
                 id = estado.respuesta.id,
-                correo = estado.respuesta.correo
+                correo = estado.respuesta.correo,
+                rol = estado.respuesta.rol,
+                permisos = estado.respuesta.permisos
             )
+            viewModel.consumirExito() // HU 23 - No reutilizar un éxito de una sesión anterior.
             onLoginExitoso()
         }
     }

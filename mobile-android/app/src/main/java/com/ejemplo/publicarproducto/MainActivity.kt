@@ -3,6 +3,14 @@ package com.ejemplo.publicarproducto
 import android.os.Bundle
 import android.content.Intent
 import androidx.activity.ComponentActivity
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.ManageAccounts
+import com.ejemplo.publicarproducto.ui.SesionViewModel
+import com.ejemplo.publicarproducto.ui.AdministrarRolesScreen
+import com.ejemplo.publicarproducto.network.RetrofitClient
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import com.ejemplo.publicarproducto.session.SessionManager
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
 import com.ejemplo.publicarproducto.ui.CarritoScreen
 import com.ejemplo.publicarproducto.ui.ChatbotScreen
@@ -58,7 +65,8 @@ private val PESTANAS = listOf(
     Pestana(1, "Productos", Icons.Default.Inventory2),
     Pestana(2, "Carrito", Icons.Default.ShoppingCart),
     Pestana(3, "Chatbot", Icons.Default.SmartToy),
-    Pestana(4, "Premium", Icons.Default.WorkspacePremium)
+    Pestana(4, "Premium", Icons.Default.WorkspacePremium),
+    Pestana(5, "Roles", Icons.Default.ManageAccounts)
 )
 
 /**
@@ -72,6 +80,7 @@ private val PESTANAS = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+    private val sesionViewModel: SesionViewModel by viewModels()
 
     // HU 22 - Enlace recibido al iniciar la app o cuando ya está abierta.
     private var tokenRecuperacion by mutableStateOf<String?>(null)
@@ -94,6 +103,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         recibirEnlace(intent)
+        RetrofitClient.configurarSesion(sesionViewModel.sesion) { codigo ->
+            runOnUiThread { sesionViewModel.manejarError(codigo) }
+        }
+        sesionViewModel.recargarYValidar()
         setContent {
             PulgaTecTheme {
                 Surface(
@@ -101,28 +114,36 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    // HU 21 - control de UI local de sesión
-                    val sesion = remember {
-                        SessionManager(this@MainActivity.applicationContext)
+                    // HU 23 - La sesión validada determina pestañas y acciones disponibles.
+                    val usuario = sesionViewModel.usuario
+                    val puedeComprar = usuario?.permisos?.contains("COMPRAR") == true
+                    val puedePublicar = usuario?.permisos?.contains("GESTIONAR_PRODUCTOS") == true
+                    val puedeAdministrar = usuario?.permisos?.contains("ASIGNAR_ROLES") == true
+                    val pestanasPermitidas = PESTANAS.filter {
+                        when (it.indice) { 1 -> puedePublicar; 2 -> puedeComprar; 5 -> puedeAdministrar; else -> true }
                     }
-                    var sesionIniciada by remember {
-                        mutableStateOf(sesion.haySesion())
-                    }
-
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        sesionViewModel.aviso?.let { aviso ->
+                            Text(aviso, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = { sesionViewModel.cerrarAviso() }) { Text("Cerrar aviso") }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
                     if (recuperando) {
                         RecuperacionScreen(
                             token = tokenRecuperacion,
                             onVolver = {
                                 tokenRecuperacion = null
                                 recuperando = false
-                                sesionIniciada = false
+                                sesionViewModel.volverAlLogin()
                             },
                             onSolicitarEnlace = { tokenRecuperacion = null }
                         )
-                    } else if (!sesionIniciada) {
+                    } else if (sesionViewModel.validando) {
+                        Text("Validando sesión...")
+                    } else if (usuario == null) {
                         // Entrada de la app sin token
                         LoginScreen(
-                            onLoginExitoso = { sesionIniciada = true },
+                            onLoginExitoso = { sesionViewModel.recargarYValidar() },
                             onRecuperarAcceso = {
                                 tokenRecuperacion = null
                                 recuperando = true
@@ -132,13 +153,13 @@ class MainActivity : ComponentActivity() {
 
                     // 0 = Inicio (catálogo/búsqueda), 1 = Mis productos,
                     // 2 = Carrito (HU 12), 3 = Chatbot (HU 16/17), 4 = Premium (HU 18)
-                    var pestana by remember { mutableStateOf(0) }
+                    var pestana by remember(usuario.id, usuario.rol) { mutableStateOf(0) }
 
                     // Sub-pantallas fuera de la barra inferior
-                    var productoDetalleId by remember { mutableStateOf<Long?>(null) } // HU 07
-                    var productoEnEdicionId by remember { mutableStateOf<Long?>(null) } // HU 03
-                    var publicando by remember { mutableStateOf(false) } // HU 01/02
-                    var confirmandoCompra by remember { mutableStateOf(false) } // HU 15
+                    var productoDetalleId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 07
+                    var productoEnEdicionId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 03
+                    var publicando by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 01/02
+                    var confirmandoCompra by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 15
 
                     val enPantallaPrincipal = productoDetalleId == null
                             && productoEnEdicionId == null
@@ -168,7 +189,7 @@ class MainActivity : ComponentActivity() {
                                 NavigationBar(
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ) {
-                                    PESTANAS.forEach { item ->
+                                    pestanasPermitidas.forEach { item ->
                                         NavigationBarItem(
                                             selected = pestana == item.indice,
                                             onClick = { pestana = item.indice },
@@ -187,7 +208,7 @@ class MainActivity : ComponentActivity() {
                         },
                         floatingActionButton = {
                             // HU 01 - publicar desde "Mis productos" sin ocupar una pestaña
-                            if (pestana == 1 && enPantallaPrincipal) {
+                            if (puedePublicar && pestana == 1 && enPantallaPrincipal) {
                                 FloatingActionButton(
                                     onClick = { publicando = true },
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -209,6 +230,7 @@ class MainActivity : ComponentActivity() {
                             detalleId != null -> {
                                 DetalleProductoScreen(
                                     productoId = detalleId,
+                                    puedeComprar = puedeComprar,
                                     onVolver = { productoDetalleId = null },
                                     onIrACarrito = {
                                         productoDetalleId = null
@@ -277,6 +299,12 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(padding)
                                 )
 
+                                // HU 23 - Pantalla exclusiva de administración.
+                                5 -> AdministrarRolesScreen(
+                                    onRolActualizado = { sesionViewModel.actualizar() },
+                                    modifier = Modifier.padding(padding)
+                                )
+
                                 // HU 18 - beneficios Premium
                                 else -> PlanPremiumScreen(
                                     modifier = Modifier.padding(padding)
@@ -286,6 +314,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     } // fin del flujo principal (sesión iniciada)
+                        } // Contenido de la sesión
+                    } // Avisos y contenido
                 }
             }
         }

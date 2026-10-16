@@ -19,7 +19,8 @@ sealed interface MisProductosUiState {
 class MisProductosViewModel : ViewModel() {
 
     companion object {
-        private const val VENDEDOR_ID = 1L
+        // HU 23 - Propietario obtenido de la sesión autenticada.
+        private val VENDEDOR_ID get() = RetrofitClient.usuarioActualId()
     }
 
     var productos by mutableStateOf<List<ProductoResponse>>(emptyList())

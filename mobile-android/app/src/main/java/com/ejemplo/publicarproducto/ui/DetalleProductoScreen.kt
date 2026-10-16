@@ -47,6 +47,7 @@ fun DetalleProductoScreen(
     productoId: Long,
     onVolver: () -> Unit,
     onIrACarrito: () -> Unit = {},
+    puedeComprar: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: DetalleProductoViewModel = viewModel()
 ) {
@@ -108,7 +109,8 @@ fun DetalleProductoScreen(
                         producto = producto,
                         disponibilidad = disponibilidad,
                         viewModel = viewModel,
-                        onIrACarrito = onIrACarrito
+                        onIrACarrito = onIrACarrito,
+                        puedeComprar = puedeComprar
                     )
                 }
             }
@@ -121,7 +123,8 @@ private fun DetalleContenido(
     producto: ProductoResponse,
     disponibilidad: DisponibilidadProductoResponse,
     viewModel: DetalleProductoViewModel,
-    onIrACarrito: () -> Unit = {}
+    onIrACarrito: () -> Unit = {},
+    puedeComprar: Boolean = false
 ) {
     // Galería de imágenes (hoy: 1 imagen por producto, HU 02)
     val imagen = producto.imagenUrl?.takeIf { it.isNotBlank() }
@@ -249,6 +252,8 @@ private fun DetalleContenido(
         }
     }
 
+    // HU 23 - El detalle es visible para todos; comprar requiere permiso.
+    if (puedeComprar) {
     // HU 11 - selector numérico de cantidad (- / +)
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -335,6 +340,7 @@ private fun DetalleContenido(
                 modifier = Modifier.padding(12.dp)
             )
         }
+    }
     }
 }
 

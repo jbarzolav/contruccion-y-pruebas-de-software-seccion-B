@@ -8,6 +8,11 @@ import com.ejemplo.publicarproducto.model.LoginResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.Path
+import com.ejemplo.publicarproducto.model.UsuarioRolResponse
+import com.ejemplo.publicarproducto.model.AsignarRolRequest
 
 interface AuthApi {
 
@@ -25,4 +30,12 @@ interface AuthApi {
 
     @POST("api/auth/restablecer")
     suspend fun restablecer(@Body request: RestablecerRequest): Response<RecuperacionResponse>
+
+    // HU 23 - Sesión actual y administración de roles.
+    @GET("api/auth/me")
+    suspend fun obtenerSesion(): Response<UsuarioRolResponse>
+    @GET("api/admin/usuarios")
+    suspend fun listarUsuarios(): Response<List<UsuarioRolResponse>>
+    @PATCH("api/admin/usuarios/{idUsuario}/rol")
+    suspend fun asignarRol(@Path("idUsuario") idUsuario: Long, @Body request: AsignarRolRequest): Response<UsuarioRolResponse>
 }
