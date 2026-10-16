@@ -28,4 +28,7 @@ public class TokenService {
         }
         return sesion.get().usuarioId();
     }
+
+    /** Invalidación inmediata por logout; el token opaco deja de ser válido en cualquier endpoint. */
+    public void invalidar(String token) { sesiones.eliminar(token); }
 }
