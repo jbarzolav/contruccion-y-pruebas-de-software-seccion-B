@@ -43,4 +43,13 @@ class TokenServiceTest {
         String token = servicio.generarToken();
         assertThrows(AutorizacionException.class, () -> servicio.validar(token));
     }
+
+    @Test
+    void tokenInvalidadoYaNoPuedeReutilizarse() {
+        String token = servicio.generarToken(23L);
+        servicio.invalidar(token);
+        assertTrue(sesiones.buscar(token).isEmpty());
+        assertEquals(HttpStatus.UNAUTHORIZED,
+                assertThrows(AutorizacionException.class, () -> servicio.validar(token)).getEstado());
+    }
 }
