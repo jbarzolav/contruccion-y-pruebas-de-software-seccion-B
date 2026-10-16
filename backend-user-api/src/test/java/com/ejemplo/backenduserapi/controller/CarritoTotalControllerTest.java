@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CarritoTotalControllerTest {
+class CarritoTotalControllerTest extends SesionControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ProductoRepository productoRepository;
@@ -65,7 +65,7 @@ class CarritoTotalControllerTest {
 
     @Test
     void carritoVacioTieneTotalCero() throws Exception {
-        mockMvc.perform(get("/api/carrito/total"))
+        mockMvc.perform(get("/api/carrito/total").with(comoCliente(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
     }
@@ -76,7 +76,7 @@ class CarritoTotalControllerTest {
         agregar(carrito, producto("Teclado", "50.00"), 2);
         agregar(carrito, producto("Mouse", "20.00"), 3);
 
-        mockMvc.perform(get("/api/carrito/total"))
+        mockMvc.perform(get("/api/carrito/total").with(comoCliente(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(160.00));
     }
@@ -86,12 +86,12 @@ class CarritoTotalControllerTest {
         Carrito carrito = carritoRepository.save(new Carrito(1L));
         Long id = agregar(carrito, producto("Teclado", "50.00"), 2);
 
-        mockMvc.perform(put("/api/carrito/items/" + id)
+        mockMvc.perform(put("/api/carrito/items/" + id).with(comoCliente(1L))
                         .contentType("application/json")
                         .content("{\"cantidad\":3}"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/carrito/total"))
+        mockMvc.perform(get("/api/carrito/total").with(comoCliente(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(150.00));
     }
@@ -102,10 +102,10 @@ class CarritoTotalControllerTest {
         Long id = agregar(carrito, producto("Teclado", "50.00"), 2);
         agregar(carrito, producto("Mouse", "20.00"), 3);
 
-        mockMvc.perform(delete("/api/carrito/items/" + id))
+        mockMvc.perform(delete("/api/carrito/items/" + id).with(comoCliente(1L)))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/carrito/total"))
+        mockMvc.perform(get("/api/carrito/total").with(comoCliente(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(60.00));
     }

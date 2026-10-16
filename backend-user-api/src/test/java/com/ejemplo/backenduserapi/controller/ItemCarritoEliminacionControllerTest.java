@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ItemCarritoEliminacionControllerTest {
+class ItemCarritoEliminacionControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,7 +77,7 @@ class ItemCarritoEliminacionControllerTest {
         Carrito carrito = carritoRepository.save(new Carrito(1L));
         Long idItem = crearItem(carrito, producto);
 
-        mockMvc.perform(delete("/api/carrito/items/" + idItem))
+        mockMvc.perform(delete("/api/carrito/items/" + idItem).with(comoCliente(1L)))
                 .andExpect(status().isNoContent());
 
         assertFalse(itemCarritoRepository.existsById(idItem));
@@ -86,7 +86,7 @@ class ItemCarritoEliminacionControllerTest {
 
     @Test
     void eliminarItemInexistente() throws Exception {
-        mockMvc.perform(delete("/api/carrito/items/99999"))
+        mockMvc.perform(delete("/api/carrito/items/99999").with(comoCliente(1L)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error")
@@ -102,7 +102,7 @@ class ItemCarritoEliminacionControllerTest {
         Long idItem1 = crearItem(carrito, producto1);
         Long idItem2 = crearItem(carrito, producto2);
 
-        mockMvc.perform(delete("/api/carrito/items/" + idItem1))
+        mockMvc.perform(delete("/api/carrito/items/" + idItem1).with(comoCliente(1L)))
                 .andExpect(status().isNoContent());
 
         assertFalse(itemCarritoRepository.existsById(idItem1));

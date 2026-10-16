@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoMisProductosControllerTest {
+class ProductoMisProductosControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,7 +42,7 @@ class ProductoMisProductosControllerTest {
     void obtenerProductosDelVendedor() throws Exception {
         crearProductoDePrueba(1L, "Protoboard");
 
-        mockMvc.perform(get("/api/vendedores/me/productos")
+        mockMvc.perform(get("/api/vendedores/me/productos").with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.nombre == 'Protoboard')]").isNotEmpty())
@@ -51,7 +51,7 @@ class ProductoMisProductosControllerTest {
 
     @Test
     void obtenerListaVaciaCuandoVendedorNoTieneProductos() throws Exception {
-        mockMvc.perform(get("/api/vendedores/me/productos")
+        mockMvc.perform(get("/api/vendedores/me/productos").with(comoVendedor(999L))
                         .param("vendedorId", "999"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
@@ -62,7 +62,7 @@ class ProductoMisProductosControllerTest {
         crearProductoDePrueba(10L, "Arduino Uno");
         crearProductoDePrueba(20L, "Sensor Ultrasonico");
 
-        mockMvc.perform(get("/api/vendedores/me/productos")
+        mockMvc.perform(get("/api/vendedores/me/productos").with(comoVendedor(10L))
                         .param("vendedorId", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nombre").value("Arduino Uno"))

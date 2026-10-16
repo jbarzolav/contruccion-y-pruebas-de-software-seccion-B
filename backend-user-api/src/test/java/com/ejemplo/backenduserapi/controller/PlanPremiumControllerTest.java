@@ -14,7 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.ejemplo.backenduserapi.dto.PlanPremiumResponse;
 import java.util.List;
 
-@WebMvcTest(PlanPremiumController.class)
+// HU 23 - Esta prueba aislada solo carga el controlador público de Premium.
+@WebMvcTest(controllers = PlanPremiumController.class, excludeFilters =
+        @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
+                classes = {com.ejemplo.backenduserapi.config.AutorizacionConfig.class,
+                        com.ejemplo.backenduserapi.config.AutorizacionInterceptor.class}))
 class PlanPremiumControllerTest {
 
     @Autowired

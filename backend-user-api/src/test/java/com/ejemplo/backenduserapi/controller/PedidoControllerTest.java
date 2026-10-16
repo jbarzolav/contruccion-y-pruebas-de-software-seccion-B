@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class PedidoControllerTest {
+class PedidoControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -96,7 +96,7 @@ class PedidoControllerTest {
         Producto notebook = crearProducto("Notebook Lenovo", "199.90", 5);
         agregarAlCarrito(notebook, 2);
 
-        mockMvc.perform(post("/api/pedidos"))
+        mockMvc.perform(post("/api/pedidos").with(comoCliente(1L)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idPedido").isNumber())
                 .andExpect(jsonPath("$.total").value(399.80))
@@ -118,7 +118,7 @@ class PedidoControllerTest {
     // ---------------------------------------------------------------
     @Test
     void pedidoConCarritoVacioDevuelve400() throws Exception {
-        mockMvc.perform(post("/api/pedidos"))
+        mockMvc.perform(post("/api/pedidos").with(comoCliente(1L)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Pedido inválido"))
@@ -133,7 +133,7 @@ class PedidoControllerTest {
         Producto mouse = crearProducto("Mouse", "50.00", 3);
         Long idItem = agregarAlCarrito(mouse, 5);
 
-        mockMvc.perform(post("/api/pedidos"))
+        mockMvc.perform(post("/api/pedidos").with(comoCliente(1L)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Stock insuficiente"))
@@ -147,14 +147,14 @@ class PedidoControllerTest {
     }
 
     // ---------------------------------------------------------------
-    // 4) Fallo de validación: clienteId inválido -> 400
+    // 4) HU 23 - Identidad distinta de la sesión -> 403
     // ---------------------------------------------------------------
     @Test
-    void pedidoConClienteIdInvalidoDevuelve400() throws Exception {
-        mockMvc.perform(post("/api/pedidos").param("clienteId", "0"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Pedido inválido"))
-                .andExpect(jsonPath("$.messages[0]").value("El clienteId debe ser mayor a 0"));
+    void pedidoConIdentidadDistintaDevuelve403() throws Exception {
+        mockMvc.perform(post("/api/pedidos").with(comoCliente(1L)).param("clienteId", "0"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value("Autorización"))
+                .andExpect(jsonPath("$.messages[0]").value("No puedes operar con datos de otro usuario."));
     }
 }

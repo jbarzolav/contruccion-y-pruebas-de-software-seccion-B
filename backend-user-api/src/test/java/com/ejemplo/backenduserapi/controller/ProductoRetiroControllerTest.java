@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoRetiroControllerTest {
+class ProductoRetiroControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,7 +49,7 @@ class ProductoRetiroControllerTest {
     void retirarPublicacionPropia() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto)
+        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"RETIRADO\"}"))
@@ -66,7 +66,7 @@ class ProductoRetiroControllerTest {
     // b) Producto inexistente -> 404
     @Test
     void rechazarRetiroDeProductoInexistente() throws Exception {
-        mockMvc.perform(patch("/api/productos/{idProducto}/estado", 999999L)
+        mockMvc.perform(patch("/api/productos/{idProducto}/estado", 999999L).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"RETIRADO\"}"))
@@ -79,7 +79,7 @@ class ProductoRetiroControllerTest {
     void rechazarRetiroDeProductoDeOtroVendedor() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto)
+        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto).with(comoVendedor(2L))
                         .param("vendedorId", "2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"RETIRADO\"}"))
@@ -92,7 +92,7 @@ class ProductoRetiroControllerTest {
     void retirarSinBodyAsignaRetiradoPorDefecto() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto)
+        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto).with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("RETIRADO"));
@@ -103,7 +103,7 @@ class ProductoRetiroControllerTest {
     void rechazarEstadoNoPermitido() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto)
+        mockMvc.perform(patch("/api/productos/{idProducto}/estado", idProducto).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"VENDIDO-AL-MAYOR\"}"))

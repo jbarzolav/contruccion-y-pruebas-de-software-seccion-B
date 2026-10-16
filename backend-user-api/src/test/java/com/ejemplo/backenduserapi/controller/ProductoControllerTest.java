@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoControllerTest {
+class ProductoControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -46,7 +46,7 @@ class ProductoControllerTest {
     // 1. Registro exitoso
     @Test
     void registrarProductoExitosamente() throws Exception {
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/productos").with(comoVendedor(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(productoValido())))
                 .andExpect(status().isCreated())
@@ -62,7 +62,7 @@ class ProductoControllerTest {
         ProductoRequest request = productoValido();
         request.setPrecio(BigDecimal.ZERO);
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/productos").with(comoVendedor(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -74,7 +74,7 @@ class ProductoControllerTest {
         ProductoRequest request = productoValido();
         request.setPrecio(new BigDecimal("-100.50"));
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/productos").with(comoVendedor(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -87,7 +87,7 @@ class ProductoControllerTest {
         ProductoRequest request = productoValido();
         request.setStock(-5);
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/productos").with(comoVendedor(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -107,7 +107,7 @@ class ProductoControllerTest {
         request.setStock(null);
         request.setVendedorId(null);
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/productos").with(comoVendedor(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoUpdateControllerTest {
+class ProductoUpdateControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,7 +66,7 @@ class ProductoUpdateControllerTest {
     void editarProductoExitosamente() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(put("/api/productos/{idProducto}", idProducto)
+        mockMvc.perform(put("/api/productos/{idProducto}", idProducto).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cuerpoDePrueba())))
@@ -82,7 +82,7 @@ class ProductoUpdateControllerTest {
     void rechazarEdicionDeProductoDeOtroVendedor() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(put("/api/productos/{idProducto}", idProducto)
+        mockMvc.perform(put("/api/productos/{idProducto}", idProducto).with(comoVendedor(2L))
                         .param("vendedorId", "2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cuerpoDePrueba())))
@@ -93,7 +93,7 @@ class ProductoUpdateControllerTest {
     // Producto inexistente -> 404
     @Test
     void rechazarEdicionDeProductoInexistente() throws Exception {
-        mockMvc.perform(put("/api/productos/{idProducto}", 999999L)
+        mockMvc.perform(put("/api/productos/{idProducto}", 999999L).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cuerpoDePrueba())))
@@ -111,7 +111,7 @@ class ProductoUpdateControllerTest {
         invalido.setStock(-3);
         invalido.setNombre("");
 
-        mockMvc.perform(put("/api/productos/{idProducto}", idProducto)
+        mockMvc.perform(put("/api/productos/{idProducto}", idProducto).with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalido)))

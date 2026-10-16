@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ItemCarritoModificacionControllerTest {
+class ItemCarritoModificacionControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -92,7 +92,7 @@ class ItemCarritoModificacionControllerTest {
         Producto producto = crearProducto(10);
         Long idItem = crearItem(producto, 1);
 
-        mockMvc.perform(put("/api/carrito/items/" + idItem)
+        mockMvc.perform(put("/api/carrito/items/" + idItem).with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\":3}"))
                 .andExpect(status().isOk())
@@ -109,7 +109,7 @@ class ItemCarritoModificacionControllerTest {
         Producto producto = crearProducto(3);
         Long idItem = crearItem(producto, 1);
 
-        mockMvc.perform(put("/api/carrito/items/" + idItem)
+        mockMvc.perform(put("/api/carrito/items/" + idItem).with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\":3}"))
                 .andExpect(status().isOk())
@@ -123,7 +123,7 @@ class ItemCarritoModificacionControllerTest {
         Producto producto = crearProducto(10);
         Long idItem = crearItem(producto, 2);
 
-        mockMvc.perform(put("/api/carrito/items/" + idItem)
+        mockMvc.perform(put("/api/carrito/items/" + idItem).with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\":0}"))
                 .andExpect(status().isBadRequest())
@@ -137,7 +137,7 @@ class ItemCarritoModificacionControllerTest {
         Producto producto = crearProducto(4);
         Long idItem = crearItem(producto, 2);
 
-        mockMvc.perform(put("/api/carrito/items/" + idItem)
+        mockMvc.perform(put("/api/carrito/items/" + idItem).with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\":9}"))
                 .andExpect(status().isBadRequest())
@@ -150,7 +150,7 @@ class ItemCarritoModificacionControllerTest {
     // 5. Ítem inexistente → 404 con la forma estándar {status, error, messages}
     @Test
     void modificarItemInexistente() throws Exception {
-        mockMvc.perform(put("/api/carrito/items/99999")
+        mockMvc.perform(put("/api/carrito/items/99999").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\":2}"))
                 .andExpect(status().isNotFound())

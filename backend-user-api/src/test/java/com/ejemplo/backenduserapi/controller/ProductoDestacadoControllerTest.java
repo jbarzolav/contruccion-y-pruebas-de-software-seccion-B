@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoDestacadoControllerTest {
+class ProductoDestacadoControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -75,7 +75,7 @@ class ProductoDestacadoControllerTest {
         Producto producto = crearProducto(
                 "Notebook Lenovo", "Computadoras", "2500.00", 5, "DISPONIBLE", 1L);
 
-        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))
@@ -95,7 +95,7 @@ class ProductoDestacadoControllerTest {
                 "Mouse Logitech", "Accesorios", "89.90", 10, "DISPONIBLE", 1L);
 
         // Activar primero.
-        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))
@@ -103,7 +103,7 @@ class ProductoDestacadoControllerTest {
                 .andExpect(jsonPath("$.esDestacado").value(true));
 
         // Desactivar: cambia SOLO el indicador.
-        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":false}"))
@@ -126,11 +126,11 @@ class ProductoDestacadoControllerTest {
                 "Teclado", "Accesorios", "80.00", 6, "DISPONIBLE", 1L);
         String ruta = "/api/productos/" + producto.getId() + "/destacado";
 
-        mockMvc.perform(patch(ruta).param("vendedorId", "1"))
+        mockMvc.perform(patch(ruta).with(comoVendedor(1L)).param("vendedorId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.esDestacado").value(true));
 
-        mockMvc.perform(patch(ruta).param("vendedorId", "1"))
+        mockMvc.perform(patch(ruta).with(comoVendedor(1L)).param("vendedorId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.esDestacado").value(false));
     }
@@ -143,7 +143,7 @@ class ProductoDestacadoControllerTest {
         Producto producto = crearProducto(
                 "Auriculares", "Accesorios", "149.90", 3, "DISPONIBLE", 7L);
 
-        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado").with(comoVendedor(7L))
                         .param("vendedorId", "7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))
@@ -168,7 +168,7 @@ class ProductoDestacadoControllerTest {
                 "Monitor Dell", "Computadoras", "899.90", 2, "DISPONIBLE", 7L);
 
         // El vendedor 1 (premium) intenta destacar el producto del vendedor 7.
-        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + producto.getId() + "/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))
@@ -188,7 +188,7 @@ class ProductoDestacadoControllerTest {
     // ---------------------------------------------------------------
     @Test
     void productoInexistenteDevuelve404() throws Exception {
-        mockMvc.perform(patch("/api/productos/999999/destacado")
+        mockMvc.perform(patch("/api/productos/999999/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))
@@ -208,7 +208,7 @@ class ProductoDestacadoControllerTest {
                 "Notebook Lenovo", "Computadoras", "2500.00", 5, "DISPONIBLE", 1L);
         crearProducto("Teclado", "Accesorios", "80.00", 6, "DISPONIBLE", 1L);
 
-        mockMvc.perform(patch("/api/productos/" + destacado.getId() + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + destacado.getId() + "/destacado").with(comoVendedor(1L))
                         .param("vendedorId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"destacado\":true}"))

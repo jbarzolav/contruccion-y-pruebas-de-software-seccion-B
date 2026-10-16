@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ItemCarritoControllerTest {
+class ItemCarritoControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -83,7 +83,7 @@ class ItemCarritoControllerTest {
     void agregarItemAlCarritoConExito() throws Exception {
         Producto producto = crearProducto(5);
 
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo(producto.getId(), 2)))
                 .andExpect(status().isCreated())
@@ -101,7 +101,7 @@ class ItemCarritoControllerTest {
     void agregarItemConCantidadCero() throws Exception {
         Producto producto = crearProducto(5);
 
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo(producto.getId(), 0)))
                 .andExpect(status().isBadRequest())
@@ -115,7 +115,7 @@ class ItemCarritoControllerTest {
     void agregarItemConCantidadNegativa() throws Exception {
         Producto producto = crearProducto(5);
 
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo(producto.getId(), -3)))
                 .andExpect(status().isBadRequest())
@@ -127,7 +127,7 @@ class ItemCarritoControllerTest {
     void agregarItemConCantidadSuperiorAlStock() throws Exception {
         Producto producto = crearProducto(3);
 
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo(producto.getId(), 5)))
                 .andExpect(status().isBadRequest())
@@ -140,7 +140,7 @@ class ItemCarritoControllerTest {
     // 5. Producto inexistente → 404 con la forma estándar {status, error, messages}
     @Test
     void agregarProductoInexistenteAlCarrito() throws Exception {
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo(99999, 1)))
                 .andExpect(status().isNotFound())

@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class FlujoIntegralPulgaTecTest {
+class FlujoIntegralPulgaTecTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -67,8 +67,8 @@ class FlujoIntegralPulgaTecTest {
     @Autowired
     private DetallePedidoRepository detallePedidoRepository;
 
-    /** Cliente simulado del recorrido (convención: clienteId = 1). */
-    private static final long CLIENTE = 1L;
+    /** HU 23 - Cliente autenticado distinto del vendedor del recorrido. */
+    private static final long CLIENTE = 2L;
 
     /** Vendedor del recorrido (convención: vendedorId = 1, Premium). */
     private static final long VENDEDOR = 1L;
@@ -104,7 +104,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 01 - Registro de publicación
         // ============================================================
-        String cuerpoRegistro = mockMvc.perform(post("/api/productos")
+        String cuerpoRegistro = mockMvc.perform(post("/api/productos").with(comoVendedor(VENDEDOR))
                         .contentType("application/json")
                         .content("{\"nombre\":\"Arduino Uno R4\","
                                 + "\"descripcion\":\"Placa para prácticas del curso\","
@@ -126,8 +126,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         MockMultipartFile archivo = new MockMultipartFile(
                 "file", "arduino.png", "image/png", "png-simulado".getBytes());
-        mockMvc.perform(multipart("/api/productos/" + idProducto + "/imagenes")
-                        .file(archivo)
+        mockMvc.perform(multipart("/api/productos/" + idProducto + "/imagenes").file(archivo).with(comoVendedor(VENDEDOR))
                         .param("vendedorId", String.valueOf(VENDEDOR)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.imagenUrl").isNotEmpty());
@@ -135,7 +134,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 03 - Edición (nuevo precio) y HU 05 - Mis productos
         // ============================================================
-        mockMvc.perform(put("/api/productos/" + idProducto)
+        mockMvc.perform(put("/api/productos/" + idProducto).with(comoVendedor(VENDEDOR))
                         .param("vendedorId", String.valueOf(VENDEDOR))
                         .contentType("application/json")
                         .content("{\"nombre\":\"Arduino Uno R4\","
@@ -148,7 +147,7 @@ class FlujoIntegralPulgaTecTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.precio").value(110.00));
 
-        mockMvc.perform(get("/api/vendedores/me/productos")
+        mockMvc.perform(get("/api/vendedores/me/productos").with(comoVendedor(VENDEDOR))
                         .param("vendedorId", String.valueOf(VENDEDOR)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
@@ -178,7 +177,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 11 - Agregar 2 unidades al carrito
         // ============================================================
-        mockMvc.perform(post("/api/carrito/items")
+        mockMvc.perform(post("/api/carrito/items").with(comoCliente(CLIENTE))
                         .param("clienteId", String.valueOf(CLIENTE))
                         .contentType("application/json")
                         .content("{\"productoId\":" + idProducto + ",\"cantidad\":2}"))
@@ -189,12 +188,12 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 12 / HU 14 - Listado y total del carrito
         // ============================================================
-        mockMvc.perform(get("/api/carrito/items")
+        mockMvc.perform(get("/api/carrito/items").with(comoCliente(CLIENTE))
                         .param("clienteId", String.valueOf(CLIENTE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
 
-        mockMvc.perform(get("/api/carrito/total")
+        mockMvc.perform(get("/api/carrito/total").with(comoCliente(CLIENTE))
                         .param("clienteId", String.valueOf(CLIENTE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(220.00));
@@ -202,7 +201,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 15 - Confirmar la compra: 201 y descuento de stock
         // ============================================================
-        mockMvc.perform(post("/api/pedidos")
+        mockMvc.perform(post("/api/pedidos").with(comoCliente(CLIENTE))
                         .param("clienteId", String.valueOf(CLIENTE)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.total").value(220.00));
@@ -256,7 +255,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 19 - Destacar con el vendedor Premium y priorizar en catálogo
         // ============================================================
-        mockMvc.perform(patch("/api/productos/" + idProducto + "/destacado")
+        mockMvc.perform(patch("/api/productos/" + idProducto + "/destacado").with(comoVendedor(VENDEDOR))
                         .param("vendedorId", String.valueOf(VENDEDOR))
                         .contentType("application/json")
                         .content("{\"destacado\":true}"))
@@ -272,7 +271,7 @@ class FlujoIntegralPulgaTecTest {
         // ============================================================
         // HU 04 - Retiro lógico (baja sin delete) cierra el ciclo
         // ============================================================
-        mockMvc.perform(patch("/api/productos/" + idProducto + "/estado")
+        mockMvc.perform(patch("/api/productos/" + idProducto + "/estado").with(comoVendedor(VENDEDOR))
                         .param("vendedorId", String.valueOf(VENDEDOR))
                         .contentType("application/json")
                         .content("{\"estado\":\"RETIRADO\"}"))

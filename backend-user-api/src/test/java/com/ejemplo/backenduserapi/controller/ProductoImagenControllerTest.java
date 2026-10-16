@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProductoImagenControllerTest {
+class ProductoImagenControllerTest extends SesionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,8 +57,7 @@ class ProductoImagenControllerTest {
     void asociarImagenExitosamente() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto)
-                        .file(archivoValido())
+        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto).file(archivoValido()).with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(idProducto))
@@ -68,8 +67,7 @@ class ProductoImagenControllerTest {
     // 2. Producto inexistente -> 404
     @Test
     void rechazarCuandoElProductoNoExiste() throws Exception {
-        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", 999999L)
-                        .file(archivoValido())
+        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", 999999L).file(archivoValido()).with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -81,8 +79,7 @@ class ProductoImagenControllerTest {
     void rechazarCuandoElProductoPerteneceAOtroVendedor() throws Exception {
         Long idProducto = crearProductoDePrueba(1L);
 
-        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto)
-                        .file(archivoValido())
+        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto).file(archivoValido()).with(comoVendedor(2L))
                         .param("vendedorId", "2"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
@@ -96,8 +93,7 @@ class ProductoImagenControllerTest {
         MockMultipartFile vacio = new MockMultipartFile(
                 "file", "vacio.png", MediaType.IMAGE_PNG_VALUE, new byte[0]);
 
-        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto)
-                        .file(vacio)
+        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto).file(vacio).with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
@@ -111,8 +107,7 @@ class ProductoImagenControllerTest {
         MockMultipartFile texto = new MockMultipartFile(
                 "file", "notas.txt", MediaType.TEXT_PLAIN_VALUE, "esto no es una imagen".getBytes());
 
-        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto)
-                        .file(texto)
+        mockMvc.perform(multipart("/api/productos/{idProducto}/imagenes", idProducto).file(texto).with(comoVendedor(1L))
                         .param("vendedorId", "1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
