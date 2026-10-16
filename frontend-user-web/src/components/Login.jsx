@@ -1,14 +1,14 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../api/auth.js'
+import { guardarSesion } from '../api/sesion.js'
 
 /**
  * HU 21 - Inicio de sesión seguro.
  *
  * Consume POST /api/auth/login y guarda la sesión en localStorage
  * (token + id + correo). Nunca muestra, registra ni almacena la
- * contraseña. No protege ninguna ruta: las demás páginas siguen
- * abiertas (la autorización global llega en historias posteriores).
+ * contraseña. HU 23 limita las funciones según el rol de la sesión.
  */
 export default function Login() {
   const [correo, setCorreo] = useState('')
@@ -73,10 +73,9 @@ export default function Login() {
     try {
       const respuesta = await login(correo.trim(), password)
 
-      // HU 21 - sesión: solo token e id del usuario (nunca la contraseña)
-      localStorage.setItem('pulgatec_token', respuesta.token)
-      localStorage.setItem('pulgatec_usuario_id', String(respuesta.id))
-      localStorage.setItem('pulgatec_usuario_correo', respuesta.correo)
+      // HU 21 / HU 23 - Sesión y permisos, sin guardar la contraseña.
+      // HU 23 - Guardar también el rol y los permisos devueltos por el backend.
+      guardarSesion(respuesta)
 
       setMensaje({ tipo: 'exito', texto: '¡Sesión iniciada!' })
       navigate('/')

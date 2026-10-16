@@ -12,7 +12,19 @@ import CarritoDrawer from './components/CarritoDrawer.jsx'
 import ChatbotFab from './components/ChatbotFab.jsx'
 import Login from './components/Login.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
+import AdministrarRoles from './components/AdministrarRoles.jsx'
+import { obtenerSesion } from './api/auth.js'
+import { guardarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
 import { obtenerCarrito } from './api/productos.js'
+
+// HU 23 - Las rutas protegidas también comprueban el permiso al abrirlas directamente.
+function AccesoProtegido({ permiso, children }) {
+    const sesion = useSesion()
+    if (!sesion) return <section className="tarjeta"><p>Debes iniciar sesión para continuar.</p><Link to="/login">Iniciar sesión</Link></section>
+    if (!sesion.rol) return <p>Validando sesión...</p>
+    if (!tienePermiso(sesion, permiso)) return <section className="tarjeta"><p>No tienes permiso para acceder a esta función.</p><Link to="/">Volver al inicio</Link></section>
+    return children
+}
 
 /**
  * Rediseño UI/UX - PulgaTec.
@@ -20,6 +32,39 @@ import { obtenerCarrito } from './api/productos.js'
  * carrito como panel lateral, publicar/editar en modal y chatbot flotante.
  */
 export default function App() {
+    const sesion = useSesion()
+    const puedeComprar = tienePermiso(sesion, 'COMPRAR')
+    const puedePublicar = tienePermiso(sesion, 'GESTIONAR_PRODUCTOS')
+    const puedeAdministrar = tienePermiso(sesion, 'ASIGNAR_ROLES')
+    const [avisoSesion, setAvisoSesion] = useState('')
+
+    // HU 23 - Recuperar el rol actual, incluidas sesiones creadas antes de esta historia.
+    useEffect(() => {
+        let vigente = true
+        if (sesion?.token) setAvisoSesion('')
+        async function actualizarSesion() {
+            const token = leerSesion()?.token
+            if (!token) return
+            try {
+                const actual = await obtenerSesion()
+                if (vigente && leerSesion()?.token === token) guardarSesion(actual)
+            } catch (error) {
+                if (vigente && !error.response) setAvisoSesion('No se pudo verificar la sesión. Revisa la conexión.')
+            }
+        }
+        function manejarError(evento) {
+            setAvisoSesion(evento.detail === 401 ? 'Tu sesión ha vencido o es inválida. Inicia sesión nuevamente.' : 'No tienes permiso para realizar esta acción.')
+            if (evento.detail === 403) actualizarSesion()
+        }
+        actualizarSesion()
+        window.addEventListener('focus', actualizarSesion)
+        window.addEventListener('pulgatec-autorizacion', manejarError)
+        return () => {
+            vigente = false
+            window.removeEventListener('focus', actualizarSesion)
+            window.removeEventListener('pulgatec-autorizacion', manejarError)
+        }
+    }, [sesion?.token])
     const [productoEnEdicion, setProductoEnEdicion] = useState(null)
     const [publicando, setPublicando] = useState(false)
     const [drawerCarritoAbierto, setDrawerCarritoAbierto] = useState(false)
@@ -30,10 +75,14 @@ export default function App() {
 
     useEffect(() => {
         recargarCarrito()
-    }, [])
+        setPublicando(false)
+        setProductoEnEdicion(null)
+        setDrawerCarritoAbierto(false)
+    }, [sesion?.id, sesion?.token, puedeComprar, puedePublicar])
 
     // GET /api/carrito/items → suma de unidades para el badge
     const recargarCarrito = async () => {
+        if (!puedeComprar) { setItemsEnCarrito(0); return }
         try {
             const items = await obtenerCarrito()
             const total = items.reduce((suma, item) => suma + item.cantidad, 0)
@@ -88,13 +137,16 @@ export default function App() {
 
                     <nav className="nav-principal" aria-label="Navegación principal">
                         <Link to="/">Inicio</Link>
-                        <Link to="/mis-publicaciones">Mis Publicaciones</Link>
+                        {puedePublicar && <Link to="/mis-publicaciones">Mis Publicaciones</Link>}
                         <Link to="/premium">Plan Premium</Link>
+                        {puedeAdministrar && <Link to="/administracion/roles">Administrar roles</Link>}
+                        {!sesion && <Link to="/login">Iniciar sesión</Link>}
+                        {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
                     </nav>
 
                     <div className="app-acciones">
                         {/* Carrito como panel lateral (sin cambiar de página) */}
-                        <button
+                        {puedeComprar && <button
                             type="button"
                             className="btn-carrito"
                             onClick={() => setDrawerCarritoAbierto(true)}
@@ -104,18 +156,21 @@ export default function App() {
                             {itemsEnCarrito > 0 && (
                                 <span className="badge-carrito">{itemsEnCarrito}</span>
                             )}
-                        </button>
+                        </button>}
 
-                        <button
+                        {puedePublicar && <button
                             type="button"
                             className="btn-primario btn-publicar"
                             onClick={abrirPublicacion}
                         >
                             + Publicar
-                        </button>
+                        </button>}
                     </div>
                 </header>
 
+                {avisoSesion && <div className="alerta error" role="alert">{avisoSesion}
+                    <button type="button" className="btn-secundario" onClick={() => setAvisoSesion('')}>Cerrar aviso</button>
+                </div>}
                 <Routes>
                     {/* Inicio: catálogo con búsqueda (HU 06) y orden (HU 09)
                         + insignias Destacado/Agotado (HU 07/HU 19) */}
@@ -128,11 +183,11 @@ export default function App() {
                     <Route
                         path="/mis-publicaciones"
                         element={
-                            <MisProductos
+                            <AccesoProtegido permiso="GESTIONAR_PRODUCTOS"><MisProductos
                                 actualizar={actualizarMisProductos}
                                 onEditar={abrirEdicion}
                                 onActualizado={refrescarPublicaciones}
-                            />
+                            /></AccesoProtegido>
                         }
                     />
 
@@ -151,7 +206,7 @@ export default function App() {
                     <Route
                         path="/confirmar-compra"
                         element={
-                            <ConfirmarCompra onCarritoActualizado={recargarCarrito} />
+                            <AccesoProtegido permiso="COMPRAR"><ConfirmarCompra onCarritoActualizado={recargarCarrito} /></AccesoProtegido>
                         }
                     />
 
@@ -161,13 +216,16 @@ export default function App() {
                     {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
                     <Route path="/login" element={<Login />} />
 
+                    {/* HU 23 - Asignación administrativa de roles. */}
+                    <Route path="/administracion/roles" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarRoles /></AccesoProtegido>} />
+
                     {/* HU 22 - Solicitud y restablecimiento mediante enlace temporal. */}
                     <Route path="/recuperacion" element={<RecuperarAcceso key="solicitar" />} />
                     <Route path="/restablecer" element={<RecuperarAcceso key="restablecer" restablecer />} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}
-                {modalAbierto && (
+                {puedePublicar && modalAbierto && (
                     <ProductoModal
                         titulo={
                             productoEnEdicion
@@ -189,11 +247,11 @@ export default function App() {
                 )}
 
                 {/* Panel lateral del carrito (HU 11 / 12 / 13 / 14) */}
-                <CarritoDrawer
+                {puedeComprar && <CarritoDrawer
                     abierto={drawerCarritoAbierto}
                     onCerrar={() => setDrawerCarritoAbierto(false)}
                     onCarritoActualizado={recargarCarrito}
-                />
+                />}
 
                 {/* HU 16 / HU 17 - asistente IA como widget flotante */}
                 <ChatbotFab />

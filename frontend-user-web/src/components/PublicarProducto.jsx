@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { crearProducto, subirImagenProducto } from '../api/productos.js'
+import { usuarioActualId } from '../api/sesion.js'
 import { validarProducto } from '../validation/productoValidaciones.js'
 
 const FORM_INICIAL = {
@@ -13,7 +14,7 @@ const FORM_INICIAL = {
 
 const CAMPOS_OCULTOS = {
   imagenUrl: 'https://via.placeholder.com/300',
-  vendedorId: 1,
+
 }
 
 const FORMATOS_PERMITIDOS = ['image/jpeg', 'image/png']
@@ -129,6 +130,7 @@ export default function PublicarProducto({ onProductoCreado }) {
 
     const payload = {
       ...CAMPOS_OCULTOS,
+      vendedorId: usuarioActualId(), // HU 23 - Vendedor autenticado.
       ...formulario,
       precio: Number(formulario.precio),
       stock: Number(formulario.stock),
@@ -141,7 +143,7 @@ export default function PublicarProducto({ onProductoCreado }) {
       const creado = await crearProducto(payload)
 
       // HU02 - Subir el archivo REAL de la imagen (multipart)
-      await subirImagenProducto(creado.id, imagen, CAMPOS_OCULTOS.vendedorId)
+      await subirImagenProducto(creado.id, imagen, usuarioActualId())
 
       const productoFinalizado = {
         ...creado,

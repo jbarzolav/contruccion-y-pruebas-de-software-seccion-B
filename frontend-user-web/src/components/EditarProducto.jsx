@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { actualizarProducto, retirarProducto } from '../api/productos.js'
+import { usuarioActualId } from '../api/sesion.js'
 import { validarProducto } from '../validation/productoValidaciones.js'
 
 const FORM_INICIAL = {
@@ -11,7 +12,7 @@ const FORM_INICIAL = {
   estado: 'DISPONIBLE',
 }
 
-const VENDEDOR_ACTUAL = 1
+// HU 23 - La identidad se obtiene de la sesión, sin vendedor fijo.
 
 /**
  * HU 03 - Formulario de edición de productos.
@@ -85,7 +86,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
 
       const actualizado = await retirarProducto(
         producto.id,
-        producto.vendedorId ?? VENDEDOR_ACTUAL
+        producto.vendedorId ?? usuarioActualId()
       )
 
       setMensaje({
@@ -142,7 +143,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
       stock: Number(formulario.stock),
       // Campos no editables que el backend espera en el cuerpo
       imagenUrl: producto.imagenUrl,
-      vendedorId: producto.vendedorId ?? VENDEDOR_ACTUAL,
+      vendedorId: producto.vendedorId ?? usuarioActualId(),
     }
 
     try {
@@ -151,7 +152,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
       const actualizado = await actualizarProducto(
         producto.id,
         payload,
-        producto.vendedorId ?? VENDEDOR_ACTUAL
+        producto.vendedorId ?? usuarioActualId()
       )
 
       setMensaje({

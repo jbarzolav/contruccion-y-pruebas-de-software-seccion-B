@@ -1,8 +1,9 @@
 import axios from 'axios'
+import { API_URL, configurarSesion, usuarioActualId } from './sesion.js'
 
 // Servicio JSON (HU 01 / HU 03) - Spring Boot en el puerto 9000
 const api = axios.create({
-  baseURL: 'http://localhost:9000/api/productos',
+  baseURL: `${API_URL}/api/productos`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
@@ -10,41 +11,45 @@ const api = axios.create({
 // Servicio para subir archivos (HU 02).
 // NO se fija Content-Type: el navegador debe poner el boundary del multipart.
 const apiArchivos = axios.create({
-  baseURL: 'http://localhost:9000/api/productos',
+  baseURL: `${API_URL}/api/productos`,
   timeout: 20000,
 })
 
 // Servicio del carrito de compras (HU 11 / HU 12) - vive en /api/carrito
 const apiCarrito = axios.create({
-  baseURL: 'http://localhost:9000/api/carrito',
+  baseURL: `${API_URL}/api/carrito`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
 // Servicio de pedidos (HU 15 - Confirmar mi compra)
 const apiPedidos = axios.create({
-  baseURL: 'http://localhost:9000/api/pedidos',
+  baseURL: `${API_URL}/api/pedidos`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
 // Servicio del chatbot (HU 16 - recomendaciones)
 const apiChatbot = axios.create({
-  baseURL: 'http://localhost:9000/api/chatbot',
+  baseURL: `${API_URL}/api/chatbot`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
 // Servicio de recomendaciones por búsqueda (HU 20)
 const apiRecomendaciones = axios.create({
-  baseURL: 'http://localhost:9000/api/recomendaciones',
+  baseURL: `${API_URL}/api/recomendaciones`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
 
+// HU 23 - Autenticación en publicaciones, imágenes, carrito y pedidos.
+for (const servicio of [api, apiArchivos, apiCarrito, apiPedidos]) configurarSesion(servicio)
+const apiVendedor = configurarSesion(axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 }))
+
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
-  const { data } = await api.post('', producto)
+  const { data } = await api.post('', { ...producto, vendedorId: usuarioActualId() })
   return data
 }
 
@@ -59,7 +64,7 @@ export async function subirImagenProducto(idProducto, file, vendedorId) {
 }
 
 // HU 03 - PUT /api/productos/{id}?vendedorId=1
-export async function actualizarProducto(idProducto, producto, vendedorId = 1) {
+export async function actualizarProducto(idProducto, producto, vendedorId = usuarioActualId()) {
   const { data } = await api.put(`/${idProducto}`, producto, {
     params: { vendedorId },
   })
@@ -67,7 +72,7 @@ export async function actualizarProducto(idProducto, producto, vendedorId = 1) {
 }
 
 // HU 04 - PATCH /api/productos/{id}/estado (baja lógica, sin eliminar)
-export async function retirarProducto(idProducto, vendedorId = 1) {
+export async function retirarProducto(idProducto, vendedorId = usuarioActualId()) {
   const { data } = await api.patch(
       `/${idProducto}/estado`,
       { estado: 'RETIRADO' },
@@ -77,8 +82,8 @@ export async function retirarProducto(idProducto, vendedorId = 1) {
 }
 
 // HU 05 - GET /api/vendedores/me/productos?vendedorId=1
-export async function obtenerMisProductos(vendedorId = 1) {
-  const { data } = await axios.get('http://localhost:9000/api/vendedores/me/productos', {
+export async function obtenerMisProductos(vendedorId = usuarioActualId()) {
+  const { data } = await apiVendedor.get('/me/productos', {
     params: { vendedorId },
   })
   return data
@@ -112,7 +117,7 @@ export async function obtenerCatalogo() {
 export function urlImagen(imagenUrl) {
   if (!imagenUrl) return null
   if (imagenUrl.startsWith('http')) return imagenUrl
-  return `http://localhost:9000${imagenUrl}`
+  return `${API_URL}${imagenUrl}`
 }
 
 // HU 10 - GET /api/productos/{idProducto}/disponibilidad
@@ -172,7 +177,7 @@ export async function consultarChatbotTecnico(consulta) {
 // HU 18 - GET /api/planes/premium
 export async function consultarPlanPremium() {
   const { data } = await axios.get(
-    'http://localhost:9000/api/planes/premium',
+    `${API_URL}/api/planes/premium`,
     { timeout: 10000 }
   )
   return data
@@ -181,7 +186,7 @@ export async function consultarPlanPremium() {
 // HU 19 - PATCH /api/productos/{id}/destacado (solo vendedores con plan Premium)
 // 200 con el producto actualizado; 403 si el vendedor no tiene el beneficio.
 //   destacado = true  -> activar · false -> desactivar · null -> alternar
-export async function gestionarDestacado(idProducto, vendedorId = 1, destacado = null) {
+export async function gestionarDestacado(idProducto, vendedorId = usuarioActualId(), destacado = null) {
   const cuerpo = destacado === null ? null : { destacado }
   const { data } = await api.patch(`/${idProducto}/destacado`, cuerpo, {
     params: { vendedorId },

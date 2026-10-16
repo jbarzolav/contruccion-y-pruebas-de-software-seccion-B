@@ -1,8 +1,9 @@
 import axios from 'axios'
+import { API_URL, configurarSesion } from './sesion.js'
 
 // Servicio de autenticación (HU 21) - Spring Boot en el puerto 9000
 const apiAuth = axios.create({
-  baseURL: 'http://localhost:9000/api/auth',
+  baseURL: `${API_URL}/api/auth`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
@@ -23,5 +24,19 @@ export async function solicitarRecuperacion(correo) {
 
 export async function restablecerPassword(token, password, confirmacionPassword) {
   const { data } = await apiAuth.post('/restablecer', { token, password, confirmacionPassword })
+  return data
+}
+// HU 23 - Servicios que requieren la sesión autenticada.
+const apiPermisos = configurarSesion(axios.create({ baseURL: `${API_URL}/api`, timeout: 10000 }))
+export async function obtenerSesion() {
+  const { data } = await apiPermisos.get('/auth/me')
+  return data
+}
+export async function listarUsuarios() {
+  const { data } = await apiPermisos.get('/admin/usuarios')
+  return data
+}
+export async function asignarRol(idUsuario, rol) {
+  const { data } = await apiPermisos.patch(`/admin/usuarios/${idUsuario}/rol`, { rol })
   return data
 }

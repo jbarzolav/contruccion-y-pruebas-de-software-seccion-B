@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { obtenerMisProductos, gestionarDestacado } from '../api/productos.js'
+import { obtenerMisProductos, gestionarDestacado, urlImagen } from '../api/productos.js'
 
 export default function MisProductos({ actualizar, onEditar, onActualizado }) {
     const [productos, setProductos] = useState([])
@@ -16,7 +16,7 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
         try {
             setCargando(true)
             setError('')
-            const data = await obtenerMisProductos(1)
+            const data = await obtenerMisProductos()
             setProductos(data)
         } catch {
             setError('No se pudieron cargar los productos.')
@@ -29,7 +29,7 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
     async function alternarDestacado(producto, activar) {
         try {
             setAviso('')
-            await gestionarDestacado(producto.id, 1, activar)
+            await gestionarDestacado(producto.id, producto.vendedorId, activar)
             // Avisa al padre para refrescar "Mis productos" y el Catálogo.
             if (onActualizado) {
                 onActualizado()
@@ -67,7 +67,7 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
                         {producto.imagenUrl && (
                             <img
                                 className="producto-imagen"
-                                src={`http://localhost:9000${producto.imagenUrl}`}
+                                src={urlImagen(producto.imagenUrl)}
                                 alt={producto.nombre}
                             />
                         )}

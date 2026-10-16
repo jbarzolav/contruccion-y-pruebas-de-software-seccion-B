@@ -1,3 +1,4 @@
+import { tienePermiso, useSesion } from '../api/sesion.js'
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -20,6 +21,7 @@ const CLASES_ESTADO = {
 // HU 11 / HU 12 - Seleccionar cantidad y agregar al carrito
 // HU 15 - Comprar y navegar a la confirmación de compra
 export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) {
+    const puedeComprar = tienePermiso(useSesion(), 'COMPRAR')
     const { idProducto } = useParams()
     const navigate = useNavigate()
 
@@ -218,7 +220,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
             </div>
 
             {/* HU 11 - Selector de cantidad y agregar al carrito */}
-            <div className="detalle-carrito">
+            {puedeComprar && <div className="detalle-carrito">
                 <div className="cantidad-selector">
                     <span>Cantidad:</span>
 
@@ -304,11 +306,11 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                 {errorCarrito && (
                     <div className="alerta error">{errorCarrito}</div>
                 )}
-            </div>
+            </div>}
 
             <div className="botones">
                 {/* HU 15 - Comprar y abrir confirmación de compra */}
-                <button
+                {puedeComprar && <button
                     type="button"
                     className="btn-primario"
                     onClick={() => handleAgregarAlCarrito(true)}
@@ -324,7 +326,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                     }
                 >
                     {agregando ? 'Procesando...' : 'Comprar'}
-                </button>
+                </button>}
 
                 <button
                     type="button"
