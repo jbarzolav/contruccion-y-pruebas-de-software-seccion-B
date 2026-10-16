@@ -13,8 +13,10 @@ import ChatbotFab from './components/ChatbotFab.jsx'
 import Login from './components/Login.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import AdministrarRoles from './components/AdministrarRoles.jsx'
+import AdministrarAuditoria from './components/AdministrarAuditoria.jsx'
 import { obtenerSesion } from './api/auth.js'
-import { guardarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
+import { cerrarSesion as solicitarCierre } from './api/auth.js'
+import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
 import { obtenerCarrito } from './api/productos.js'
 
 // HU 23 - Las rutas protegidas también comprueban el permiso al abrirlas directamente.
@@ -37,6 +39,23 @@ export default function App() {
     const puedePublicar = tienePermiso(sesion, 'GESTIONAR_PRODUCTOS')
     const puedeAdministrar = tienePermiso(sesion, 'ASIGNAR_ROLES')
     const [avisoSesion, setAvisoSesion] = useState('')
+    const [cerrandoSesion, setCerrandoSesion] = useState(false)
+
+    async function cerrarSesion() {
+        if (!sesion || cerrandoSesion || !window.confirm('¿Deseas cerrar la sesión?')) return
+        setCerrandoSesion(true)
+        let falloServidor = false
+        try {
+            await solicitarCierre(sesion.token)
+        } catch {
+            falloServidor = true
+        } finally {
+            limpiarSesion()
+            setCerrandoSesion(false)
+            window.location.hash = '#/login'
+        }
+        if (falloServidor) window.alert('Se cerró la sesión en este dispositivo, pero no se pudo confirmar la revocación en el servidor.')
+    }
 
     // HU 23 - Recuperar el rol actual, incluidas sesiones creadas antes de esta historia.
     useEffect(() => {
@@ -140,8 +159,11 @@ export default function App() {
                         {puedePublicar && <Link to="/mis-publicaciones">Mis Publicaciones</Link>}
                         <Link to="/premium">Plan Premium</Link>
                         {puedeAdministrar && <Link to="/administracion/roles">Administrar roles</Link>}
+                        {puedeAdministrar && <Link to="/administracion/auditoria">Auditoría</Link>}
                         {!sesion && <Link to="/login">Iniciar sesión</Link>}
                         {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
+                        {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
+                            onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
                     </nav>
 
                     <div className="app-acciones">
@@ -218,6 +240,8 @@ export default function App() {
 
                     {/* HU 23 - Asignación administrativa de roles. */}
                     <Route path="/administracion/roles" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarRoles /></AccesoProtegido>} />
+                    {/* HU 24 - Consulta de acciones; servidor exige identidad y permiso admin. */}
+                    <Route path="/administracion/auditoria" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarAuditoria /></AccesoProtegido>} />
 
                     {/* HU 22 - Solicitud y restablecimiento mediante enlace temporal. */}
                     <Route path="/recuperacion" element={<RecuperarAcceso key="solicitar" />} />
@@ -259,7 +283,3 @@ export default function App() {
         </HashRouter>
     )
 }
-import AdministrarAuditoria from './components/AdministrarAuditoria.jsx'
-                        {puedeAdministrar && <Link to="/administracion/auditoria">Auditoría</Link>}
-                    {/* HU 24 - Consulta de acciones; servidor exige identidad y permiso admin. */}
-                    <Route path="/administracion/auditoria" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarAuditoria /></AccesoProtegido>} />

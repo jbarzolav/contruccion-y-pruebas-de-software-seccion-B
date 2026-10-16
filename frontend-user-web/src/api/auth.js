@@ -46,3 +46,11 @@ export async function listarAuditoria(page = 0, size = 20) {
   const { data } = await apiPermisos.get('/admin/auditoria', { params: { page, size } })
   return data
 }
+
+// HU25 - El token capturado se envía aunque la interfaz borre la sesión local inmediatamente.
+export async function cerrarSesion(token) {
+  const { data } = await apiPermisos.post('/auth/logout', {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return data
+}

@@ -8,8 +8,18 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.network.RetrofitClient
 import com.ejemplo.publicarproducto.session.SessionManager
+import com.ejemplo.publicarproducto.model.ErrorResponse
+import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import retrofit2.Response
+
+sealed interface LogoutUiState {
+    data object Initial : LogoutUiState
+    data object Loading : LogoutUiState
+    data object Success : LogoutUiState
+    data class Error(val mensaje: String) : LogoutUiState
+}
 
 /** HU 23 - Permisos actuales, validación al entrar y avisos de autorización. */
 class SesionViewModel(application: Application) : AndroidViewModel(application) {
@@ -19,6 +29,8 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
     var validando by mutableStateOf(sesion.haySesion())
         private set
     var aviso by mutableStateOf<String?>(null)
+        private set
+    var logoutState by mutableStateOf<LogoutUiState>(LogoutUiState.Initial)
         private set
 
     fun recargarYValidar() {
@@ -61,5 +73,45 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
         validando = false
         aviso = null
     }
+
+    fun reiniciarEstadoLogout() { logoutState = LogoutUiState.Initial }
+
+    /** Revoca en servidor con la sesión existente y siempre limpia datos locales al terminar. */
+    fun cerrarSesion() {
+        if (logoutState is LogoutUiState.Loading) return
+        val token = sesion.obtenerToken()
+        if (token.isNullOrBlank()) {
+            sesion.invalidarSesion()
+            usuario = null
+            validando = false
+            logoutState = LogoutUiState.Success
+            return
+        }
+        logoutState = LogoutUiState.Loading
+        viewModelScope.launch {
+            var resultado: LogoutUiState = LogoutUiState.Success
+            try {
+                val respuesta = RetrofitClient.authApi.cerrarSesion()
+                if (!respuesta.isSuccessful && respuesta.code() != 401) {
+                    resultado = LogoutUiState.Error(mensajeErrorLogout(respuesta))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                resultado = LogoutUiState.Error("No se pudo confirmar el cierre en el servidor; se cerró la sesión local.")
+            } finally {
+                sesion.invalidarSesion()
+                usuario = null
+                validando = false
+                logoutState = resultado
+            }
+        }
+    }
+
+    private fun mensajeErrorLogout(respuesta: Response<*>): String = runCatching {
+        Gson().fromJson(respuesta.errorBody()?.string(), ErrorResponse::class.java)
+            ?.messages?.joinToString(" ")
+    }.getOrNull() ?: "No se pudo confirmar el cierre; se cerró la sesión local."
+
     fun cerrarAviso() { aviso = null }
 }

@@ -14,6 +14,7 @@ import retrofit2.http.Path
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
 import com.ejemplo.publicarproducto.model.AsignarRolRequest
 import com.ejemplo.publicarproducto.model.PaginaAuditoriaResponse
+import com.ejemplo.publicarproducto.model.AuthMessageResponse
 import retrofit2.http.Query
 
 interface AuthApi {
@@ -38,11 +39,14 @@ interface AuthApi {
     suspend fun obtenerSesion(): Response<UsuarioRolResponse>
     @GET("api/admin/usuarios")
     suspend fun listarUsuarios(): Response<List<UsuarioRolResponse>>
+    @PATCH("api/admin/usuarios/{idUsuario}/rol")
+    suspend fun asignarRol(@Path("idUsuario") idUsuario: Long, @Body request: AsignarRolRequest): Response<UsuarioRolResponse>
 
     // HU24 - Historial administrativo paginado.
     @GET("api/admin/auditoria")
     suspend fun listarAuditoria(@Query("page") pagina: Int, @Query("size") tamano: Int): Response<PaginaAuditoriaResponse>
 
-    @PATCH("api/admin/usuarios/{idUsuario}/rol")
-    suspend fun asignarRol(@Path("idUsuario") idUsuario: Long, @Body request: AsignarRolRequest): Response<UsuarioRolResponse>
+    // HU25 - RetrofitClient agrega el Bearer existente mediante SessionManager.
+    @POST("api/auth/logout")
+    suspend fun cerrarSesion(): Response<AuthMessageResponse>
 }

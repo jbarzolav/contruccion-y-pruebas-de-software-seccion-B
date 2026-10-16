@@ -10,11 +10,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.History
 import com.ejemplo.publicarproducto.ui.SesionViewModel
-import com.ejemplo.publicarproducto.ui.AuditoriaScreen
 import com.ejemplo.publicarproducto.ui.AdministrarRolesScreen
+import com.ejemplo.publicarproducto.ui.AuditoriaScreen
+import com.ejemplo.publicarproducto.ui.LogoutUiState
 import com.ejemplo.publicarproducto.network.RetrofitClient
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -130,7 +135,53 @@ class MainActivity : ComponentActivity() {
                             else -> true
                         }
                     }
+                    var mostrarDialogoLogout by remember { mutableStateOf(false) }
+                    if (mostrarDialogoLogout) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                if (sesionViewModel.logoutState !is LogoutUiState.Loading) {
+                                    mostrarDialogoLogout = false
+                                    sesionViewModel.reiniciarEstadoLogout()
+                                }
+                            },
+                            title = { Text("Cerrar sesión") },
+                            text = {
+                                when (val estado = sesionViewModel.logoutState) {
+                                    LogoutUiState.Initial -> Text("¿Quieres cerrar tu sesión de forma segura?")
+                                    LogoutUiState.Loading -> Text("Cerrando sesión...")
+                                    LogoutUiState.Success -> Text("Sesión cerrada correctamente.")
+                                    is LogoutUiState.Error -> Text(estado.mensaje, color = MaterialTheme.colorScheme.error)
+                                }
+                            },
+                            confirmButton = {
+                                when (sesionViewModel.logoutState) {
+                                    LogoutUiState.Initial -> TextButton(onClick = sesionViewModel::cerrarSesion) { Text("Cerrar sesión") }
+                                    LogoutUiState.Loading -> Unit
+                                    LogoutUiState.Success, is LogoutUiState.Error -> TextButton(onClick = {
+                                        mostrarDialogoLogout = false
+                                        sesionViewModel.reiniciarEstadoLogout()
+                                    }) { Text("Continuar") }
+                                }
+                            },
+                            dismissButton = {
+                                if (sesionViewModel.logoutState == LogoutUiState.Initial) TextButton(onClick = {
+                                    mostrarDialogoLogout = false
+                                }) { Text("Cancelar") }
+                            }
+                        )
+                    }
                     Column(modifier = Modifier.fillMaxSize()) {
+                        if (usuario != null) {
+                            androidx.compose.foundation.layout.Row(
+                                modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                            ) {
+                                TextButton(onClick = {
+                                    sesionViewModel.reiniciarEstadoLogout()
+                                    mostrarDialogoLogout = true
+                                }) { Text("Cerrar sesión") }
+                            }
+                        }
                         sesionViewModel.aviso?.let { aviso ->
                             Text(aviso, color = MaterialTheme.colorScheme.error)
                             TextButton(onClick = { sesionViewModel.cerrarAviso() }) { Text("Cerrar aviso") }
@@ -309,12 +360,12 @@ class MainActivity : ComponentActivity() {
 
                                 // HU 23 - Pantalla exclusiva de administración.
                                 5 -> AdministrarRolesScreen(
-                                // HU24 - Historial exclusivo para el rol administrativo.
-                                6 -> AuditoriaScreen(modifier = Modifier.padding(padding))
-
                                     onRolActualizado = { sesionViewModel.actualizar() },
                                     modifier = Modifier.padding(padding)
                                 )
+
+                                // HU24 - Historial exclusivo para el rol administrativo.
+                                6 -> AuditoriaScreen(modifier = Modifier.padding(padding))
 
                                 // HU 18 - beneficios Premium
                                 else -> PlanPremiumScreen(
