@@ -51,8 +51,10 @@ public class AuthService {
         }
 
         Usuario existente = usuario.get();
-        String token = tokenService.generarToken();
+        String token = tokenService.generarToken(existente.getId());
 
-        return new LoginResponse(token, existente.getId(), existente.getCorreo());
+        LoginResponse respuesta = new LoginResponse(token, existente.getId(), existente.getCorreo());
+        respuesta.setRol(existente.getRol());
+        return respuesta;
     }
 }

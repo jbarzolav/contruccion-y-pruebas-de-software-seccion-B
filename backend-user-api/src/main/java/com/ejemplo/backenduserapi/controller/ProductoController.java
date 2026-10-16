@@ -1,5 +1,9 @@
 package com.ejemplo.backenduserapi.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.ejemplo.backenduserapi.entity.Usuario;
+import com.ejemplo.backenduserapi.service.AutorizacionService;
+import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import com.ejemplo.backenduserapi.dto.DestacarRequest;
 import com.ejemplo.backenduserapi.dto.DisponibilidadProductoResponse;
 import com.ejemplo.backenduserapi.dto.EstadoProductoRequest;
@@ -22,15 +26,19 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
-    public ProductoController(ProductoService productoService) {
+    private final AutorizacionService autorizacion;
+    public ProductoController(ProductoService productoService, AutorizacionService autorizacion) {
         this.productoService = productoService;
+        this.autorizacion = autorizacion;
     }
 
     // ------------------------------------------------------------------
     // HU 01 - Registro
     // ------------------------------------------------------------------
     @PostMapping
-    public ResponseEntity<Producto> crear(@Valid @RequestBody ProductoRequest request) {
+    public ResponseEntity<Producto> crear(@Valid @RequestBody ProductoRequest request, HttpServletRequest httpRequest) {
+        // HU 23 - No publicar a nombre de otro vendedor.
+        autorizacion.exigirPropietario((Usuario) httpRequest.getAttribute("usuarioSesion"), request.getVendedorId());
 
         Producto creado = productoService.registrar(request);
 
@@ -75,6 +83,10 @@ public class ProductoController {
             @Valid @RequestBody ProductoRequest request,
             @RequestParam("vendedorId") Long vendedorId) {
 
+        // HU 23 - El cuerpo no puede declarar otro propietario.
+        if (!vendedorId.equals(request.getVendedorId())) {
+            throw new PropietarioInvalidoException("No puedes cambiar el vendedor del producto.");
+        }
         Producto actualizado = productoService.actualizar(idProducto, request, vendedorId);
 
         return ResponseEntity.ok(actualizado);

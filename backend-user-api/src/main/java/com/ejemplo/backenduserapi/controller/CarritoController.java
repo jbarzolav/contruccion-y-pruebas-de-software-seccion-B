@@ -1,5 +1,7 @@
 package com.ejemplo.backenduserapi.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.dto.CarritoTotalResponse;
 import com.ejemplo.backenduserapi.dto.ItemCarritoCantidadRequest;
 import com.ejemplo.backenduserapi.dto.ItemCarritoRequest;
@@ -32,7 +34,9 @@ public class CarritoController {
     @PostMapping("/items")
     public ResponseEntity<ItemCarritoResponse> agregarItem(
             @Valid @RequestBody ItemCarritoRequest request,
-            @RequestParam(value = "clienteId", required = false) Long clienteId) {
+            @RequestParam(value = "clienteId", required = false) Long clienteId, HttpServletRequest httpRequest) {
+        // HU 23 - El propietario proviene de la sesión.
+        clienteId = ((Usuario) httpRequest.getAttribute("usuarioSesion")).getId();
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(carritoService.agregarItem(clienteId, request));
@@ -66,7 +70,9 @@ public class CarritoController {
 
     @GetMapping("/items")
     public ResponseEntity<List<ItemCarritoResponse>> listarItems(
-            @RequestParam(value = "clienteId", required = false) Long clienteId) {
+            @RequestParam(value = "clienteId", required = false) Long clienteId, HttpServletRequest httpRequest) {
+        // HU 23 - El propietario proviene de la sesión.
+        clienteId = ((Usuario) httpRequest.getAttribute("usuarioSesion")).getId();
 
         return ResponseEntity.ok(carritoService.listarItems(clienteId));
     }
@@ -75,7 +81,9 @@ public class CarritoController {
     // GET /api/carrito/total
     @GetMapping("/total")
     public ResponseEntity<CarritoTotalResponse> obtenerTotal(
-            @RequestParam(value = "clienteId", required = false) Long clienteId) {
+            @RequestParam(value = "clienteId", required = false) Long clienteId, HttpServletRequest httpRequest) {
+        // HU 23 - El propietario proviene de la sesión.
+        clienteId = ((Usuario) httpRequest.getAttribute("usuarioSesion")).getId();
 
         return ResponseEntity.ok(
                 new CarritoTotalResponse(carritoService.calcularTotal(clienteId)));

@@ -1,5 +1,6 @@
 package com.ejemplo.backenduserapi.controller;
 
+import com.ejemplo.backenduserapi.exception.AutorizacionException;
 import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
 import com.ejemplo.backenduserapi.exception.RecuperacionInvalidaException;
 import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
@@ -145,6 +146,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RecuperacionInvalidaException.class)
     public ResponseEntity<Map<String, Object>> handleRecuperacionInvalida(RecuperacionInvalidaException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Recuperación inválida", List.of(ex.getMessage()));
+    }
+
+    /** HU 23 - Sesión inválida -> 401; permiso denegado -> 403; rol inválido -> 400. */
+    @ExceptionHandler(AutorizacionException.class)
+    public ResponseEntity<Map<String, Object>> handleAutorizacion(AutorizacionException ex) {
+        return responder(ex.getEstado(), "Autorización", List.of(ex.getMessage()));
     }
 
     private ResponseEntity<Map<String, Object>> responder(HttpStatus estado, String error, List<String> mensajes) {

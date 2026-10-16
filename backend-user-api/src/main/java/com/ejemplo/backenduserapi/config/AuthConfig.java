@@ -1,5 +1,7 @@
 package com.ejemplo.backenduserapi.config;
 
+import org.springframework.beans.factory.annotation.Value;
+import com.ejemplo.backenduserapi.entity.Rol;
 import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.repository.UsuarioRepository;
 import org.springframework.boot.ApplicationRunner;
@@ -12,11 +14,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * HU 21 - Infraestructura de autenticación.
  *
  * Solo se usa spring-security-crypto para BCrypt: NO se activa el
- * starter de seguridad, no hay filtros automáticos ni autorización
- * global; los endpoints del Sprint 1 y de HU 20 siguen abiertos.
+ * starter de seguridad. HU 23 registra la autorización con un interceptor MVC.
  */
 @Configuration
 public class AuthConfig {
+
+    /** HU 23 - Administrador inicial solo cuando se configura expresamente. */
+    @Bean
+    public ApplicationRunner administradorInicial(UsuarioRepository usuarios, PasswordEncoder encoder,
+            @Value("${app.admin.correo:}") String correo,
+            @Value("${app.admin.password:}") String password) {
+        return args -> {
+            if (!correo.isBlank() && !password.isBlank() && usuarios.findByCorreoIgnoreCase(correo).isEmpty()) {
+                Usuario administrador = new Usuario(correo, encoder.encode(password));
+                administrador.setRol(Rol.ADMINISTRADOR);
+                usuarios.save(administrador);
+            }
+        };
+    }
 
     /** Codificador de contraseñas con BCrypt (hash con salt aleatorio). */
     @Bean

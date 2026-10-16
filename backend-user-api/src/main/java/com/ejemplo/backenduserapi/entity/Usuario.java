@@ -24,6 +24,13 @@ public class Usuario {
     @Column(nullable = false)
     private String passwordHash;
 
+    // HU 23 - Una cuenta comienza sin privilegios administrativos.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Rol rol = Rol.CLIENTE;
+    public Rol getRol() { return rol; }
+    public void setRol(Rol rol) { this.rol = rol; }
+
     public Usuario() {
     }
 

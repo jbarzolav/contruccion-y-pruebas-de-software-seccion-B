@@ -1,5 +1,7 @@
 package com.ejemplo.backenduserapi.dto;
 
+import com.ejemplo.backenduserapi.entity.Rol;
+import java.util.Set;
 /**
  * HU 21 - Respuesta del login (200 OK).
  *
@@ -14,6 +16,12 @@ public class LoginResponse {
     private Long id;
 
     private String correo;
+
+    // HU 23 - Rol y permisos para las interfaces web y Android.
+    private Rol rol = Rol.CLIENTE;
+    public Rol getRol() { return rol; }
+    public void setRol(Rol rol) { this.rol = rol; }
+    public Set<String> getPermisos() { return rol.getPermisos(); }
 
     public LoginResponse() {
     }

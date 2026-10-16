@@ -1,5 +1,7 @@
 package com.ejemplo.backenduserapi.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.dto.PedidoResponse;
 import com.ejemplo.backenduserapi.service.PedidoService;
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,9 @@ public class PedidoController {
 
     @PostMapping
     public ResponseEntity<PedidoResponse> confirmarCompra(
-            @RequestParam(value = "clienteId", required = false) Long clienteId) {
+            @RequestParam(value = "clienteId", required = false) Long clienteId, HttpServletRequest httpRequest) {
+        // HU 23 - El propietario proviene de la sesión.
+        clienteId = ((Usuario) httpRequest.getAttribute("usuarioSesion")).getId();
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(pedidoService.confirmarCompra(clienteId));
