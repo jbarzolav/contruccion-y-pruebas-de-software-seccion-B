@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.History
 import com.ejemplo.publicarproducto.ui.SesionViewModel
+import com.ejemplo.publicarproducto.ui.AuditoriaScreen
 import com.ejemplo.publicarproducto.ui.AdministrarRolesScreen
 import com.ejemplo.publicarproducto.network.RetrofitClient
 import androidx.activity.compose.setContent
@@ -66,7 +68,8 @@ private val PESTANAS = listOf(
     Pestana(2, "Carrito", Icons.Default.ShoppingCart),
     Pestana(3, "Chatbot", Icons.Default.SmartToy),
     Pestana(4, "Premium", Icons.Default.WorkspacePremium),
-    Pestana(5, "Roles", Icons.Default.ManageAccounts)
+    Pestana(5, "Roles", Icons.Default.ManageAccounts),
+    Pestana(6, "Auditoría", Icons.Default.History)
 )
 
 /**
@@ -120,7 +123,12 @@ class MainActivity : ComponentActivity() {
                     val puedePublicar = usuario?.permisos?.contains("GESTIONAR_PRODUCTOS") == true
                     val puedeAdministrar = usuario?.permisos?.contains("ASIGNAR_ROLES") == true
                     val pestanasPermitidas = PESTANAS.filter {
-                        when (it.indice) { 1 -> puedePublicar; 2 -> puedeComprar; 5 -> puedeAdministrar; else -> true }
+                        when (it.indice) {
+                            1 -> puedePublicar
+                            2 -> puedeComprar
+                            5, 6 -> puedeAdministrar
+                            else -> true
+                        }
                     }
                     Column(modifier = Modifier.fillMaxSize()) {
                         sesionViewModel.aviso?.let { aviso ->
@@ -301,6 +309,9 @@ class MainActivity : ComponentActivity() {
 
                                 // HU 23 - Pantalla exclusiva de administración.
                                 5 -> AdministrarRolesScreen(
+                                // HU24 - Historial exclusivo para el rol administrativo.
+                                6 -> AuditoriaScreen(modifier = Modifier.padding(padding))
+
                                     onRolActualizado = { sesionViewModel.actualizar() },
                                     modifier = Modifier.padding(padding)
                                 )

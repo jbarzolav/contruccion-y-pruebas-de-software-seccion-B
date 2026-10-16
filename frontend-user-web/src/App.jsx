@@ -259,3 +259,7 @@ export default function App() {
         </HashRouter>
     )
 }
+import AdministrarAuditoria from './components/AdministrarAuditoria.jsx'
+                        {puedeAdministrar && <Link to="/administracion/auditoria">Auditoría</Link>}
+                    {/* HU 24 - Consulta de acciones; servidor exige identidad y permiso admin. */}
+                    <Route path="/administracion/auditoria" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarAuditoria /></AccesoProtegido>} />

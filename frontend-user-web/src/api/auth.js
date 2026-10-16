@@ -40,3 +40,9 @@ export async function asignarRol(idUsuario, rol) {
   const { data } = await apiPermisos.patch(`/admin/usuarios/${idUsuario}/rol`, { rol })
   return data
 }
+
+// HU24 - Historial administrativo paginado.
+export async function listarAuditoria(page = 0, size = 20) {
+  const { data } = await apiPermisos.get('/admin/auditoria', { params: { page, size } })
+  return data
+}
