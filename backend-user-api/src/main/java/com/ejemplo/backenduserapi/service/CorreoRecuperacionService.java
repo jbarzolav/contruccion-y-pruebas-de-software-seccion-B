@@ -25,7 +25,8 @@ public class CorreoRecuperacionService {
             Files.createDirectories(directorio);
             Path mensaje = Files.createTempFile(directorio, "recuperacion-", ".txt");
             Files.writeString(mensaje, "Para: " + correo + "\nRecuperar acceso: "
-                    + url + "?token=" + token + "\n", StandardCharsets.UTF_8);
+                    + url + "?token=" + token + "\nAbrir en Android: pulgatec://restablecer?token="
+                    + token + "\n", StandardCharsets.UTF_8);
         } catch (IOException ex) {
             throw new IllegalStateException("No se pudo generar el correo local de recuperación", ex);
         }

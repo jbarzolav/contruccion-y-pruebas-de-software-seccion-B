@@ -1,6 +1,7 @@
 package com.ejemplo.publicarproducto
 
 import android.os.Bundle
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +40,7 @@ import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
 import com.ejemplo.publicarproducto.ui.LoginScreen
+import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
@@ -71,8 +73,27 @@ private val PESTANAS = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
+    // HU 22 - Enlace recibido al iniciar la app o cuando ya está abierta.
+    private var tokenRecuperacion by mutableStateOf<String?>(null)
+    private var recuperando by mutableStateOf(false)
+
+    private fun recibirEnlace(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (intent.action == Intent.ACTION_VIEW && uri.scheme == "pulgatec" && uri.host == "restablecer") {
+            tokenRecuperacion = uri.getQueryParameter("token") ?: ""
+            recuperando = true
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        recibirEnlace(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        recibirEnlace(intent)
         setContent {
             PulgaTecTheme {
                 Surface(
@@ -88,10 +109,24 @@ class MainActivity : ComponentActivity() {
                         mutableStateOf(sesion.haySesion())
                     }
 
-                    if (!sesionIniciada) {
+                    if (recuperando) {
+                        RecuperacionScreen(
+                            token = tokenRecuperacion,
+                            onVolver = {
+                                tokenRecuperacion = null
+                                recuperando = false
+                                sesionIniciada = false
+                            },
+                            onSolicitarEnlace = { tokenRecuperacion = null }
+                        )
+                    } else if (!sesionIniciada) {
                         // Entrada de la app sin token
                         LoginScreen(
-                            onLoginExitoso = { sesionIniciada = true }
+                            onLoginExitoso = { sesionIniciada = true },
+                            onRecuperarAcceso = {
+                                tokenRecuperacion = null
+                                recuperando = true
+                            }
                         )
                     } else {
 
