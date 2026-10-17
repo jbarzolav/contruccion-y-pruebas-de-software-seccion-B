@@ -39,6 +39,12 @@ export async function obtenerSesion() {
   const { data } = await apiPermisos.get('/auth/me')
   return data
 }
+
+// HU 27 - Perfil del usuario autenticado: GET /api/usuarios/me
+export async function obtenerPerfil() {
+  const { data } = await apiPermisos.get('/usuarios/me')
+  return data
+}
 // HU25 - El token capturado se envía aunque la interfaz borre la sesión local inmediatamente.
 export async function cerrarSesion(token) {
   const { data } = await apiPermisos.post('/auth/logout', {}, {
