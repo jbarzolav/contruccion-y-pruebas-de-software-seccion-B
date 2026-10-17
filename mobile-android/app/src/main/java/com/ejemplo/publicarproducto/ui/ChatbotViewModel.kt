@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ChatbotRequest
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ProductoResumenResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -82,10 +82,10 @@ class ChatbotViewModel : ViewModel() {
 
                 val respuesta = when (modoConsulta) {
                     ModoChatbot.RECOMENDACIONES ->
-                        RetrofitClient.productoApi.recomendarProductos(request)
+                        UserApiClient.productoApi.recomendarProductos(request)
 
                     ModoChatbot.CONSULTAS_TECNICAS ->
-                        RetrofitClient.productoApi.consultarComponenteTecnico(request)
+                        UserApiClient.productoApi.consultarComponenteTecnico(request)
                 }
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {

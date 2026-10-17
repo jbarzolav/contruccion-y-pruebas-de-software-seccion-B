@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -56,11 +56,11 @@ class ConfirmarCompraViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.obtenerCarrito()
+                val respuesta = UserApiClient.productoApi.obtenerCarrito()
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     items = respuesta.body()!!
-                    val respuestaTotal = RetrofitClient.productoApi.obtenerTotalCarrito()
+                    val respuestaTotal = UserApiClient.productoApi.obtenerTotalCarrito()
                     if (respuestaTotal.isSuccessful && respuestaTotal.body() != null) {
                         totalCarrito = respuestaTotal.body()!!.total
                     }
@@ -87,7 +87,7 @@ class ConfirmarCompraViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.confirmarCompra()
+                val respuesta = UserApiClient.productoApi.confirmarCompra()
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     pedido = respuesta.body()!!

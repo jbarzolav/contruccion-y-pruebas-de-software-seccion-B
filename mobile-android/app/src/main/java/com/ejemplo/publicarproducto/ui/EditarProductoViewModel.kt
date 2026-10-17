@@ -9,7 +9,7 @@ import com.ejemplo.publicarproducto.model.EstadoProductoRequest
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
@@ -28,7 +28,7 @@ class EditarProductoViewModel : ViewModel() {
 
     companion object {
         // HU 23 - Propietario obtenido de la sesión autenticada.
-        private val VENDEDOR_ID get() = RetrofitClient.usuarioActualId()
+        private val VENDEDOR_ID get() = UserApiClient.usuarioActualId()
         private const val ESTADO_RETIRADO = "RETIRADO"
     }
 
@@ -118,7 +118,7 @@ class EditarProductoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.obtenerProducto(id)
+                val respuesta = UserApiClient.productoApi.obtenerProducto(id)
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     precargar(respuesta.body()!!)
@@ -183,7 +183,7 @@ class EditarProductoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.actualizarProducto(
+                val respuesta = UserApiClient.productoApi.actualizarProducto(
                     productoActual.id ?: return@launch,
                     request,
                     productoActual.vendedorId ?: VENDEDOR_ID
@@ -238,7 +238,7 @@ class EditarProductoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.cambiarEstado(
+                val respuesta = UserApiClient.productoApi.cambiarEstado(
                     productoActual.id ?: return@launch,
                     EstadoProductoRequest(ESTADO_RETIRADO),
                     productoActual.vendedorId ?: VENDEDOR_ID

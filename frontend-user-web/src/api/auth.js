@@ -26,27 +26,12 @@ export async function restablecerPassword(token, password, confirmacionPassword)
   const { data } = await apiAuth.post('/restablecer', { token, password, confirmacionPassword })
   return data
 }
-// HU 23 - Servicios que requieren la sesión autenticada.
+// Sesión user autenticada contra Spring.
 const apiPermisos = configurarSesion(axios.create({ baseURL: `${API_URL}/api`, timeout: 10000 }))
 export async function obtenerSesion() {
   const { data } = await apiPermisos.get('/auth/me')
   return data
 }
-export async function listarUsuarios() {
-  const { data } = await apiPermisos.get('/admin/usuarios')
-  return data
-}
-export async function asignarRol(idUsuario, rol) {
-  const { data } = await apiPermisos.patch(`/admin/usuarios/${idUsuario}/rol`, { rol })
-  return data
-}
-
-// HU24 - Historial administrativo paginado.
-export async function listarAuditoria(page = 0, size = 20) {
-  const { data } = await apiPermisos.get('/admin/auditoria', { params: { page, size } })
-  return data
-}
-
 // HU25 - El token capturado se envía aunque la interfaz borre la sesión local inmediatamente.
 export async function cerrarSesion(token) {
   const { data } = await apiPermisos.post('/auth/logout', {}, {

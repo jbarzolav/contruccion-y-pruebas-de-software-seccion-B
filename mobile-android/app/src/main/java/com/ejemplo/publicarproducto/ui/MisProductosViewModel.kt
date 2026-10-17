@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.DestacarRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import kotlinx.coroutines.launch
 
 sealed interface MisProductosUiState {
@@ -20,7 +20,7 @@ class MisProductosViewModel : ViewModel() {
 
     companion object {
         // HU 23 - Propietario obtenido de la sesión autenticada.
-        private val VENDEDOR_ID get() = RetrofitClient.usuarioActualId()
+        private val VENDEDOR_ID get() = UserApiClient.usuarioActualId()
     }
 
     var productos by mutableStateOf<List<ProductoResponse>>(emptyList())
@@ -34,7 +34,7 @@ class MisProductosViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.obtenerMisProductos(VENDEDOR_ID)
+                val respuesta = UserApiClient.productoApi.obtenerMisProductos(VENDEDOR_ID)
 
                 if (respuesta.isSuccessful) {
                     productos = respuesta.body().orEmpty()
@@ -56,7 +56,7 @@ class MisProductosViewModel : ViewModel() {
     fun gestionarDestacado(idProducto: Long, destacado: Boolean) {
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi
+                val respuesta = UserApiClient.productoApi
                     .gestionarDestacado(idProducto, DestacarRequest(destacado), VENDEDOR_ID)
 
                 if (respuesta.isSuccessful) {

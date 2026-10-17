@@ -12,8 +12,6 @@ import CarritoDrawer from './components/CarritoDrawer.jsx'
 import ChatbotFab from './components/ChatbotFab.jsx'
 import Login from './components/Login.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
-import AdministrarRoles from './components/AdministrarRoles.jsx'
-import AdministrarAuditoria from './components/AdministrarAuditoria.jsx'
 import { obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -37,7 +35,6 @@ export default function App() {
     const sesion = useSesion()
     const puedeComprar = tienePermiso(sesion, 'COMPRAR')
     const puedePublicar = tienePermiso(sesion, 'GESTIONAR_PRODUCTOS')
-    const puedeAdministrar = tienePermiso(sesion, 'ASIGNAR_ROLES')
     const [avisoSesion, setAvisoSesion] = useState('')
     const [cerrandoSesion, setCerrandoSesion] = useState(false)
 
@@ -158,8 +155,6 @@ export default function App() {
                         <Link to="/">Inicio</Link>
                         {puedePublicar && <Link to="/mis-publicaciones">Mis Publicaciones</Link>}
                         <Link to="/premium">Plan Premium</Link>
-                        {puedeAdministrar && <Link to="/administracion/roles">Administrar roles</Link>}
-                        {puedeAdministrar && <Link to="/administracion/auditoria">Auditoría</Link>}
                         {!sesion && <Link to="/login">Iniciar sesión</Link>}
                         {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
@@ -237,11 +232,6 @@ export default function App() {
 
                     {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
                     <Route path="/login" element={<Login />} />
-
-                    {/* HU 23 - Asignación administrativa de roles. */}
-                    <Route path="/administracion/roles" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarRoles /></AccesoProtegido>} />
-                    {/* HU 24 - Consulta de acciones; servidor exige identidad y permiso admin. */}
-                    <Route path="/administracion/auditoria" element={<AccesoProtegido permiso="ASIGNAR_ROLES"><AdministrarAuditoria /></AccesoProtegido>} />
 
                     {/* HU 22 - Solicitud y restablecimiento mediante enlace temporal. */}
                     <Route path="/recuperacion" element={<RecuperarAcceso key="solicitar" />} />

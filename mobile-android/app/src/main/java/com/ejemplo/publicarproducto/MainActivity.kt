@@ -13,7 +13,7 @@ import com.ejemplo.publicarproducto.ui.SesionViewModel
 import com.ejemplo.publicarproducto.ui.AdministrarRolesScreen
 import com.ejemplo.publicarproducto.ui.AuditoriaScreen
 import com.ejemplo.publicarproducto.ui.LogoutUiState
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         recibirEnlace(intent)
-        RetrofitClient.configurarSesion(sesionViewModel.sesion) { codigo ->
+        UserApiClient.configurarSesion(sesionViewModel.sesion) { codigo ->
             runOnUiThread { sesionViewModel.manejarError(codigo) }
         }
         sesionViewModel.recargarYValidar()

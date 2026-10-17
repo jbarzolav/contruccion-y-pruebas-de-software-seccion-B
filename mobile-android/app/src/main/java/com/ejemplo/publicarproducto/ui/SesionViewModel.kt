@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.ejemplo.publicarproducto.session.SessionManager
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.google.gson.Gson
@@ -43,7 +43,7 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
         val token = sesion.obtenerToken() ?: run { validando = false; return }
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.authApi.obtenerSesion()
+                val respuesta = UserApiClient.authApi.obtenerSesion()
                 if (sesion.obtenerToken() != token) return@launch
                 val actual = respuesta.body()
                 if (respuesta.isSuccessful && actual != null) {
@@ -91,7 +91,7 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             var resultado: LogoutUiState = LogoutUiState.Success
             try {
-                val respuesta = RetrofitClient.authApi.cerrarSesion()
+                val respuesta = UserApiClient.authApi.cerrarSesion()
                 if (!respuesta.isSuccessful && respuesta.code() != 401) {
                     resultado = LogoutUiState.Error(mensajeErrorLogout(respuesta))
                 }

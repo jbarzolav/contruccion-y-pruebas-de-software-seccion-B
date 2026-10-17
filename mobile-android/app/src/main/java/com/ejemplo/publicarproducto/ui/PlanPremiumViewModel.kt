@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.PlanPremiumResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import kotlinx.coroutines.launch
 
 // HU 18 - Estados de la consulta del plan Premium.
@@ -35,7 +35,7 @@ class PlanPremiumViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val respuesta =
-                    RetrofitClient.productoApi.consultarPlanPremium()
+                    UserApiClient.productoApi.consultarPlanPremium()
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     plan = respuesta.body()

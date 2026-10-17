@@ -9,7 +9,7 @@ import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -66,7 +66,7 @@ class DetalleProductoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.agregarAlCarrito(
+                val respuesta = UserApiClient.productoApi.agregarAlCarrito(
                     ItemCarritoRequest(
                         productoId = productoActual.id ?: 0L,
                         cantidad = cantidad
@@ -112,10 +112,10 @@ class DetalleProductoViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val respuestaProducto =
-                    RetrofitClient.productoApi.obtenerProducto(idProducto)
+                    UserApiClient.productoApi.obtenerProducto(idProducto)
 
                 val respuestaDisponibilidad =
-                    RetrofitClient.productoApi.obtenerDisponibilidadProducto(idProducto)
+                    UserApiClient.productoApi.obtenerDisponibilidadProducto(idProducto)
 
                 if (
                     respuestaProducto.isSuccessful &&

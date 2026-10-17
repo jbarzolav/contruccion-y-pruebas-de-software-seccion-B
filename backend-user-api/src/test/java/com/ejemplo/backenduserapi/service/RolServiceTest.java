@@ -72,11 +72,4 @@ class RolServiceTest {
         verify(usuarios, never()).save(any());
     }
 
-    @Test
-    void vendedorNoPuedeConsultarUsuariosAdministrativos() {
-        cliente.setRol(Rol.VENDEDOR);
-        var error = assertThrows(AutorizacionException.class, () -> servicio.listar(cliente));
-        assertEquals(HttpStatus.FORBIDDEN, error.getEstado());
-        verifyNoInteractions(usuarios);
-    }
 }

@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.PaginaAuditoriaResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.AdminApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -30,7 +30,7 @@ class AuditoriaViewModel : ViewModel() {
         estado = AuditoriaUiState.Loading
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.authApi.listarAuditoria(pagina, TAMANO_PAGINA)
+                val respuesta = AdminApiClient.api.listarAuditoria(pagina, TAMANO_PAGINA)
                 val body = respuesta.body()
                 estado = if (respuesta.isSuccessful && body != null) {
                     AuditoriaUiState.Success(body)

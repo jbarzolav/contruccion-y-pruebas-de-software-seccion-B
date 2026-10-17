@@ -10,7 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType
@@ -39,7 +39,7 @@ class PublicarProductoViewModel(application: Application) :
         private const val IMAGEN_PENDIENTE = "https://via.placeholder.com/300"
 
         // HU 23 - Propietario obtenido de la sesión autenticada.
-        private val VENDEDOR_ID get() = RetrofitClient.usuarioActualId()
+        private val VENDEDOR_ID get() = UserApiClient.usuarioActualId()
 
         private val TIPOS_PERMITIDOS = setOf("image/jpeg", "image/jpg", "image/png")
     }
@@ -265,7 +265,7 @@ class PublicarProductoViewModel(application: Application) :
                 )
 
                 val respuesta =
-                    RetrofitClient.productoApi.crearProducto(request)
+                    UserApiClient.productoApi.crearProducto(request)
 
                 if (!respuesta.isSuccessful) {
                     uiState = PublicarUiState.Error(
@@ -303,7 +303,7 @@ class PublicarProductoViewModel(application: Application) :
                     VENDEDOR_ID.toString().toRequestBody("text/plain".toMediaTypeOrNull())
 
                 val respuestaImagen =
-                    RetrofitClient.productoApi.agregarImagen(
+                    UserApiClient.productoApi.agregarImagen(
                         idProducto,
                         parteArchivo,
                         parteVendedor

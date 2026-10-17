@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** HU 23 - Autorización real con sesiones de login y base H2 aislada. */
-@SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:hu23autorizacion;DB_CLOSE_DELAY=-1")
+@SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:hu23autorizacion;DB_CLOSE_DELAY=-1", "app.internal.admin-api-key=test-admin-key"})
 @AutoConfigureMockMvc
 @Transactional
 class AutorizacionControllerTest {
@@ -58,7 +58,8 @@ class AutorizacionControllerTest {
     }
 
     private ResultActions asignar(String token, Long id, String rol) throws Exception {
-        return mvc.perform(patch("/api/admin/usuarios/{id}/rol", id)
+        return mvc.perform(patch("/_internal/admin/usuarios/{id}/rol", id)
+                .header("X-Internal-Admin-Key", "test-admin-key")
                 .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("rol", rol))));
     }
@@ -99,21 +100,22 @@ class AutorizacionControllerTest {
 
     @Test
     void sinSesionNoPermiteAsignarRoles() throws Exception {
-        mvc.perform(patch("/api/admin/usuarios/{id}/rol", cliente.getId())
+        mvc.perform(patch("/_internal/admin/usuarios/{id}/rol", cliente.getId())
+                .header("X-Internal-Admin-Key", "test-admin-key")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"rol\":\"ADMINISTRADOR\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void tokenInventadoDevuelve401() throws Exception {
-        mvc.perform(get("/api/admin/usuarios").header("Authorization", "Bearer inventado"))
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer inventado"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void tokenVencidoDevuelve401() throws Exception {
         sesiones.guardar("token-vencido-hu23", admin.getId(), Instant.now().minusSeconds(1));
-        mvc.perform(get("/api/admin/usuarios").header("Authorization", "Bearer token-vencido-hu23"))
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer token-vencido-hu23"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -129,11 +131,9 @@ class AutorizacionControllerTest {
     }
 
     @Test
-    void listadoAdministrativoNoExponeHashes() throws Exception {
-        String respuesta = mvc.perform(get("/api/admin/usuarios").header("Authorization", "Bearer " + token(admin)))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertFalse(respuesta.contains("password"));
-        assertFalse(respuesta.contains("$2"));
+    void endpointsAdminPublicosLegacyFueronRetirados() throws Exception {
+        mvc.perform(get("/api/admin/usuarios")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/auditoria")).andExpect(status().isNotFound());
     }
 
     @Test

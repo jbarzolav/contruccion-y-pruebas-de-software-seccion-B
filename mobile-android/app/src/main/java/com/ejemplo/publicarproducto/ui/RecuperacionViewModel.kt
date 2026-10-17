@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.RecuperacionRequest
 import com.ejemplo.publicarproducto.model.RestablecerRequest
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -74,9 +74,9 @@ class RecuperacionViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val respuesta = if (token == null) {
-                    RetrofitClient.authApi.solicitarRecuperacion(RecuperacionRequest(correo.trim()))
+                    UserApiClient.authApi.solicitarRecuperacion(RecuperacionRequest(correo.trim()))
                 } else {
-                    RetrofitClient.authApi.restablecer(RestablecerRequest(token, password, confirmacion))
+                    UserApiClient.authApi.restablecer(RestablecerRequest(token, password, confirmacion))
                 }
                 val cuerpo = respuesta.body()
                 uiState = if (respuesta.isSuccessful && cuerpo != null) {

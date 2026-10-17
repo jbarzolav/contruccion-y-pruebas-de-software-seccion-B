@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ProductoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -91,7 +91,7 @@ class BuscarProductosViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val respuesta =
-                    RetrofitClient.productoApi.buscarProductosPorNombre(
+                    UserApiClient.productoApi.buscarProductosPorNombre(
                         nombre = criterio,
                         sort = criterioOrden.ifBlank { null }
                     )
@@ -133,7 +133,7 @@ class BuscarProductosViewModel : ViewModel() {
         jobRecomendaciones = viewModelScope.launch {
             try {
                 val respuesta =
-                    RetrofitClient.productoApi.obtenerRecomendaciones(criterio)
+                    UserApiClient.productoApi.obtenerRecomendaciones(criterio)
 
                 if (respuesta.isSuccessful) {
                     recomendaciones = respuesta.body().orEmpty()
@@ -166,7 +166,7 @@ class BuscarProductosViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.listarCatalogo()
+                val respuesta = UserApiClient.productoApi.listarCatalogo()
 
                 if (respuesta.isSuccessful) {
                     productos = respuesta.body().orEmpty()

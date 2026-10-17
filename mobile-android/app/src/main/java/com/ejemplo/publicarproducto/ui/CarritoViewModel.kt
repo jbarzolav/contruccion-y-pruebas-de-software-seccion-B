@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -48,7 +48,7 @@ class CarritoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.obtenerCarrito()
+                val respuesta = UserApiClient.productoApi.obtenerCarrito()
 
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     items = respuesta.body()!!
@@ -83,7 +83,7 @@ class CarritoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.actualizarCantidadItem(
+                val respuesta = UserApiClient.productoApi.actualizarCantidadItem(
                     idItemCarrito = idItem,
                     request = ItemCarritoCantidadRequest(cantidad = nuevaCantidad)
                 )
@@ -116,7 +116,7 @@ class CarritoViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.eliminarItemCarrito(idItem)
+                val respuesta = UserApiClient.productoApi.eliminarItemCarrito(idItem)
 
                 if (respuesta.isSuccessful) {
                     items = items.filter { it.id != idItem }
@@ -137,7 +137,7 @@ class CarritoViewModel : ViewModel() {
     fun cargarTotalCarrito() {
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.productoApi.obtenerTotalCarrito()
+                val respuesta = UserApiClient.productoApi.obtenerTotalCarrito()
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     totalCarrito = respuesta.body()!!.total
                 } else {

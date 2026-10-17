@@ -49,8 +49,10 @@ public class AuthConfig {
      */
     @Bean
     public ApplicationRunner usuarioDemoRunner(UsuarioRepository usuarioRepository,
-                                               PasswordEncoder passwordEncoder) {
+                                               PasswordEncoder passwordEncoder,
+                                               @Value("${app.demo.enabled:true}") boolean demoHabilitado) {
         return args -> {
+            if (!demoHabilitado) return;
             String correoDemo = "demo@pulgatec.com";
             if (usuarioRepository.findByCorreoIgnoreCase(correoDemo).isEmpty()) {
                 Usuario demo =

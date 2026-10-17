@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.AsignarRolRequest
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.AdminApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -34,7 +34,7 @@ class AdministrarRolesViewModel : ViewModel() {
         mensaje = null
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.authApi.listarUsuarios()
+                val respuesta = AdminApiClient.api.listarUsuarios()
                 if (respuesta.isSuccessful) usuarios = respuesta.body().orEmpty()
                 else mostrarError(respuesta)
             } catch (e: CancellationException) { throw e }
@@ -48,7 +48,7 @@ class AdministrarRolesViewModel : ViewModel() {
         mensaje = null
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.authApi.asignarRol(usuario.id, AsignarRolRequest(rol))
+                val respuesta = AdminApiClient.api.asignarRol(usuario.id, AsignarRolRequest(rol))
                 val actual = respuesta.body()
                 if (respuesta.isSuccessful && actual != null) {
                     usuarios = usuarios.map { if (it.id == actual.id) actual else it }

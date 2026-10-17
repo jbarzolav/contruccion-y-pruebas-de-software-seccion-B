@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.LoginRequest
 import com.ejemplo.publicarproducto.model.LoginResponse
-import com.ejemplo.publicarproducto.network.RetrofitClient
+import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ sealed interface LoginUiState {
  *
  * Valida antes de llamar al backend, maneja 200/400/401 y errores de
  * red, y evita el doble envío. La contraseña solo vive en memoria:
- * jamás se guarda ni se registra en logs (RetrofitClient usa un
+ * jamás se guarda ni se registra en logs (UserApiClient usa un
  * cliente sin logging interceptor para auth).
  */
 class LoginViewModel : ViewModel() {
@@ -92,7 +92,7 @@ class LoginViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val respuesta = RetrofitClient.authApi.login(
+                val respuesta = UserApiClient.authApi.login(
                     LoginRequest(correo = correo.trim(), password = password)
                 )
 

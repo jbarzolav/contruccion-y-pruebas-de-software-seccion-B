@@ -19,8 +19,7 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
         if ("OPTIONS".equals(request.getMethod())) return true;
         String ruta = request.getRequestURI().substring(request.getContextPath().length());
         String permiso = null;
-        if (ruta.startsWith("/api/admin/")) permiso = "ASIGNAR_ROLES";
-        else if (ruta.startsWith("/api/vendedores/") || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
+        if (ruta.startsWith("/api/vendedores/") || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/carrito/") || ruta.equals("/api/pedidos")) permiso = "COMPRAR";
         if (permiso == null && !ruta.equals("/api/auth/me")) return true;
         Usuario usuario = autorizacion.autenticar(request.getHeader("Authorization"));
