@@ -3,6 +3,8 @@ package com.ejemplo.backenduserapi.controller;
 import com.ejemplo.backenduserapi.exception.AutorizacionException;
 import com.ejemplo.backenduserapi.exception.BeneficioPremiumNoDisponibleException;
 import com.ejemplo.backenduserapi.exception.RecuperacionInvalidaException;
+import com.ejemplo.backenduserapi.exception.CorreoYaRegistradoException;
+import com.ejemplo.backenduserapi.exception.RegistroInvalidoException;
 import com.ejemplo.backenduserapi.exception.ChatbotInvalidoException;
 import com.ejemplo.backenduserapi.exception.CredencialesInvalidasException;
 import com.ejemplo.backenduserapi.exception.CriterioOrdenInvalidoException;
@@ -14,6 +16,7 @@ import com.ejemplo.backenduserapi.exception.PedidoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -147,6 +150,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RecuperacionInvalidaException.class)
     public ResponseEntity<Map<String, Object>> handleRecuperacionInvalida(RecuperacionInvalidaException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Recuperación inválida", List.of(ex.getMessage()));
+    }
+
+    /** HU 26 - Registro: contraseñas distintas o > 72 bytes -> 400; correo ocupado -> 409. */
+    @ExceptionHandler(RegistroInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleRegistroInvalido(RegistroInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Registro inválido", List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CorreoYaRegistradoException.class)
+    public ResponseEntity<Map<String, Object>> handleCorreoYaRegistrado(CorreoYaRegistradoException ex) {
+        return responder(HttpStatus.CONFLICT, "Correo ya registrado", List.of(ex.getMessage()));
+    }
+
+    /** HU 26 - Carrera entre la comprobación y el INSERT: la clave única de usuarios decide. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleIntegridad(DataIntegrityViolationException ex) {
+        return responder(HttpStatus.CONFLICT, "Correo ya registrado", List.of("El correo ya está registrado."));
     }
 
     /** HU 23 - Sesión inválida -> 401; permiso denegado -> 403; rol inválido -> 400. */
