@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../api/auth.js'
 import { guardarSesion } from '../api/sesion.js'
 
@@ -22,6 +22,10 @@ export default function Login() {
   const enviandoRef = useRef(false)
 
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // HU 26 - Confirmación del registro que llega desde la pantalla anterior.
+  const mensajeRegistro = location.state?.mensaje
 
   // Validación local antes de llamar al backend
   const validar = () => {
@@ -145,13 +149,18 @@ export default function Login() {
       {/* HU 22 - Acceso a la recuperación de contraseña. */}
       <p><Link to="/recuperacion">Olvidé mi contraseña</Link></p>
 
-      {mensaje && (
+      {/* HU 26 - Acceso al registro de cuenta. */}
+      <p><Link to="/registro">Crear cuenta</Link></p>
+
+      {mensaje ? (
         <div
           className={mensaje.tipo === 'exito' ? 'alerta exito' : 'alerta error'}
           role="alert"
         >
           {mensaje.texto}
         </div>
+      ) : mensajeRegistro && (
+        <div className="alerta exito" role="alert">{mensajeRegistro}</div>
       )}
     </section>
   )

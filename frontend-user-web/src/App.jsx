@@ -11,6 +11,7 @@ import ProductoModal from './components/ProductoModal.jsx'
 import CarritoDrawer from './components/CarritoDrawer.jsx'
 import ChatbotFab from './components/ChatbotFab.jsx'
 import Login from './components/Login.jsx'
+import Registro from './components/Registro.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import { obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
@@ -232,6 +233,9 @@ export default function App() {
 
                     {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
                     <Route path="/login" element={<Login />} />
+
+                    {/* HU 26 - Registro de cuenta. */}
+                    <Route path="/registro" element={<Registro />} />
 
                     {/* HU 22 - Solicitud y restablecimiento mediante enlace temporal. */}
                     <Route path="/recuperacion" element={<RecuperarAcceso key="solicitar" />} />
