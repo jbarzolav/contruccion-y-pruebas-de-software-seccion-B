@@ -55,6 +55,7 @@ import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
 import com.ejemplo.publicarproducto.ui.LoginScreen
 import com.ejemplo.publicarproducto.ui.RecuperacionScreen
+import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
@@ -93,6 +94,9 @@ class MainActivity : ComponentActivity() {
     // HU 22 - Enlace recibido al iniciar la app o cuando ya está abierta.
     private var tokenRecuperacion by mutableStateOf<String?>(null)
     private var recuperando by mutableStateOf(false)
+
+    // HU 26 - Registro de cuenta desde la pantalla de inicio de sesión.
+    private var registrando by mutableStateOf(false)
 
     private fun recibirEnlace(intent: Intent?) {
         val uri = intent?.data ?: return
@@ -199,6 +203,14 @@ class MainActivity : ComponentActivity() {
                         )
                     } else if (sesionViewModel.validando) {
                         Text("Validando sesión...")
+                    } else if (registrando) {
+                        // HU 26 - Registro: al volver se descarta el estado y se ofrece el login.
+                        RegistroScreen(
+                            onVolver = {
+                                registrando = false
+                                sesionViewModel.volverAlLogin()
+                            }
+                        )
                     } else if (usuario == null) {
                         // Entrada de la app sin token
                         LoginScreen(
@@ -206,7 +218,8 @@ class MainActivity : ComponentActivity() {
                             onRecuperarAcceso = {
                                 tokenRecuperacion = null
                                 recuperando = true
-                            }
+                            },
+                            onCrearCuenta = { registrando = true }
                         )
                     } else {
 

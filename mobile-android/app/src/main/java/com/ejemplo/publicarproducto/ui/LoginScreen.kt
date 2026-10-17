@@ -41,6 +41,7 @@ import com.ejemplo.publicarproducto.session.SessionManager
 fun LoginScreen(
     onLoginExitoso: () -> Unit,
     onRecuperarAcceso: () -> Unit = {},
+    onCrearCuenta: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel()
 ) {
@@ -153,6 +154,11 @@ fun LoginScreen(
                 // HU 22 - Acceso a la solicitud de recuperación.
                 TextButton(onClick = onRecuperarAcceso, enabled = !cargando) {
                     Text("Olvidé mi contraseña")
+                }
+
+                // HU 26 - Acceso al registro de cuenta.
+                TextButton(onClick = onCrearCuenta, enabled = !cargando) {
+                    Text("Crear cuenta")
                 }
 
                 // Error general: 401 (credenciales) / 400 (validación) / red

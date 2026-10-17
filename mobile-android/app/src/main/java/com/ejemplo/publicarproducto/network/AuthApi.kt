@@ -5,6 +5,7 @@ import com.ejemplo.publicarproducto.model.RestablecerRequest
 import com.ejemplo.publicarproducto.model.RecuperacionResponse
 import com.ejemplo.publicarproducto.model.LoginRequest
 import com.ejemplo.publicarproducto.model.LoginResponse
+import com.ejemplo.publicarproducto.model.RegistroRequest
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -22,6 +23,12 @@ interface AuthApi {
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
+
+    // HU 26 - POST /api/auth/registro
+    // 201: {mensaje} sin token automático; 409 si el correo ya está registrado.
+    @POST("api/auth/registro")
+    suspend fun registro(@Body request: RegistroRequest): Response<AuthMessageResponse>
+
     // HU 22 - Recuperación mediante enlace temporal de un solo uso.
     @POST("api/auth/recuperacion")
     suspend fun solicitarRecuperacion(@Body request: RecuperacionRequest): Response<RecuperacionResponse>
