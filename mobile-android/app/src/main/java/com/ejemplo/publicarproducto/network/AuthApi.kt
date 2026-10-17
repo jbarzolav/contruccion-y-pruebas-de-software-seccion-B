@@ -40,6 +40,10 @@ interface AuthApi {
     @GET("api/auth/me")
     suspend fun obtenerSesion(): Response<UsuarioRolResponse>
 
+    // HU 27 - Perfil del usuario autenticado
+    @GET("api/usuarios/me")
+    suspend fun obtenerPerfil(): Response<UsuarioRolResponse>
+
     // HU25 - UserApiClient agrega el Bearer existente mediante SessionManager.
     @POST("api/auth/logout")
     suspend fun cerrarSesion(): Response<AuthMessageResponse>

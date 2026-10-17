@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +55,7 @@ import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
 import com.ejemplo.publicarproducto.ui.DetalleProductoScreen
 import com.ejemplo.publicarproducto.ui.EditarProductoScreen
 import com.ejemplo.publicarproducto.ui.LoginScreen
+import com.ejemplo.publicarproducto.ui.PerfilScreen
 import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
@@ -75,7 +77,8 @@ private val PESTANAS = listOf(
     Pestana(3, "Chatbot", Icons.Default.SmartToy),
     Pestana(4, "Premium", Icons.Default.WorkspacePremium),
     Pestana(5, "Roles", Icons.Default.ManageAccounts),
-    Pestana(6, "Auditoría", Icons.Default.History)
+    Pestana(6, "Auditoría", Icons.Default.History),
+    Pestana(7, "Mi perfil", Icons.Default.Person)
 )
 
 /**
@@ -136,6 +139,7 @@ class MainActivity : ComponentActivity() {
                             1 -> puedePublicar
                             2 -> puedeComprar
                             5, 6 -> puedeAdministrar
+                            7 -> usuario != null
                             else -> true
                         }
                     }
@@ -379,6 +383,12 @@ class MainActivity : ComponentActivity() {
 
                                 // HU24 - Historial exclusivo para el rol administrativo.
                                 6 -> AuditoriaScreen(modifier = Modifier.padding(padding))
+
+                                // HU 27 - Mi perfil
+                                7 -> PerfilScreen(
+                                    onVolver = { pestana = 0 },
+                                    modifier = Modifier.padding(padding)
+                                )
 
                                 // HU 18 - beneficios Premium
                                 else -> PlanPremiumScreen(
