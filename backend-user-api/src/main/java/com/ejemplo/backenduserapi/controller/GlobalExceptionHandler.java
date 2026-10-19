@@ -13,6 +13,7 @@ import com.ejemplo.backenduserapi.exception.ImagenInvalidaException;
 import com.ejemplo.backenduserapi.exception.ItemCarritoInvalidoException;
 import com.ejemplo.backenduserapi.exception.ItemCarritoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PedidoInvalidoException;
+import com.ejemplo.backenduserapi.exception.PerfilInvalidoException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
@@ -156,6 +157,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RegistroInvalidoException.class)
     public ResponseEntity<Map<String, Object>> handleRegistroInvalido(RegistroInvalidoException ex) {
         return responder(HttpStatus.BAD_REQUEST, "Registro inválido", List.of(ex.getMessage()));
+    }
+
+    /** HU 28 / HU 29 - Campos de perfil inválidos (nombre, correo, teléfono, datos del vendedor) -> 400. */
+    @ExceptionHandler(PerfilInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handlePerfilInvalido(PerfilInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, "Perfil inválido", List.of(ex.getMessage()));
     }
 
     @ExceptionHandler(CorreoYaRegistradoException.class)
