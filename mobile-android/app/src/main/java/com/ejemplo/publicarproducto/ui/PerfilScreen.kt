@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -19,6 +20,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,13 +29,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ejemplo.publicarproducto.model.UsuarioRolResponse
+import com.ejemplo.publicarproducto.model.PerfilUsuarioResponse
+import com.ejemplo.publicarproducto.model.PerfilVendedorResponse
 
 /**
  * HU 27 - Pantalla "Mi perfil" (Android, Jetpack Compose).
+ *
+ * HU 28 - Muestra los datos personales y permite entrar en modo edición
+ * (nombre, correo, teléfono) con validación local, Guardar/Cancelary
+ * refresco con la respuesta del backend.
+ *
+ * HU 29 - Si la sesión es VENDEDOR, agrega la sección "Información del
+ * vendedor" con carga, edición y guardado del perfil comercial.
  */
 @Composable
 fun PerfilScreen(
@@ -63,7 +74,25 @@ fun PerfilScreen(
                 }
             }
             is PerfilUiState.Exito -> {
-                PerfilContenido(estado.perfil)
+                if (viewModel.editando) {
+                    FormularioEdicionPerfil(viewModel)
+                } else {
+                    PerfilContenido(estado.perfil)
+                    viewModel.avisoEdicion?.let { mensaje ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = mensaje, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { viewModel.iniciarEdicion() }) {
+                        Text("Editar datos personales")
+                    }
+                }
+
+                // HU 29 - la sección del vendedor solo aplica a ese rol.
+                if (estado.perfil.rol == "VENDEDOR") {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SeccionVendedor(viewModel)
+                }
             }
             is PerfilUiState.Error -> {
                 Card(
@@ -89,6 +118,7 @@ fun PerfilScreen(
 
         Button(
             onClick = onVolver,
+            enabled = !viewModel.editando,
             colors = ButtonDefaults.outlinedButtonColors()
         ) {
             Text("Volver")
@@ -97,7 +127,7 @@ fun PerfilScreen(
 }
 
 @Composable
-private fun PerfilContenido(perfil: UsuarioRolResponse) {
+private fun PerfilContenido(perfil: PerfilUsuarioResponse) {
     val inicial = perfil.correo.trim().firstOrNull()?.uppercaseChar() ?: 'U'
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -123,8 +153,10 @@ private fun PerfilContenido(perfil: UsuarioRolResponse) {
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            DatosFila("ID de usuario", perfil.id.toString())
+            DatosFila("Nombre", perfil.nombre?.takeIf { it.isNotBlank() } ?: "Sin nombre registrado")
             DatosFila("Correo electrónico", perfil.correo)
+            DatosFila("Teléfono", perfil.telefono?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado")
+            DatosFila("ID de usuario", perfil.id.toString())
             DatosFila("Rol", perfil.rol)
             DatosFilaPermisos(perfil.permisos)
             Spacer(modifier = Modifier.height(8.dp))
@@ -133,6 +165,211 @@ private fun PerfilContenido(perfil: UsuarioRolResponse) {
                 color = Color.Gray,
                 fontSize = 12.sp
             )
+        }
+    }
+}
+
+/**
+ * HU 28 - Formulario de edición de los campos personales habilitados.
+ * El rol, los permisos y la contraseña no se muestran como editables.
+ */
+@Composable
+private fun FormularioEdicionPerfil(viewModel: PerfilViewModel) {
+    val guardando = viewModel.guardando
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Editar datos personales", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = viewModel.nombre,
+                onValueChange = viewModel::cambiarNombre,
+                label = { Text("Nombre") },
+                singleLine = true,
+                enabled = !guardando,
+                isError = viewModel.errorNombre != null,
+                modifier = Modifier.fillMaxWidth()
+            )
+            viewModel.errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = viewModel.correo,
+                onValueChange = viewModel::cambiarCorreo,
+                label = { Text("Correo electrónico") },
+                singleLine = true,
+                enabled = !guardando,
+                isError = viewModel.errorCorreo != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+            viewModel.errorCorreo?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = viewModel.telefono,
+                onValueChange = viewModel::cambiarTelefono,
+                label = { Text("Teléfono (opcional)") },
+                singleLine = true,
+                enabled = !guardando,
+                isError = viewModel.errorTelefono != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
+            )
+            viewModel.errorTelefono?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "El rol, los permisos y la contraseña no se pueden editar aquí.",
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
+
+            viewModel.avisoEdicion?.let { mensaje ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = mensaje, color = MaterialTheme.colorScheme.error)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Row {
+                Button(
+                    onClick = { viewModel.guardarCambios() },
+                    enabled = !guardando,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(if (guardando) "Guardando..." else "Guardar")
+                }
+                Spacer(modifier = Modifier.size(12.dp))
+                Button(
+                    onClick = { viewModel.cancelarEdicion() },
+                    enabled = !guardando,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        }
+    }
+}
+
+/**
+ * HU 29 - Sección "Información del vendedor" (solo rol VENDEDOR).
+ * Carga el perfil comercial, permite completarlo/editarlo y guardarlo.
+ */
+@Composable
+private fun SeccionVendedor(viewModel: PerfilViewModel) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Información del vendedor", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            when {
+                viewModel.cargandoVendedor -> {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                viewModel.editandoVendedor -> {
+                    FormularioVendedor(viewModel)
+                }
+
+                else -> {
+                    val perfil = viewModel.perfilVendedor
+                    val sinCompletar = perfil?.nombreComercial.isNullOrBlank()
+                    if (sinCompletar) {
+                        Text(
+                            text = "Aún no has completado tu información comercial. " +
+                                "Complétala para generar más confianza en tus clientes.",
+                            color = Color.Gray,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    DatosFila("Nombre comercial", perfil?.nombreComercial?.takeIf { it.isNotBlank() } ?: "Sin completar")
+                    DatosFila("Descripción", perfil?.descripcion?.takeIf { it.isNotBlank() } ?: "Sin completar")
+                    DatosFila("Teléfono de contacto", perfil?.telefonoContacto?.takeIf { it.isNotBlank() } ?: "Sin completar")
+
+                    viewModel.avisoVendedor?.let { mensaje ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = mensaje, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { viewModel.iniciarEdicionVendedor() }) {
+                        Text(if (sinCompletar) "Completar información" else "Editar información")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FormularioVendedor(viewModel: PerfilViewModel) {
+    val guardando = viewModel.guardandoVendedor
+
+    OutlinedTextField(
+        value = viewModel.nombreComercial,
+        onValueChange = viewModel::cambiarNombreComercial,
+        label = { Text("Nombre comercial") },
+        singleLine = true,
+        enabled = !guardando,
+        isError = viewModel.errorNombreComercial != null,
+        modifier = Modifier.fillMaxWidth()
+    )
+    viewModel.errorNombreComercial?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    OutlinedTextField(
+        value = viewModel.descripcion,
+        onValueChange = viewModel::cambiarDescripcion,
+        label = { Text("Descripción") },
+        enabled = !guardando,
+        isError = viewModel.errorDescripcion != null,
+        minLines = 3,
+        modifier = Modifier.fillMaxWidth()
+    )
+    viewModel.errorDescripcion?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    OutlinedTextField(
+        value = viewModel.telefonoContacto,
+        onValueChange = viewModel::cambiarTelefonoContacto,
+        label = { Text("Teléfono de contacto") },
+        singleLine = true,
+        enabled = !guardando,
+        isError = viewModel.errorTelefonoContacto != null,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        modifier = Modifier.fillMaxWidth()
+    )
+    viewModel.errorTelefonoContacto?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+    viewModel.avisoVendedor?.let { mensaje ->
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = mensaje, color = MaterialTheme.colorScheme.error)
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+    Row {
+        Button(
+            onClick = { viewModel.guardarPerfilVendedor() },
+            enabled = !guardando,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(if (guardando) "Guardando..." else "Guardar")
+        }
+        Spacer(modifier = Modifier.size(12.dp))
+        Button(
+            onClick = { viewModel.cancelarEdicionVendedor() },
+            enabled = !guardando,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text("Cancelar")
         }
     }
 }

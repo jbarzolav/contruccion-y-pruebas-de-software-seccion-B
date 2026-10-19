@@ -7,8 +7,13 @@ import com.ejemplo.publicarproducto.model.LoginRequest
 import com.ejemplo.publicarproducto.model.LoginResponse
 import com.ejemplo.publicarproducto.model.RegistroRequest
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
+import com.ejemplo.publicarproducto.model.ActualizarPerfilRequest
+import com.ejemplo.publicarproducto.model.PerfilUsuarioResponse
+import com.ejemplo.publicarproducto.model.PerfilVendedorRequest
+import com.ejemplo.publicarproducto.model.PerfilVendedorResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.GET
 import com.ejemplo.publicarproducto.model.AuthMessageResponse
@@ -40,9 +45,24 @@ interface AuthApi {
     @GET("api/auth/me")
     suspend fun obtenerSesion(): Response<UsuarioRolResponse>
 
-    // HU 27 - Perfil del usuario autenticado
+    // HU 27 / HU 28 - Perfil del usuario autenticado (incluye nombre y teléfono).
     @GET("api/usuarios/me")
-    suspend fun obtenerPerfil(): Response<UsuarioRolResponse>
+    suspend fun obtenerPerfil(): Response<PerfilUsuarioResponse>
+
+    // HU 28 - Edición de datos personales del usuario autenticado.
+    // 200: perfil actualizado; 400: datos inválidos; 401: sesión vencida;
+    // 409: correo ya registrado por otra cuenta. La identidad viene del Bearer.
+    @PATCH("api/usuarios/me")
+    suspend fun actualizarPerfil(@Body request: ActualizarPerfilRequest): Response<PerfilUsuarioResponse>
+
+    // HU 29 - Perfil comercial del vendedor autenticado (solo rol VENDEDOR;
+    // CLIENTE recibe 403 desde el backend). GET devuelve campos vacíos si
+    // aún no se ha completado.
+    @GET("api/vendedores/me/perfil")
+    suspend fun obtenerPerfilVendedor(): Response<PerfilVendedorResponse>
+
+    @PATCH("api/vendedores/me/perfil")
+    suspend fun guardarPerfilVendedor(@Body request: PerfilVendedorRequest): Response<PerfilVendedorResponse>
 
     // HU25 - UserApiClient agrega el Bearer existente mediante SessionManager.
     @POST("api/auth/logout")
