@@ -16,6 +16,8 @@ import retrofit2.http.Body
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import com.ejemplo.publicarproducto.model.AuthMessageResponse
 
 interface AuthApi {
@@ -54,6 +56,11 @@ interface AuthApi {
     // 409: correo ya registrado por otra cuenta. La identidad viene del Bearer.
     @PATCH("api/usuarios/me")
     suspend fun actualizarPerfil(@Body request: ActualizarPerfilRequest): Response<PerfilUsuarioResponse>
+
+    // HU 30 - Foto JPG/PNG multipart; la identidad viene del Bearer vigente.
+    @Multipart
+    @POST("api/usuarios/me/foto")
+    suspend fun actualizarFotoPerfil(@Part file: okhttp3.MultipartBody.Part): Response<PerfilUsuarioResponse>
 
     // HU 29 - Perfil comercial del vendedor autenticado (solo rol VENDEDOR;
     // CLIENTE recibe 403 desde el backend). GET devuelve campos vacíos si

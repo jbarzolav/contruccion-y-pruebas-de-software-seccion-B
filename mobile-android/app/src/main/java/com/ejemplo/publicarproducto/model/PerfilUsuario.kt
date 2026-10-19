@@ -21,5 +21,7 @@ data class PerfilUsuarioResponse(
     val correo: String,
     val telefono: String? = null,
     val rol: String,
-    val permisos: Set<String>
+    val permisos: Set<String>,
+    // HU 30 - Ruta pública de la foto del perfil, si fue configurada.
+    val fotoUrl: String? = null
 )

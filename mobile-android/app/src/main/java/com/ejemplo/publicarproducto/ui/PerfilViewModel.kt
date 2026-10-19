@@ -1,6 +1,7 @@
 package com.ejemplo.publicarproducto.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,7 +15,13 @@ import com.ejemplo.publicarproducto.model.UsuarioRolResponse
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.ejemplo.publicarproducto.session.SessionManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 sealed interface PerfilUiState {
@@ -62,6 +69,96 @@ class PerfilViewModel(application: Application) : AndroidViewModel(application) 
 
     // Corta el doble toque de forma SÍNCRONA, igual que registro/login.
     private var enviandoEdicion = false
+
+    // HU 30 - selección, validación y carga de foto de perfil.
+    var fotoLocalUri by mutableStateOf<Uri?>(null)
+        private set
+    var subiendoFoto by mutableStateOf(false)
+        private set
+    var avisoFoto by mutableStateOf<String?>(null)
+        private set
+    private var enviandoFoto = false
+
+    fun seleccionarFoto(uri: Uri?) {
+        if (uri == null) return
+        fotoLocalUri = uri
+        avisoFoto = null
+    }
+
+    fun subirFoto() {
+        if (enviandoFoto) return
+        val uri = fotoLocalUri ?: return
+        val application = getApplication<Application>()
+        val tipo = application.contentResolver.getType(uri)
+        val extension = when (tipo?.lowercase()) {
+            "image/jpeg", "image/jpg" -> "jpg"
+            "image/png" -> "png"
+            else -> {
+                avisoFoto = "Selecciona una imagen JPG o PNG."
+                return
+            }
+        }
+
+        enviandoFoto = true
+        subiendoFoto = true
+        avisoFoto = null
+        viewModelScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) {
+                    application.contentResolver.openInputStream(uri)?.use { input ->
+                        val salida = ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        var total = 0
+                        while (true) {
+                            val leidos = input.read(buffer)
+                            if (leidos < 0) break
+                            total += leidos
+                            if (total > MAX_FOTO_BYTES) break
+                            salida.write(buffer, 0, leidos)
+                        }
+                        if (total > MAX_FOTO_BYTES) null else salida.toByteArray()
+                    }
+                }
+                if (bytes == null) {
+                    avisoFoto = "La imagen no debe superar 2 MB."
+                    return@launch
+                }
+                if (bytes.isEmpty()) {
+                    avisoFoto = "No se pudo leer la imagen seleccionada."
+                    return@launch
+                }
+
+                val mediaType = if (extension == "png") "image/png" else "image/jpeg"
+                val archivo = MultipartBody.Part.createFormData(
+                    "file", "foto-perfil.$extension", bytes.toRequestBody(mediaType.toMediaTypeOrNull())
+                )
+                val respuesta = UserApiClient.authApi.actualizarFotoPerfil(archivo)
+                when {
+                    respuesta.isSuccessful && respuesta.body() != null -> {
+                        estado = PerfilUiState.Exito(respuesta.body()!!)
+                        fotoLocalUri = null
+                        avisoFoto = "Foto de perfil actualizada correctamente."
+                    }
+                    respuesta.code() == 401 -> {
+                        sesion.invalidarSesion()
+                        estado = PerfilUiState.Error("Tu sesión ha vencido o es inválida. Inicia sesión nuevamente.")
+                    }
+                    respuesta.code() == 400 || respuesta.code() == 413 ->
+                        avisoFoto = "La imagen debe ser JPG o PNG y no superar 2 MB."
+                    else -> avisoFoto = "No se pudo actualizar la foto (HTTP ${respuesta.code()})."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: IOException) {
+                avisoFoto = "No hay conexión con el servidor o no se pudo leer la imagen."
+            } catch (e: Exception) {
+                avisoFoto = "No se pudo actualizar la foto. Inténtalo de nuevo."
+            } finally {
+                enviandoFoto = false
+                subiendoFoto = false
+            }
+        }
+    }
 
     // ------------------------------------------------------------
     // HU 29 - perfil comercial del vendedor
@@ -365,6 +462,7 @@ class PerfilViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     companion object {
+        private const val MAX_FOTO_BYTES = 2 * 1024 * 1024
         // Mismos formatos que el frontend web y el backend Spring.
         private val CORREO_REGEX = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
         private val TELEFONO_REGEX = Regex("^\\+?[0-9][0-9 \\-]{5,17}[0-9]$")

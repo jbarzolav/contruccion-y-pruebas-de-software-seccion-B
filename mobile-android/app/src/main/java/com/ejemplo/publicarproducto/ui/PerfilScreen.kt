@@ -1,5 +1,6 @@
 package com.ejemplo.publicarproducto.ui
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,11 +29,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
 import com.ejemplo.publicarproducto.model.PerfilUsuarioResponse
 import com.ejemplo.publicarproducto.model.PerfilVendedorResponse
 
@@ -52,6 +57,9 @@ fun PerfilScreen(
     modifier: Modifier = Modifier,
 ) {
     val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<PerfilViewModel>()
+    val selectorFoto = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+        viewModel.seleccionarFoto(it)
+    }
     LaunchedEffect(Unit) { viewModel.cargarPerfil() }
 
     Column(
@@ -77,7 +85,7 @@ fun PerfilScreen(
                 if (viewModel.editando) {
                     FormularioEdicionPerfil(viewModel)
                 } else {
-                    PerfilContenido(estado.perfil)
+                    PerfilContenido(estado.perfil, viewModel.fotoLocalUri)
                     viewModel.avisoEdicion?.let { mensaje ->
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = mensaje, color = MaterialTheme.colorScheme.primary)
@@ -86,6 +94,33 @@ fun PerfilScreen(
                     Button(onClick = { viewModel.iniciarEdicion() }) {
                         Text("Editar datos personales")
                     }
+                }
+
+                // HU 30 - selección, vista previa y guardado de la foto personal.
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { selectorFoto.launch("image/*") },
+                    enabled = !viewModel.subiendoFoto
+                ) {
+                    Text(if (viewModel.fotoLocalUri == null) "Elegir foto JPG o PNG" else "Cambiar foto")
+                }
+                if (viewModel.fotoLocalUri != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { viewModel.subirFoto() }, enabled = !viewModel.subiendoFoto) {
+                        Text(if (viewModel.subiendoFoto) "Guardando foto..." else "Actualizar foto")
+                    }
+                }
+                if (viewModel.subiendoFoto) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CircularProgressIndicator()
+                }
+                viewModel.avisoFoto?.let { mensaje ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = mensaje,
+                        color = if (mensaje.startsWith("Foto de perfil")) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
+                    )
                 }
 
                 // HU 29 - la sección del vendedor solo aplica a ese rol.
@@ -127,7 +162,7 @@ fun PerfilScreen(
 }
 
 @Composable
-private fun PerfilContenido(perfil: PerfilUsuarioResponse) {
+private fun PerfilContenido(perfil: PerfilUsuarioResponse, fotoLocalUri: Uri?) {
     val inicial = perfil.correo.trim().firstOrNull()?.uppercaseChar() ?: 'U'
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -139,7 +174,20 @@ private fun PerfilContenido(perfil: PerfilUsuarioResponse) {
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = inicial.toString(), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    val fotoGuardada = perfil.fotoUrl?.let { ruta ->
+                        if (ruta.startsWith("http")) ruta else "http://10.0.2.2:9000$ruta"
+                    }
+                    val modeloFoto: Any? = fotoLocalUri ?: fotoGuardada
+                    if (modeloFoto != null) {
+                        AsyncImage(
+                            model = modeloFoto,
+                            contentDescription = "Foto de perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Text(text = inicial.toString(), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 Column(modifier = Modifier.padding(start = 16.dp)) {
                     Text(
