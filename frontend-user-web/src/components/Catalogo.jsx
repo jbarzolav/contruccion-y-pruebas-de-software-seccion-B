@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+    agregarFavorito,
     buscarProductosPorNombre,
+    obtenerFavoritos,
     obtenerCatalogo,
     obtenerRecomendaciones,
     urlImagen
 } from '../api/productos.js'
+import { tienePermiso, useSesion } from '../api/sesion.js'
 
 const CLASES_ESTADO = {
     DISPONIBLE: 'badge-disponible',
@@ -17,58 +20,45 @@ const CLASES_ESTADO = {
 // HU 07 + HU 08 + HU 20 - Tarjeta única del catálogo: la usan tanto los
 // resultados de búsqueda como las recomendaciones (mismos estilos y la
 // misma navegación hacia /producto/:id, sin duplicar componentes).
-function tarjetaProducto(producto) {
+function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar }) {
     const imagen = urlImagen(producto.imagenUrl)
     const agotado = producto.stock === 0
 
     return (
-        <Link
-            key={producto.id}
-            to={`/producto/${producto.id}`}
-            className="catalogo-tarjeta"
-        >
-            {imagen ? (
-                <img
-                    className="catalogo-imagen"
-                    src={imagen}
-                    alt={producto.nombre}
-                />
-            ) : (
-                <div className="catalogo-imagen-vacia">
-                    Sin imagen
+        <article key={producto.id} className="catalogo-tarjeta">
+            <Link to={`/producto/${producto.id}`} className="catalogo-tarjeta-enlace">
+                {imagen ? (
+                    <img className="catalogo-imagen" src={imagen} alt={producto.nombre} />
+                ) : (
+                    <div className="catalogo-imagen-vacia">Sin imagen</div>
+                )}
+                <div className="catalogo-datos">
+                    <div className="catalogo-insignias">
+                        {producto.esDestacado && <span className="badge badge-destacado">★ Destacado</span>}
+                        {agotado && producto.estado === 'DISPONIBLE' ? (
+                            <span className="badge badge-agotado">Agotado</span>
+                        ) : (
+                            <span className={`badge ${CLASES_ESTADO[producto.estado] || ''}`}>
+                                {producto.estado}
+                            </span>
+                        )}
+                    </div>
+                    <h3>{producto.nombre}</h3>
+                    <p className="catalogo-precio">S/ {Number(producto.precio).toFixed(2)}</p>
                 </div>
+            </Link>
+            {puedeGuardar && (
+                <button
+                    type="button"
+                    className="catalogo-favorito"
+                    onClick={() => alGuardar(producto)}
+                    disabled={esFavorito || guardando}
+                    aria-label={esFavorito ? `${producto.nombre} guardado en favoritos` : `Guardar ${producto.nombre} en favoritos`}
+                >
+                    {guardando ? 'Guardando…' : esFavorito ? '♥ Guardado' : '♡ Favorito'}
+                </button>
             )}
-
-            <div className="catalogo-datos">
-                {/* Insignias visuales: Destacado (HU 19) y estado */}
-                <div className="catalogo-insignias">
-                    {producto.esDestacado && (
-                        <span className="badge badge-destacado">
-                            ★ Destacado
-                        </span>
-                    )}
-
-                    {agotado && producto.estado === 'DISPONIBLE' ? (
-                        <span className="badge badge-agotado">
-                            Agotado
-                        </span>
-                    ) : (
-                        <span
-                            className={`badge ${
-                                CLASES_ESTADO[producto.estado] || ''
-                            }`}
-                        >
-                            {producto.estado}
-                        </span>
-                    )}
-                </div>
-
-                <h3>{producto.nombre}</h3>
-                <p className="catalogo-precio">
-                    S/ {Number(producto.precio).toFixed(2)}
-                </p>
-            </div>
-        </Link>
+        </article>
     )
 }
 
@@ -76,6 +66,8 @@ function tarjetaProducto(producto) {
 // Rediseño UI/UX: recibe la búsqueda (HU 06) y el orden (HU 09) desde Inicio
 // y muestra insignias visuales de Destacado (HU 19) y Agotado.
 export default function Catalogo({ nombre = '', sort = '', actualizar }) {
+    const sesion = useSesion()
+    const puedeGuardar = tienePermiso(sesion, 'COMPRAR')
     const [productos, setProductos] = useState([])
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
@@ -85,8 +77,62 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
     const [recomendaciones, setRecomendaciones] = useState([])
     const [cargandoRecomendaciones, setCargandoRecomendaciones] = useState(false)
     const [errorRecomendaciones, setErrorRecomendaciones] = useState('')
+    // HU 31 - la lista guardada se carga para conservar el estado del favorito al volver.
+    const [favoritos, setFavoritos] = useState([])
+    const [cargandoFavoritos, setCargandoFavoritos] = useState(false)
+    const [errorFavoritos, setErrorFavoritos] = useState('')
+    const [idGuardandoFavorito, setIdGuardandoFavorito] = useState(null)
+    const [avisoFavorito, setAvisoFavorito] = useState('')
+    const [mostrarFavoritos, setMostrarFavoritos] = useState(false)
     // Último término realmente solicitado: descarta respuestas desactualizadas
     const ultimoTermino = useRef('')
+
+    useEffect(() => {
+        if (!puedeGuardar) {
+            setFavoritos([])
+            setMostrarFavoritos(false)
+            return
+        }
+        async function cargarFavoritos() {
+            setCargandoFavoritos(true)
+            setErrorFavoritos('')
+            try {
+                setFavoritos(await obtenerFavoritos())
+            } catch {
+                setErrorFavoritos('No se pudieron cargar tus favoritos.')
+            } finally {
+                setCargandoFavoritos(false)
+            }
+        }
+        cargarFavoritos()
+    }, [puedeGuardar, sesion?.token])
+
+    async function guardarFavorito(producto) {
+        if (!producto?.id || idGuardandoFavorito != null) return
+        setIdGuardandoFavorito(producto.id)
+        setAvisoFavorito('')
+        try {
+            await agregarFavorito(producto.id)
+            setFavoritos((actuales) => actuales.some((item) => item.id === producto.id)
+                ? actuales
+                : [producto, ...actuales])
+            setAvisoFavorito(`${producto.nombre} se guardó en tus favoritos.`)
+        } catch (err) {
+            setAvisoFavorito(err?.response?.data?.messages?.[0] || 'No se pudo guardar el favorito.')
+        } finally {
+            setIdGuardandoFavorito(null)
+        }
+    }
+
+    const idsFavoritos = new Set(favoritos.map((producto) => producto.id))
+    function renderTarjeta(producto) {
+        return tarjetaProducto(producto, {
+            puedeGuardar,
+            esFavorito: idsFavoritos.has(producto.id),
+            guardando: idGuardandoFavorito === producto.id,
+            alGuardar: guardarFavorito,
+        })
+    }
 
     // Recarga con debounce al escribir, al cambiar el orden o al modificar productos
     useEffect(() => {
@@ -197,6 +243,25 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
                 Selecciona un producto para ver su detalle.
             </p>
 
+            {puedeGuardar && (
+                <div className="catalogo-favoritos-barra">
+                    <button type="button" className="btn-secundario" onClick={() => setMostrarFavoritos((mostrar) => !mostrar)}>
+                        {mostrarFavoritos ? 'Volver al catálogo' : `Mis favoritos (${favoritos.length})`}
+                    </button>
+                    {avisoFavorito && <span role="status">{avisoFavorito}</span>}
+                </div>
+            )}
+
+            {mostrarFavoritos ? (
+                <>
+                    {cargandoFavoritos && <p>Cargando favoritos...</p>}
+                    {errorFavoritos && <div className="alerta error">{errorFavoritos}</div>}
+                    {!cargandoFavoritos && !errorFavoritos && favoritos.length === 0 && (
+                        <p>Aún no has guardado productos como favoritos.</p>
+                    )}
+                    <div className="catalogo-grilla">{favoritos.map(renderTarjeta)}</div>
+                </>
+            ) : <>
             {cargando && <p>Cargando catálogo...</p>}
 
             {error && <div className="alerta error">{error}</div>}
@@ -208,7 +273,7 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
             )}
 
             <div className="catalogo-grilla">
-                {productos.map(tarjetaProducto)}
+                {productos.map(renderTarjeta)}
             </div>
 
             {/* HU 20 - recomendaciones asociadas al término buscado */}
@@ -243,11 +308,12 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
                         !errorRecomendaciones &&
                         recomendacionesVisibles.length > 0 && (
                             <div className="catalogo-grilla">
-                                {recomendacionesVisibles.map(tarjetaProducto)}
+                                {recomendacionesVisibles.map(renderTarjeta)}
                             </div>
                         )}
                 </div>
             )}
+            </>}
         </section>
     )
 }

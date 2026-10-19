@@ -3,8 +3,10 @@ import { tienePermiso, useSesion } from '../api/sesion.js'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
+    agregarFavorito,
     agregarAlCarrito,
     obtenerDisponibilidadProducto,
+    obtenerFavoritos,
     obtenerProducto,
     urlImagen,
 } from '../api/productos.js'
@@ -21,7 +23,8 @@ const CLASES_ESTADO = {
 // HU 11 / HU 12 - Seleccionar cantidad y agregar al carrito
 // HU 15 - Comprar y navegar a la confirmación de compra
 export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) {
-    const puedeComprar = tienePermiso(useSesion(), 'COMPRAR')
+    const sesion = useSesion()
+    const puedeComprar = tienePermiso(sesion, 'COMPRAR')
     const { idProducto } = useParams()
     const navigate = useNavigate()
 
@@ -35,6 +38,44 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
     const [agregando, setAgregando] = useState(false)
     const [mensajeCarrito, setMensajeCarrito] = useState('')
     const [errorCarrito, setErrorCarrito] = useState('')
+    // HU 31 - estado de guardado del producto como favorito.
+    const [esFavorito, setEsFavorito] = useState(false)
+    const [cargandoFavorito, setCargandoFavorito] = useState(false)
+    const [guardandoFavorito, setGuardandoFavorito] = useState(false)
+    const [avisoFavorito, setAvisoFavorito] = useState('')
+
+    useEffect(() => {
+        let vigente = true
+        if (!puedeComprar) {
+            setEsFavorito(false)
+            return () => { vigente = false }
+        }
+        setCargandoFavorito(true)
+        obtenerFavoritos()
+            .then((lista) => {
+                if (vigente) setEsFavorito(lista.some((item) => String(item.id) === String(idProducto)))
+            })
+            .catch(() => {
+                if (vigente) setAvisoFavorito('No se pudo consultar el estado del favorito.')
+            })
+            .finally(() => { if (vigente) setCargandoFavorito(false) })
+        return () => { vigente = false }
+    }, [idProducto, puedeComprar, sesion?.token])
+
+    async function guardarFavorito() {
+        if (guardandoFavorito || esFavorito) return
+        setGuardandoFavorito(true)
+        setAvisoFavorito('')
+        try {
+            await agregarFavorito(Number(idProducto))
+            setEsFavorito(true)
+            setAvisoFavorito('Producto guardado en tus favoritos.')
+        } catch (err) {
+            setAvisoFavorito(err?.response?.data?.messages?.[0] || 'No se pudo guardar el favorito.')
+        } finally {
+            setGuardandoFavorito(false)
+        }
+    }
 
     useEffect(() => {
         let vigente = true
@@ -218,6 +259,20 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                     )}
                 </div>
             </div>
+
+            {puedeComprar && (
+                <div className="detalle-favorito">
+                    <button
+                        type="button"
+                        className="btn-secundario"
+                        onClick={guardarFavorito}
+                        disabled={cargandoFavorito || guardandoFavorito || esFavorito}
+                    >
+                        {cargandoFavorito ? 'Consultando…' : guardandoFavorito ? 'Guardando…' : esFavorito ? '♥ Guardado en favoritos' : '♡ Guardar en favoritos'}
+                    </button>
+                    {avisoFavorito && <p role="status">{avisoFavorito}</p>}
+                </div>
+            )}
 
             {/* HU 11 - Selector de cantidad y agregar al carrito */}
             {puedeComprar && <div className="detalle-carrito">

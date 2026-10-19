@@ -43,6 +43,12 @@ const apiRecomendaciones = axios.create({
   timeout: 10000,
 })
 
+// HU 31 - Favoritos personales; usa la sesión para limitar cada lista al cliente autenticado.
+const apiFavoritos = configurarSesion(axios.create({
+  baseURL: `${API_URL}/api/usuarios/me/favoritos`,
+  timeout: 10000,
+}))
+
 // HU 23 - Autenticación en publicaciones, imágenes, carrito y pedidos.
 for (const servicio of [api, apiArchivos, apiCarrito, apiPedidos]) configurarSesion(servicio)
 const apiVendedor = configurarSesion(axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 }))
@@ -110,6 +116,18 @@ export async function obtenerProducto(idProducto) {
 // HU 07 - GET /api/productos/catalogo (solo DISPONIBLE)
 export async function obtenerCatalogo() {
   const { data } = await api.get('/catalogo')
+  return data
+}
+
+// HU 31 - GET /api/usuarios/me/favoritos
+export async function obtenerFavoritos() {
+  const { data } = await apiFavoritos.get('')
+  return data
+}
+
+// HU 31 - POST /api/usuarios/me/favoritos/{idProducto} (idempotente)
+export async function agregarFavorito(idProducto) {
+  const { data } = await apiFavoritos.post(`/${idProducto}`)
   return data
 }
 
