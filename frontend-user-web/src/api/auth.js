@@ -46,6 +46,19 @@ export async function obtenerPerfil() {
   return data
 }
 
+// HU 30 - Sube la foto del usuario de la sesión (límite 2 MB, JPG/PNG).
+export async function actualizarFotoPerfil(archivo) {
+  const formulario = new FormData()
+  formulario.append('file', archivo)
+  const { data } = await apiPermisos.post('/usuarios/me/foto', formulario)
+  return data
+}
+
+export function urlFotoPerfil(ruta) {
+  if (!ruta) return null
+  return ruta.startsWith('http') ? ruta : `${API_URL}${ruta}`
+}
+
 // HU 28 - Edición de datos personales: PATCH /api/usuarios/me
 // La identidad la decide el backend desde la sesión; el body solo envía
 // los campos habilitados (nombre, correo, teléfono).

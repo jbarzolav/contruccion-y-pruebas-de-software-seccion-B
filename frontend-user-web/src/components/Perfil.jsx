@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import { guardarSesion, leerSesion } from '../api/sesion.js'
 import {
   actualizarPerfil,
+  actualizarFotoPerfil,
   guardarPerfilVendedor,
   obtenerPerfil,
   obtenerPerfilVendedor,
+  urlFotoPerfil,
 } from '../api/auth.js'
 
 /**
@@ -35,6 +37,50 @@ export default function Perfil() {
   const [erroresCampo, setErroresCampo] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState(null)
+  // HU 30 - selección temporal y vista previa de foto de perfil.
+  const [fotoSeleccionada, setFotoSeleccionada] = useState(null)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const [avisoFoto, setAvisoFoto] = useState('')
+  const [previsualizacion, setPrevisualizacion] = useState('')
+
+  useEffect(() => {
+    if (!fotoSeleccionada) { setPrevisualizacion(''); return undefined }
+    const url = URL.createObjectURL(fotoSeleccionada)
+    setPrevisualizacion(url)
+    return () => URL.revokeObjectURL(url)
+  }, [fotoSeleccionada])
+
+  function seleccionarFoto(evento) {
+    const archivo = evento.target.files?.[0]
+    evento.target.value = ''
+    setAvisoFoto('')
+    if (!archivo) return
+    if (!['image/jpeg', 'image/png'].includes(archivo.type)) {
+      setAvisoFoto('Selecciona una imagen JPG o PNG.')
+      return
+    }
+    if (archivo.size > 2 * 1024 * 1024) {
+      setAvisoFoto('La foto no puede superar 2 MB.')
+      return
+    }
+    setFotoSeleccionada(archivo)
+  }
+
+  async function guardarFoto() {
+    if (!fotoSeleccionada || subiendoFoto) return
+    setSubiendoFoto(true)
+    setAvisoFoto('')
+    try {
+      const actualizado = await actualizarFotoPerfil(fotoSeleccionada)
+      setPerfil(actualizado)
+      setFotoSeleccionada(null)
+      setAvisoFoto('Foto de perfil actualizada correctamente.')
+    } catch (err) {
+      setAvisoFoto(err?.response?.data?.messages?.[0] || 'No se pudo actualizar la foto. Inténtalo de nuevo.')
+    } finally {
+      setSubiendoFoto(false)
+    }
+  }
 
   async function cargarPerfil() {
     try {
@@ -177,12 +223,26 @@ export default function Perfil() {
 
           <div className="perfil-encabezado">
             <div className="perfil-avatar" aria-label="Avatar de usuario">
-              {inicial}
+              {(previsualizacion || perfil.fotoUrl) ? (
+                <img className="perfil-avatar-foto" src={previsualizacion || urlFotoPerfil(perfil.fotoUrl)} alt="Foto de perfil" />
+              ) : inicial}
             </div>
             <div>
               <h3 className="perfil-correo">{perfil.correo}</h3>
               <p className="perfil-rol">Rol: {perfil.rol}</p>
             </div>
+          </div>
+
+          {/* HU 30 - selección, vista previa y actualización de la foto. */}
+          <div className="perfil-foto-controles">
+            <label className="btn-secundario" htmlFor="perfil-foto">Elegir foto JPG o PNG</label>
+            <input id="perfil-foto" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" onChange={seleccionarFoto} />
+            {fotoSeleccionada && (
+              <button type="button" className="btn-primario" onClick={guardarFoto} disabled={subiendoFoto}>
+                {subiendoFoto ? 'Actualizando foto…' : 'Actualizar foto'}
+              </button>
+            )}
+            {avisoFoto && <p className="perfil-foto-aviso" role="status">{avisoFoto}</p>}
           </div>
 
           {!editando && (
