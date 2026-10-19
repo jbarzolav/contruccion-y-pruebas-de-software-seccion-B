@@ -51,8 +51,9 @@ fun DetalleProductoScreen(
     modifier: Modifier = Modifier,
     viewModel: DetalleProductoViewModel = viewModel()
 ) {
-    LaunchedEffect(productoId) {
+    LaunchedEffect(productoId, puedeComprar) {
         viewModel.cargarProducto(productoId)
+        if (puedeComprar) viewModel.cargarEstadoFavorito(productoId)
     }
 
     Column(
@@ -248,6 +249,31 @@ private fun DetalleContenido(
                 color = RojoTextoOscuro,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
+            )
+        }
+    }
+
+    // HU 31 - Guardar el producto para encontrarlo luego desde la lista de favoritos.
+    if (puedeComprar) {
+        Button(
+            onClick = viewModel::agregarFavorito,
+            enabled = !viewModel.cargandoFavorito && !viewModel.guardandoFavorito && !viewModel.esFavorito,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                when {
+                    viewModel.cargandoFavorito -> "Consultando favorito..."
+                    viewModel.guardandoFavorito -> "Guardando..."
+                    viewModel.esFavorito -> "♥ Guardado en favoritos"
+                    else -> "♡ Guardar en favoritos"
+                }
+            )
+        }
+        viewModel.avisoFavorito?.let { mensaje ->
+            Text(
+                text = mensaje,
+                color = if (mensaje.startsWith("Producto guardado")) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error
             )
         }
     }

@@ -6,6 +6,7 @@ import com.ejemplo.publicarproducto.model.ChatbotResponse
 import com.ejemplo.publicarproducto.model.DestacarRequest
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.EstadoProductoRequest
+import com.ejemplo.publicarproducto.model.FavoritoResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
@@ -28,6 +29,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ProductoApi {
+
+    // HU 31 - Favoritos del cliente autenticado.
+    @GET("api/usuarios/me/favoritos")
+    suspend fun listarFavoritos(): Response<List<ProductoResponse>>
+
+    @POST("api/usuarios/me/favoritos/{idProducto}")
+    suspend fun agregarFavorito(@Path("idProducto") idProducto: Long): Response<FavoritoResponse>
 
     // HU 01 - POST /api/productos
     @POST("api/productos")

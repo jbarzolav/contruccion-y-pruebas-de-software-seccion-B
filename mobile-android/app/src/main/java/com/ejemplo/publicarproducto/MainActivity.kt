@@ -345,6 +345,7 @@ class MainActivity : ComponentActivity() {
                                 // HU 06/07/08/09 - Inicio: catálogo con búsqueda y orden
                                 0 -> BuscarProductosScreen(
                                     modifier = Modifier.padding(padding),
+                                    puedeGuardarFavoritos = puedeComprar,
                                     onSeleccionarProducto = { id ->
                                         productoDetalleId = id
                                     }

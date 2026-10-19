@@ -40,12 +40,15 @@ import com.ejemplo.publicarproducto.model.ProductoResponse
 fun BuscarProductosScreen(
     modifier: Modifier = Modifier,
     viewModel: BuscarProductosViewModel = viewModel(),
-    onSeleccionarProducto: (Long) -> Unit = {}
+    onSeleccionarProducto: (Long) -> Unit = {},
+    puedeGuardarFavoritos: Boolean = false
 ) {
     var menuOrdenAbierto by remember { mutableStateOf(false) }
+    var mostrarFavoritos by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(puedeGuardarFavoritos) {
         viewModel.cargarCatalogo()
+        if (puedeGuardarFavoritos) viewModel.cargarFavoritos()
     }
 
     Column(
@@ -59,6 +62,43 @@ fun BuscarProductosScreen(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
+
+        if (puedeGuardarFavoritos) {
+            OutlinedButton(
+                onClick = {
+                    mostrarFavoritos = !mostrarFavoritos
+                    if (mostrarFavoritos) viewModel.cargarFavoritos()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (mostrarFavoritos) "Volver al catálogo" else "Mis favoritos (${viewModel.favoritos.size})")
+            }
+            viewModel.avisoFavorito?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        }
+
+        if (mostrarFavoritos) {
+            when {
+                viewModel.cargandoFavoritos -> CircularProgressIndicator()
+                viewModel.errorFavoritos != null -> Text(
+                    viewModel.errorFavoritos.orEmpty(), color = MaterialTheme.colorScheme.error
+                )
+                viewModel.favoritos.isEmpty() -> Text("Aún no has guardado productos como favoritos.")
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(viewModel.favoritos, key = { "fav-${it.id ?: 0L}" }) { producto ->
+                        TarjetaProductoListado(
+                            producto = producto,
+                            onSeleccionarProducto = onSeleccionarProducto,
+                            puedeGuardarFavoritos = true,
+                            esFavorito = true,
+                            guardando = false,
+                            onGuardarFavorito = viewModel::agregarFavorito
+                        )
+                    }
+                }
+            }
+        }
+
+        if (!mostrarFavoritos) {
 
         OutlinedTextField(
             value = viewModel.nombre,
@@ -169,7 +209,11 @@ fun BuscarProductosScreen(
                         ) { producto ->
                             TarjetaProductoListado(
                                 producto = producto,
-                                onSeleccionarProducto = onSeleccionarProducto
+                                onSeleccionarProducto = onSeleccionarProducto,
+                                puedeGuardarFavoritos = puedeGuardarFavoritos,
+                                esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
+                                guardando = viewModel.idGuardandoFavorito == producto.id,
+                                onGuardarFavorito = viewModel::agregarFavorito
                             )
                         }
                     }
@@ -218,7 +262,11 @@ fun BuscarProductosScreen(
                                     ) { producto ->
                                         TarjetaProductoListado(
                                             producto = producto,
-                                            onSeleccionarProducto = onSeleccionarProducto
+                                            onSeleccionarProducto = onSeleccionarProducto,
+                                            puedeGuardarFavoritos = puedeGuardarFavoritos,
+                                            esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
+                                            guardando = viewModel.idGuardandoFavorito == producto.id,
+                                            onGuardarFavorito = viewModel::agregarFavorito
                                         )
                                     }
                                 }
@@ -236,6 +284,7 @@ fun BuscarProductosScreen(
                 )
             }
         }
+        }
     }
 }
 
@@ -248,7 +297,11 @@ fun BuscarProductosScreen(
 @Composable
 private fun TarjetaProductoListado(
     producto: ProductoResponse,
-    onSeleccionarProducto: (Long) -> Unit
+    onSeleccionarProducto: (Long) -> Unit,
+    puedeGuardarFavoritos: Boolean,
+    esFavorito: Boolean,
+    guardando: Boolean,
+    onGuardarFavorito: (ProductoResponse) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -295,6 +348,16 @@ private fun TarjetaProductoListado(
             // muestra la disponibilidad cuando el producto la informa
             if (!producto.estado.isNullOrBlank()) {
                 Text("Disponibilidad: ${producto.estado}")
+            }
+
+            if (puedeGuardarFavoritos) {
+                OutlinedButton(
+                    onClick = { onGuardarFavorito(producto) },
+                    enabled = !esFavorito && !guardando,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (guardando) "Guardando..." else if (esFavorito) "♥ Guardado" else "♡ Favorito")
+                }
             }
         }
     }

@@ -19,6 +19,12 @@ data class ProductoResponse(
     val esDestacado: Boolean = false
 )
 
+/** HU 31 - Resultado idempotente de agregar un producto a favoritos. */
+data class FavoritoResponse(
+    val productoId: Long,
+    val favorito: Boolean
+)
+
 /**
  * Cuerpo de error del backend cuando la validación falla (HTTP 400).
  * { "status": 400, "error": "Validación fallida", "messages": ["..."] }

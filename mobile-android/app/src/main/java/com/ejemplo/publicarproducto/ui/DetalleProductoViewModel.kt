@@ -49,6 +49,16 @@ class DetalleProductoViewModel : ViewModel() {
     var errorCarrito by mutableStateOf<String?>(null)
         private set
 
+    // HU 31 - estado y resultado del guardado como favorito.
+    var esFavorito by mutableStateOf(false)
+        private set
+    var cargandoFavorito by mutableStateOf(false)
+        private set
+    var guardandoFavorito by mutableStateOf(false)
+        private set
+    var avisoFavorito by mutableStateOf<String?>(null)
+        private set
+
     fun cambiarCantidad(delta: Int) {
         val stockMaximo = disponibilidad?.stock ?: Int.MAX_VALUE
         cantidad = (cantidad + delta).coerceIn(1, stockMaximo)
@@ -150,6 +160,48 @@ class DetalleProductoViewModel : ViewModel() {
                 uiState = DetalleProductoUiState.Error(
                     "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
+            }
+        }
+    }
+
+    fun cargarEstadoFavorito(idProducto: Long) {
+        cargandoFavorito = true
+        esFavorito = false
+        avisoFavorito = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.listarFavoritos()
+                if (respuesta.isSuccessful) {
+                    esFavorito = respuesta.body().orEmpty().any { it.id == idProducto }
+                } else {
+                    avisoFavorito = "No se pudo consultar el estado del favorito."
+                }
+            } catch (e: Exception) {
+                avisoFavorito = "No hay conexión para consultar tus favoritos."
+            } finally {
+                cargandoFavorito = false
+            }
+        }
+    }
+
+    fun agregarFavorito() {
+        val id = producto?.id ?: return
+        if (guardandoFavorito || esFavorito) return
+        guardandoFavorito = true
+        avisoFavorito = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.agregarFavorito(id)
+                if (respuesta.isSuccessful && respuesta.body()?.favorito == true) {
+                    esFavorito = true
+                    avisoFavorito = "Producto guardado en tus favoritos."
+                } else {
+                    avisoFavorito = "Error ${respuesta.code()}: no se pudo guardar el favorito."
+                }
+            } catch (e: Exception) {
+                avisoFavorito = "No hay conexión para guardar el favorito."
+            } finally {
+                guardandoFavorito = false
             }
         }
     }

@@ -53,6 +53,18 @@ class BuscarProductosViewModel : ViewModel() {
     var recomendaciones by mutableStateOf<List<ProductoResponse>>(emptyList())
         private set
 
+    // HU 31 - favoritos persistidos y estado visible en catálogo/lista.
+    var favoritos by mutableStateOf<List<ProductoResponse>>(emptyList())
+        private set
+    var cargandoFavoritos by mutableStateOf(false)
+        private set
+    var errorFavoritos by mutableStateOf<String?>(null)
+        private set
+    var idGuardandoFavorito by mutableStateOf<Long?>(null)
+        private set
+    var avisoFavorito by mutableStateOf<String?>(null)
+        private set
+
     /** Término realmente consultado (títula la sección en la UI). */
     var terminoRecomendaciones by mutableStateOf("")
         private set
@@ -182,6 +194,52 @@ class BuscarProductosViewModel : ViewModel() {
                 uiState = BuscarProductosUiState.Error(
                     "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
+            }
+        }
+    }
+
+    fun cargarFavoritos() {
+        if (cargandoFavoritos) return
+        cargandoFavoritos = true
+        errorFavoritos = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.listarFavoritos()
+                if (respuesta.isSuccessful) {
+                    favoritos = respuesta.body().orEmpty()
+                } else {
+                    errorFavoritos = "Error ${respuesta.code()}: no se pudieron cargar tus favoritos."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                errorFavoritos = "No hay conexión para cargar tus favoritos."
+            } finally {
+                cargandoFavoritos = false
+            }
+        }
+    }
+
+    fun agregarFavorito(producto: ProductoResponse) {
+        val id = producto.id ?: return
+        if (idGuardandoFavorito != null || favoritos.any { it.id == id }) return
+        idGuardandoFavorito = id
+        avisoFavorito = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.agregarFavorito(id)
+                if (respuesta.isSuccessful && respuesta.body()?.favorito == true) {
+                    favoritos = listOf(producto) + favoritos.filterNot { it.id == id }
+                    avisoFavorito = "${producto.nombre.orEmpty()} se guardó en tus favoritos."
+                } else {
+                    avisoFavorito = "Error ${respuesta.code()}: no se pudo guardar el favorito."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                avisoFavorito = "No hay conexión para guardar el favorito."
+            } finally {
+                idGuardandoFavorito = null
             }
         }
     }
