@@ -24,6 +24,14 @@ public class Usuario {
     @Column(nullable = false)
     private String passwordHash;
 
+    // HU 28 - Datos personales editables por el propio usuario (nullables:
+    // las cuentas creadas antes de esta historia siguen siendo válidas).
+    @Column(length = 100)
+    private String nombre;
+
+    @Column(length = 20)
+    private String telefono;
+
     // HU 23 - Una cuenta comienza sin privilegios administrativos.
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -61,5 +69,21 @@ public class Usuario {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 }
