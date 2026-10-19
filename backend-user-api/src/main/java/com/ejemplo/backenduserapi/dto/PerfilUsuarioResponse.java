@@ -11,11 +11,11 @@ import java.util.Set;
  * Extiende el DTO de HU 27 con los datos personales editables (nombre y
  * teléfono); los campos autorizados de HU 27 se conservan sin cambios.
  */
-public record PerfilUsuarioResponse(Long id, String nombre, String correo, String telefono, Rol rol,
+public record PerfilUsuarioResponse(Long id, String nombre, String correo, String telefono, String fotoUrl, Rol rol,
                                     Set<String> permisos) {
 
     public static PerfilUsuarioResponse de(Usuario u) {
-        return new PerfilUsuarioResponse(u.getId(), u.getNombre(), u.getCorreo(), u.getTelefono(),
+        return new PerfilUsuarioResponse(u.getId(), u.getNombre(), u.getCorreo(), u.getTelefono(), u.getFotoUrl(),
                 u.getRol(), u.getRol().getPermisos());
     }
 }

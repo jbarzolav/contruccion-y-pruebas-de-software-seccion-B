@@ -32,6 +32,13 @@ public class Usuario {
     @Column(length = 20)
     private String telefono;
 
+    // HU 30 - Foto del perfil guardada junto a los archivos del backend.
+    @Column(length = 500)
+    private String fotoUrl;
+
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
+
     // HU 23 - Una cuenta comienza sin privilegios administrativos.
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
