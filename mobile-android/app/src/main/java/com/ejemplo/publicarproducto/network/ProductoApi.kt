@@ -37,6 +37,10 @@ interface ProductoApi {
     @POST("api/usuarios/me/favoritos/{idProducto}")
     suspend fun agregarFavorito(@Path("idProducto") idProducto: Long): Response<FavoritoResponse>
 
+    // HU 33 - elimina solo la relación del cliente autenticado.
+    @DELETE("api/usuarios/me/favoritos/{idProducto}")
+    suspend fun quitarFavorito(@Path("idProducto") idProducto: Long): Response<Void>
+
     // HU 01 - POST /api/productos
     @POST("api/productos")
     suspend fun crearProducto(

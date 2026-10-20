@@ -64,6 +64,8 @@ class BuscarProductosViewModel : ViewModel() {
         private set
     var avisoFavorito by mutableStateOf<String?>(null)
         private set
+    var idQuitandoFavorito by mutableStateOf<Long?>(null)
+        private set
 
     /** Término realmente consultado (títula la sección en la UI). */
     var terminoRecomendaciones by mutableStateOf("")
@@ -240,6 +242,34 @@ class BuscarProductosViewModel : ViewModel() {
                 avisoFavorito = "No hay conexión para guardar el favorito."
             } finally {
                 idGuardandoFavorito = null
+            }
+        }
+    }
+
+    /** HU33 - quita el favorito y conserva el producto en el catálogo. */
+    fun quitarFavorito(producto: ProductoResponse) {
+        val id = producto.id ?: return
+        if (idQuitandoFavorito != null) return
+        idQuitandoFavorito = id
+        avisoFavorito = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.quitarFavorito(id)
+                if (respuesta.isSuccessful) {
+                    favoritos = favoritos.filterNot { it.id == id }
+                    avisoFavorito = "${producto.nombre.orEmpty()} se quitó de tus favoritos."
+                } else if (respuesta.code() == 404) {
+                    favoritos = favoritos.filterNot { it.id == id }
+                    avisoFavorito = "El favorito ya no existía; la lista fue actualizada."
+                } else {
+                    avisoFavorito = "Error ${respuesta.code()}: no se pudo quitar el favorito."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                avisoFavorito = "No hay conexión para quitar el favorito."
+            } finally {
+                idQuitandoFavorito = null
             }
         }
     }

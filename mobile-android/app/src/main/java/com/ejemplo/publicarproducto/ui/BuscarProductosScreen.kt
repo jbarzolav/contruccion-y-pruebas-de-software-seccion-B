@@ -90,8 +90,9 @@ fun BuscarProductosScreen(
                             onSeleccionarProducto = onSeleccionarProducto,
                             puedeGuardarFavoritos = true,
                             esFavorito = true,
-                            guardando = false,
-                            onGuardarFavorito = viewModel::agregarFavorito
+                            guardando = viewModel.idQuitandoFavorito == producto.id,
+                            onGuardarFavorito = viewModel::agregarFavorito,
+                            onQuitarFavorito = viewModel::quitarFavorito
                         )
                     }
                 }
@@ -212,8 +213,9 @@ fun BuscarProductosScreen(
                                 onSeleccionarProducto = onSeleccionarProducto,
                                 puedeGuardarFavoritos = puedeGuardarFavoritos,
                                 esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
-                                guardando = viewModel.idGuardandoFavorito == producto.id,
-                                onGuardarFavorito = viewModel::agregarFavorito
+                                guardando = viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
+                                onGuardarFavorito = viewModel::agregarFavorito,
+                                onQuitarFavorito = viewModel::quitarFavorito
                             )
                         }
                     }
@@ -265,8 +267,9 @@ fun BuscarProductosScreen(
                                             onSeleccionarProducto = onSeleccionarProducto,
                                             puedeGuardarFavoritos = puedeGuardarFavoritos,
                                             esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
-                                            guardando = viewModel.idGuardandoFavorito == producto.id,
-                                            onGuardarFavorito = viewModel::agregarFavorito
+                                            guardando = viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
+                                            onGuardarFavorito = viewModel::agregarFavorito,
+                                            onQuitarFavorito = viewModel::quitarFavorito
                                         )
                                     }
                                 }
@@ -301,7 +304,8 @@ private fun TarjetaProductoListado(
     puedeGuardarFavoritos: Boolean,
     esFavorito: Boolean,
     guardando: Boolean,
-    onGuardarFavorito: (ProductoResponse) -> Unit
+    onGuardarFavorito: (ProductoResponse) -> Unit,
+    onQuitarFavorito: ((ProductoResponse) -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -357,6 +361,15 @@ private fun TarjetaProductoListado(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (guardando) "Guardando..." else if (esFavorito) "♥ Guardado" else "♡ Favorito")
+                }
+                if (esFavorito && onQuitarFavorito != null) {
+                    OutlinedButton(
+                        onClick = { onQuitarFavorito(producto) },
+                        enabled = !guardando,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (guardando) "Quitando..." else "Quitar de favoritos")
+                    }
                 }
             }
         }
