@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -94,6 +95,36 @@ class FavoritoControllerTest {
     @Test
     void requiereSesionAutenticada() throws Exception {
         mvc.perform(post("/api/usuarios/me/favoritos/{idProducto}", producto.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void eliminaFavoritoSinEliminarElProducto() throws Exception {
+        String token = token();
+        mvc.perform(post("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, favoritos.count());
+        org.junit.jupiter.api.Assertions.assertTrue(productos.existsById(producto.getId()));
+    }
+
+    @Test
+    void eliminarFavoritoRepetidoDevuelve404YNo500() throws Exception {
+        String token = token();
+        mvc.perform(delete("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void eliminarFavoritoRequiereSesion() throws Exception {
+        mvc.perform(delete("/api/usuarios/me/favoritos/{idProducto}", producto.getId()))
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -4,6 +4,7 @@ import com.ejemplo.backenduserapi.entity.Favorito;
 import com.ejemplo.backenduserapi.entity.Producto;
 import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
+import com.ejemplo.backenduserapi.exception.FavoritoNoEncontradoException;
 import com.ejemplo.backenduserapi.repository.FavoritoRepository;
 import com.ejemplo.backenduserapi.repository.ProductoRepository;
 import java.util.List;
@@ -79,5 +80,34 @@ class FavoritoServiceTest {
                 .thenReturn(List.of(new Favorito(cliente, producto)));
 
         assertEquals(List.of(producto), servicio.listar(cliente));
+    }
+
+    @Test
+    void eliminaSoloLaRelacionDelClienteYConservaElProducto() {
+        Favorito favorito = new Favorito(cliente, producto);
+        when(favoritos.findByUsuario_IdAndProducto_Id(3L, 7L)).thenReturn(Optional.of(favorito));
+        Integer stockAntes = producto.getStock();
+
+        servicio.eliminar(cliente, 7L);
+
+        verify(favoritos).delete(favorito);
+        assertEquals(stockAntes, producto.getStock());
+        assertEquals("Producto de prueba", producto.getNombre());
+    }
+
+    @Test
+    void eliminarFavoritoDeOtraCuentaNoPermiteManipularlo() {
+        when(favoritos.findByUsuario_IdAndProducto_Id(3L, 7L)).thenReturn(Optional.empty());
+
+        assertThrows(FavoritoNoEncontradoException.class, () -> servicio.eliminar(cliente, 7L));
+        verify(favoritos, never()).delete(any(Favorito.class));
+    }
+
+    @Test
+    void eliminarFavoritoRepetidoEsUn404Controlado() {
+        when(favoritos.findByUsuario_IdAndProducto_Id(3L, 7L)).thenReturn(Optional.empty());
+
+        assertThrows(FavoritoNoEncontradoException.class, () -> servicio.eliminar(cliente, 7L));
+        verify(favoritos, never()).delete(any(Favorito.class));
     }
 }
