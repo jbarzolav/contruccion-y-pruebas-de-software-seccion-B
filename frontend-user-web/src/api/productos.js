@@ -131,6 +131,11 @@ export async function agregarFavorito(idProducto) {
   return data
 }
 
+// HU 33 - elimina únicamente la asociación del usuario autenticado.
+export async function quitarFavorito(idProducto) {
+  await apiFavoritos.delete(`/${idProducto}`)
+}
+
 // HU 07 - ruta de la imagen: las locales van contra el backend (:9000)
 export function urlImagen(imagenUrl) {
   if (!imagenUrl) return null

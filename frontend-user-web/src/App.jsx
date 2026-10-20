@@ -14,6 +14,7 @@ import Login from './components/Login.jsx'
 import Registro from './components/Registro.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import Perfil from './components/Perfil.jsx'
+import Favoritos from './components/Favoritos.jsx'
 import { obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -165,6 +166,7 @@ export default function App() {
                         <Link to="/premium">Plan Premium</Link>
                         {!sesion && <Link to="/login">Iniciar sesión</Link>}
                         {sesion && <Link to="/perfil">Mi perfil</Link>}
+                        {sesion && tienePermiso(sesion, 'COMPRAR') && <Link to="/favoritos">Favoritos</Link>}
                         {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
@@ -252,6 +254,11 @@ export default function App() {
                     {/* HU 27 - Perfil del usuario autenticado. */}
                     <Route path="/perfil" element={
                         <AccesoAutenticado><Perfil /></AccesoAutenticado>
+                    } />
+
+                    {/* HU32/HU33 - lista y eliminación de favoritos. */}
+                    <Route path="/favoritos" element={
+                        <AccesoProtegido permiso="COMPRAR"><Favoritos /></AccesoProtegido>
                     } />
                 </Routes>
 

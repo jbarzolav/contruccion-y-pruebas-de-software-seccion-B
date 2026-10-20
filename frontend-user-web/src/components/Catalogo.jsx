@@ -20,7 +20,7 @@ const CLASES_ESTADO = {
 // HU 07 + HU 08 + HU 20 - Tarjeta única del catálogo: la usan tanto los
 // resultados de búsqueda como las recomendaciones (mismos estilos y la
 // misma navegación hacia /producto/:id, sin duplicar componentes).
-function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar }) {
+export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar, alQuitar }) {
     const imagen = urlImagen(producto.imagenUrl)
     const agotado = producto.stock === 0
 
@@ -56,6 +56,17 @@ function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuar
                     aria-label={esFavorito ? `${producto.nombre} guardado en favoritos` : `Guardar ${producto.nombre} en favoritos`}
                 >
                     {guardando ? 'Guardando…' : esFavorito ? '♥ Guardado' : '♡ Favorito'}
+                </button>
+            )}
+            {alQuitar && (
+                <button
+                    type="button"
+                    className="catalogo-favorito"
+                    onClick={() => alQuitar(producto)}
+                    disabled={guardando}
+                    aria-label={`Quitar ${producto.nombre} de favoritos`}
+                >
+                    {guardando ? 'Quitando…' : 'Quitar de favoritos'}
                 </button>
             )}
         </article>
