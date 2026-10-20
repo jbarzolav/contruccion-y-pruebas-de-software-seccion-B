@@ -15,6 +15,7 @@ import com.ejemplo.backenduserapi.exception.ItemCarritoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PedidoInvalidoException;
 import com.ejemplo.backenduserapi.exception.PerfilInvalidoException;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
+import com.ejemplo.backenduserapi.exception.FavoritoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -53,6 +54,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProductoNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> handleProductoNoEncontrado(ProductoNoEncontradoException ex) {
         return responder(HttpStatus.NOT_FOUND, "Producto no encontrado", List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(FavoritoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleFavoritoNoEncontrado(FavoritoNoEncontradoException ex) {
+        return responder(HttpStatus.NOT_FOUND, "Favorito no encontrado", List.of(ex.getMessage()));
     }
 
     /**

@@ -1,10 +1,12 @@
 package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.FavoritoResponse;
+import com.ejemplo.backenduserapi.dto.FavoritoProductoResponse;
 import com.ejemplo.backenduserapi.entity.Favorito;
 import com.ejemplo.backenduserapi.entity.Producto;
 import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
+import com.ejemplo.backenduserapi.exception.FavoritoNoEncontradoException;
 import com.ejemplo.backenduserapi.repository.FavoritoRepository;
 import com.ejemplo.backenduserapi.repository.ProductoRepository;
 import java.util.List;
@@ -37,5 +39,23 @@ public class FavoritoService {
         return favoritos.findByUsuario_IdOrderByIdDesc(usuario.getId()).stream()
                 .map(Favorito::getProducto)
                 .toList();
+    }
+
+    /** HU32 - materializa el DTO mientras la relación lazy sigue abierta. */
+    @Transactional(readOnly = true)
+    public List<FavoritoProductoResponse> listarRespuestas(Usuario usuario) {
+        return favoritos.findByUsuario_IdOrderByIdDesc(usuario.getId()).stream()
+                .map(Favorito::getProducto)
+                .map(FavoritoProductoResponse::desde)
+                .toList();
+    }
+
+    /** HU33 - elimina solo la relación perteneciente al usuario autenticado. */
+    @Transactional
+    public void eliminar(Usuario usuario, Long productoId) {
+        Favorito favorito = favoritos.findByUsuario_IdAndProducto_Id(usuario.getId(), productoId)
+                .orElseThrow(() -> new FavoritoNoEncontradoException(
+                        "El producto no está en los favoritos del usuario."));
+        favoritos.delete(favorito);
     }
 }
