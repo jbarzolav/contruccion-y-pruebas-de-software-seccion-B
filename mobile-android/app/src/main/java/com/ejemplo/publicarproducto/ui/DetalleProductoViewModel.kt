@@ -170,9 +170,9 @@ class DetalleProductoViewModel : ViewModel() {
         avisoFavorito = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.listarFavoritos()
+                val respuesta = UserApiClient.productoApi.consultarEstadoFavorito(idProducto)
                 if (respuesta.isSuccessful) {
-                    esFavorito = respuesta.body().orEmpty().any { it.id == idProducto }
+                    esFavorito = respuesta.body()?.favorito == true
                 } else {
                     avisoFavorito = "No se pudo consultar el estado del favorito."
                 }

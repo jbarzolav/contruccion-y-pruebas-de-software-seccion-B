@@ -34,6 +34,10 @@ interface ProductoApi {
     @GET("api/usuarios/me/favoritos")
     suspend fun listarFavoritos(): Response<List<ProductoResponse>>
 
+    // HU 35 - Estado puntual del favorito del cliente autenticado.
+    @GET("api/usuarios/me/favoritos/{idProducto}/estado")
+    suspend fun consultarEstadoFavorito(@Path("idProducto") idProducto: Long): Response<FavoritoResponse>
+
     @POST("api/usuarios/me/favoritos/{idProducto}")
     suspend fun agregarFavorito(@Path("idProducto") idProducto: Long): Response<FavoritoResponse>
 
