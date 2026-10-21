@@ -99,6 +99,60 @@ class FavoritoControllerTest {
     }
 
     @Test
+    void consultaEstadoComoNoFavoritoYComoFavoritoTrasAgregarYQuitar() throws Exception {
+        String token = token();
+        mvc.perform(get("/api/usuarios/me/favoritos/{idProducto}/estado", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productoId").value(producto.getId()))
+                .andExpect(jsonPath("$.favorito").value(false));
+
+        mvc.perform(post("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/usuarios/me/favoritos/{idProducto}/estado", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.favorito").value(true));
+
+        mvc.perform(delete("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/usuarios/me/favoritos/{idProducto}/estado", producto.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.favorito").value(false));
+    }
+
+    @Test
+    void consultaEstadoRequiereSesionAutenticada() throws Exception {
+        mvc.perform(get("/api/usuarios/me/favoritos/{idProducto}/estado", producto.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void elEstadoSoloConsideraLosFavoritosDelUsuarioAutenticado() throws Exception {
+        String tokenCliente = token();
+        mvc.perform(post("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
+                        .header("Authorization", "Bearer " + tokenCliente))
+                .andExpect(status().isOk());
+
+        Usuario otroCliente = new Usuario("otro-hu35@prueba.com", encoder.encode("Prueba123*"));
+        otroCliente.setRol(Rol.CLIENTE);
+        usuarios.saveAndFlush(otroCliente);
+        String respuestaLogin = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(Map.of(
+                                "correo", otroCliente.getCorreo(), "password", "Prueba123*"))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String tokenOtroCliente = mapper.readTree(respuestaLogin).get("token").asText();
+
+        mvc.perform(get("/api/usuarios/me/favoritos/{idProducto}/estado", producto.getId())
+                        .header("Authorization", "Bearer " + tokenOtroCliente))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.favorito").value(false));
+    }
+
+    @Test
     void eliminaFavoritoSinEliminarElProducto() throws Exception {
         String token = token();
         mvc.perform(post("/api/usuarios/me/favoritos/{idProducto}", producto.getId())
