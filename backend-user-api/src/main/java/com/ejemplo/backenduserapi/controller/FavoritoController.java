@@ -27,6 +27,13 @@ public class FavoritoController {
         return favoritos.listarRespuestas(usuario);
     }
 
+    /** HU35 - Consulta si un producto pertenece a los favoritos del cliente autenticado. */
+    @GetMapping("/{idProducto}/estado")
+    public FavoritoResponse consultarEstado(@RequestAttribute("usuarioSesion") Usuario usuario,
+            @PathVariable Long idProducto) {
+        return favoritos.consultarEstado(usuario, idProducto);
+    }
+
     @PostMapping("/{idProducto}")
     public FavoritoResponse agregar(@RequestAttribute("usuarioSesion") Usuario usuario,
             @PathVariable Long idProducto) {

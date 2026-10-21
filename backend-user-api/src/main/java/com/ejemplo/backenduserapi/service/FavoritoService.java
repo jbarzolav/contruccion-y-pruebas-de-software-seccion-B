@@ -50,6 +50,13 @@ public class FavoritoService {
                 .toList();
     }
 
+    /** HU35 - Responde el estado del favorito sin cargar la lista completa. */
+    @Transactional(readOnly = true)
+    public FavoritoResponse consultarEstado(Usuario usuario, Long productoId) {
+        return new FavoritoResponse(productoId,
+                favoritos.existsByUsuario_IdAndProducto_Id(usuario.getId(), productoId));
+    }
+
     /** HU33 - elimina solo la relación perteneciente al usuario autenticado. */
     @Transactional
     public void eliminar(Usuario usuario, Long productoId) {
