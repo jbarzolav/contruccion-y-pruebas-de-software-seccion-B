@@ -125,6 +125,12 @@ export async function obtenerFavoritos() {
   return data
 }
 
+// HU 35 - Consulta el estado de un producto favorito sin descargar la lista.
+export async function consultarEstadoFavorito(idProducto) {
+  const { data } = await apiFavoritos.get(`/${idProducto}/estado`)
+  return data
+}
+
 // HU 31 - POST /api/usuarios/me/favoritos/{idProducto} (idempotente)
 export async function agregarFavorito(idProducto) {
   const { data } = await apiFavoritos.post(`/${idProducto}`)

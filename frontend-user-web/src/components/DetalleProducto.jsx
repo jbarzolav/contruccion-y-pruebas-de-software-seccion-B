@@ -5,8 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
     agregarFavorito,
     agregarAlCarrito,
+    consultarEstadoFavorito,
     obtenerDisponibilidadProducto,
-    obtenerFavoritos,
     obtenerProducto,
     urlImagen,
 } from '../api/productos.js'
@@ -51,9 +51,9 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
             return () => { vigente = false }
         }
         setCargandoFavorito(true)
-        obtenerFavoritos()
-            .then((lista) => {
-                if (vigente) setEsFavorito(lista.some((item) => String(item.id) === String(idProducto)))
+        consultarEstadoFavorito(idProducto)
+            .then((estado) => {
+                if (vigente) setEsFavorito(estado.favorito === true)
             })
             .catch(() => {
                 if (vigente) setAvisoFavorito('No se pudo consultar el estado del favorito.')
