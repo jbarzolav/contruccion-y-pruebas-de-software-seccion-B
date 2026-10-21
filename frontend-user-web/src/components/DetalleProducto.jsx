@@ -179,6 +179,14 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
     const disponible = disponibilidad?.disponible === true
     const stock = disponibilidad?.stock ?? producto.stock
     const estado = disponibilidad?.estado ?? producto.estado
+    // HU 34 - Distingue un producto retirado de uno agotado en el detalle.
+    const etiquetaDisponibilidad = disponible
+        ? 'Disponible'
+        : estado === 'RETIRADO'
+            ? 'Retirado'
+            : estado === 'INACTIVO'
+                ? 'Inactivo'
+                : 'Agotado'
 
     return (
         <section className="tarjeta detalle-producto">
@@ -197,7 +205,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                         (disponible ? 'badge-disponible' : 'badge-agotado')
                     }`}
                 >
-                    {disponible ? 'Disponible' : 'Agotado'}
+                    {etiquetaDisponibilidad}
                 </span>
             </div>
 
@@ -228,7 +236,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                     <ul className="detalle-ficha">
                         <li>
                             <strong>Disponibilidad:</strong>{' '}
-                            {disponible ? 'Disponible' : 'Agotado'}
+                            {etiquetaDisponibilidad}
                         </li>
                         <li>
                             <strong>Stock:</strong> {stock} unidades
@@ -254,7 +262,9 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
 
                     {!disponible && (
                         <div className="alerta error">
-                            Este producto no se encuentra disponible para compra.
+                            {estado === 'RETIRADO'
+                                ? 'Este producto fue retirado y no se encuentra disponible para compra.'
+                                : 'Este producto no se encuentra disponible para compra.'}
                         </div>
                     )}
                 </div>

@@ -72,9 +72,10 @@ fun DetalleProductoScreen(
                 Text("← Volver")
             }
 
+            // HU 34 - El detalle identifica explícitamente los productos retirados.
             viewModel.disponibilidad?.let { disponibilidad ->
                 EstadoBadge(
-                    estado = if (disponibilidad.disponible) "DISPONIBLE" else "AGOTADO"
+                    estado = if (disponibilidad.disponible) "DISPONIBLE" else disponibilidad.estado
                 )
             }
         }
@@ -209,7 +210,12 @@ private fun DetalleContenido(
         ) {
             FilaDetalle(
                 "Disponibilidad",
-                if (disponibilidad.disponible) "Disponible" else "Agotado"
+                when {
+                    disponibilidad.disponible -> "Disponible"
+                    disponibilidad.estado == "RETIRADO" -> "Retirado"
+                    disponibilidad.estado == "INACTIVO" -> "Inactivo"
+                    else -> "Agotado"
+                }
             )
             FilaDetalle("Stock", "${disponibilidad.stock} unidades")
             FilaDetalle("Estado", disponibilidad.estado)
@@ -245,7 +251,11 @@ private fun DetalleContenido(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Este producto no se encuentra disponible para compra.",
+                text = if (disponibilidad.estado == "RETIRADO") {
+                    "Este producto fue retirado y no se encuentra disponible para compra."
+                } else {
+                    "Este producto no se encuentra disponible para compra."
+                },
                 color = RojoTextoOscuro,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(12.dp)
