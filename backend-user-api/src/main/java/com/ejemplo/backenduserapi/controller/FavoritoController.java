@@ -6,6 +6,7 @@ import com.ejemplo.backenduserapi.entity.Producto;
 import com.ejemplo.backenduserapi.entity.Usuario;
 import com.ejemplo.backenduserapi.service.FavoritoService;
 import java.util.List;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** HU31/HU32/HU33 - Favoritos del cliente autenticado. */
 @RestController
 @RequestMapping("/api/usuarios/me/favoritos")
+@CrossOrigin(origins = "*")
 public class FavoritoController {
     private final FavoritoService favoritos;
 
