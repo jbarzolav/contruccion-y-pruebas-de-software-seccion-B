@@ -114,6 +114,9 @@ fun DetalleProductoScreen(
                         onIrACarrito = onIrACarrito,
                         puedeComprar = puedeComprar
                     )
+                    if (puedeComprar && disponibilidad.estado in setOf("DISPONIBLE", "AGOTADO")) {
+                        ConsultaProducto(productoId)
+                    }
                 }
             }
         }

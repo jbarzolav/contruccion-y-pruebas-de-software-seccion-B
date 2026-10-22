@@ -77,4 +77,9 @@ object UserApiClient {
             .build()
             .create(AuthApi::class.java)
     }
+
+    val conversacionApi: ConversacionApi by lazy {
+        Retrofit.Builder().baseUrl(BASE_URL).client(httpClientSinLog)
+            .addConverterFactory(GsonConverterFactory.create()).build().create(ConversacionApi::class.java)
+    }
 }

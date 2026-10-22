@@ -246,6 +246,11 @@ class MainActivity : ComponentActivity() {
                         topBar = {
                             if (enPantallaPrincipal) {
                                 TopAppBar(
+                                    actions = {
+                                        if (usuario.rol in setOf("CLIENTE", "VENDEDOR")) {
+                                            TextButton(onClick = { pestana = 8 }) { Text("Consultas") }
+                                        }
+                                    },
                                     title = {
                                         Text(
                                             text = "PulgaTec",
@@ -342,6 +347,10 @@ class MainActivity : ComponentActivity() {
                             }
 
                             else -> when (pestana) {
+                                8 -> androidx.compose.runtime.key(usuario.id, sesionViewModel.sesion.obtenerToken()) {
+                                    com.ejemplo.publicarproducto.ui.ConsultasScreen(
+                                        esVendedor = usuario.rol == "VENDEDOR", modifier = Modifier.padding(padding))
+                                }
                                 // HU 06/07/08/09 - Inicio: catálogo con búsqueda y orden
                                 0 -> BuscarProductosScreen(
                                     modifier = Modifier.padding(padding),
