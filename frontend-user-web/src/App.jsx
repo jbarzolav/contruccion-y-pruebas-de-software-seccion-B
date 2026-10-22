@@ -15,6 +15,7 @@ import Registro from './components/Registro.jsx'
 import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import Perfil from './components/Perfil.jsx'
 import Favoritos from './components/Favoritos.jsx'
+import Conversaciones from './components/Conversaciones.jsx'
 import { obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -166,6 +167,7 @@ export default function App() {
                         <Link to="/premium">Plan Premium</Link>
                         {!sesion && <Link to="/login">Iniciar sesión</Link>}
                         {sesion && <Link to="/perfil">Mi perfil</Link>}
+                        {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <Link to="/consultas">Consultas</Link>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <Link to="/favoritos">Favoritos</Link>}
                         {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
@@ -200,6 +202,7 @@ export default function App() {
                     <button type="button" className="btn-secundario" onClick={() => setAvisoSesion('')}>Cerrar aviso</button>
                 </div>}
                 <Routes>
+                    <Route path="/consultas" element={<AccesoAutenticado><Conversaciones key={sesion?.token} /></AccesoAutenticado>} />
                     {/* Inicio: catálogo con búsqueda (HU 06) y orden (HU 09)
                         + insignias Destacado/Agotado (HU 07/HU 19) */}
                     <Route

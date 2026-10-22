@@ -1,4 +1,6 @@
 import { tienePermiso, useSesion } from '../api/sesion.js'
+import FormularioConsulta from './FormularioConsulta.jsx'
+import { enviarConsulta } from '../api/conversaciones.js'
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -283,6 +285,9 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                     {avisoFavorito && <p role="status">{avisoFavorito}</p>}
                 </div>
             )}
+
+            {sesion?.rol === 'CLIENTE' && ['DISPONIBLE', 'AGOTADO'].includes(estado) &&
+                <FormularioConsulta key={`${sesion.token}-${idProducto}`} enviar={texto => enviarConsulta(Number(idProducto), texto)} />}
 
             {/* HU 11 - Selector de cantidad y agregar al carrito */}
             {puedeComprar && <div className="detalle-carrito">
