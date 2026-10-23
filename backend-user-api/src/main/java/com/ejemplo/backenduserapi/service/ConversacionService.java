@@ -2,9 +2,13 @@ package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.ConversacionResponse;
 import com.ejemplo.backenduserapi.dto.ConversacionResponse.MensajeResponse;
+import com.ejemplo.backenduserapi.dto.ConversacionResumenResponse;
+import com.ejemplo.backenduserapi.dto.PaginaMensajesResponse;
 import com.ejemplo.backenduserapi.entity.*;
 import com.ejemplo.backenduserapi.exception.AutorizacionException;
 import com.ejemplo.backenduserapi.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -59,19 +63,31 @@ public class ConversacionService {
     }
 
     @Transactional(readOnly = true)
-    public List<ConversacionResponse> listar(Usuario usuario) {
+    public List<ConversacionResumenResponse> listar(Usuario usuario) {
         exigirParticipanteRol(usuario);
         return conversaciones.findByCliente_IdOrVendedor_IdOrderByIdDesc(usuario.getId(), usuario.getId())
-                .stream().map(this::respuesta).toList();
+                .stream().map(this::resumen).toList();
     }
 
     @Transactional(readOnly = true)
     public ConversacionResponse obtener(Usuario usuario, Long id) {
         exigirParticipanteRol(usuario);
         Conversacion conversacion = buscar(id);
-        if (!conversacion.getCliente().getId().equals(usuario.getId()) && !conversacion.getVendedor().getId().equals(usuario.getId()))
-            throw error(HttpStatus.FORBIDDEN, "No participas en esta conversación.");
+        exigirParticipante(usuario, conversacion);
         return respuesta(conversacion);
+    }
+
+    /** HU38 - Devuelve mensajes en orden cronológico y paginados solo al participante. */
+    @Transactional(readOnly = true)
+    public PaginaMensajesResponse listarMensajes(Usuario usuario, Long id, int pagina, int tamano) {
+        exigirParticipanteRol(usuario);
+        if (pagina < 0 || tamano < 1 || tamano > 100)
+            throw error(HttpStatus.BAD_REQUEST, "La página debe ser no negativa y el tamaño debe estar entre 1 y 100.");
+        Conversacion conversacion = buscar(id);
+        exigirParticipante(usuario, conversacion);
+        Page<Mensaje> resultado = mensajes.findByConversacion_IdOrderByIdDesc(id, PageRequest.of(pagina, tamano));
+        return new PaginaMensajesResponse(resultado.getContent().stream().map(MensajeResponse::desde).toList(),
+                pagina, tamano, resultado.getTotalElements(), resultado.getTotalPages(), resultado.hasNext());
     }
 
     private Conversacion buscar(Long id) {
@@ -80,6 +96,18 @@ public class ConversacionService {
     private ConversacionResponse respuesta(Conversacion c) {
         return new ConversacionResponse(c.getId(), c.getProducto().getId(), c.getProducto().getNombre(),
                 c.getFechaCreacion(), mensajes.findByConversacion_IdOrderByIdAsc(c.getId()).stream().map(MensajeResponse::desde).toList());
+    }
+    /** HU38 - Incluye el último mensaje sin cargar todo el historial en la lista. */
+    private ConversacionResumenResponse resumen(Conversacion c) {
+        MensajeResponse ultimo = mensajes.findFirstByConversacion_IdOrderByIdDesc(c.getId())
+                .map(MensajeResponse::desde).orElse(null);
+        return new ConversacionResumenResponse(c.getId(), c.getProducto().getId(), c.getProducto().getNombre(),
+                c.getFechaCreacion(), ultimo);
+    }
+    private void exigirParticipante(Usuario usuario, Conversacion conversacion) {
+        if (!conversacion.getCliente().getId().equals(usuario.getId())
+                && !conversacion.getVendedor().getId().equals(usuario.getId()))
+            throw error(HttpStatus.FORBIDDEN, "No participas en esta conversación.");
     }
     private String validarMensaje(String texto) {
         String contenido = texto == null ? "" : texto.strip();
