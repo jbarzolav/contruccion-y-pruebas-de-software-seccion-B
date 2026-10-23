@@ -3,6 +3,9 @@ package com.ejemplo.backenduserapi.service;
 import com.ejemplo.backenduserapi.entity.*;
 import com.ejemplo.backenduserapi.exception.AutorizacionException;
 import com.ejemplo.backenduserapi.repository.*;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,5 +91,30 @@ class ConversacionServiceTest {
     }
     @Test void conversacionInexistente() {
         assertEquals(404, assertThrows(AutorizacionException.class, () -> servicio.responder(vendedor, 99L, "Hola")).getEstado().value());
+    }
+    @Test void historialSeConsultaPaginadoParaUnParticipante() {
+        when(conversaciones.findById(9L)).thenReturn(Optional.of(conversacion));
+        Mensaje mensaje = new Mensaje(conversacion, vendedor, "Respuesta reciente");
+        when(mensajes.findByConversacion_IdOrderByIdDesc(eq(9L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(java.util.List.of(mensaje), PageRequest.of(0, 1), 2));
+
+        var pagina = servicio.listarMensajes(cliente, 9L, 0, 1);
+
+        assertEquals(1, pagina.mensajes().size());
+        assertEquals("Respuesta reciente", pagina.mensajes().get(0).contenido());
+        assertEquals(2, pagina.totalElementos());
+        assertTrue(pagina.tieneSiguiente());
+        verify(mensajes).findByConversacion_IdOrderByIdDesc(eq(9L), any(Pageable.class));
+    }
+    @Test void historialRechazaUsuarioAjenoYParametrosInvalidos() {
+        when(conversaciones.findById(9L)).thenReturn(Optional.of(conversacion));
+        var ajeno = usuario(4L, Rol.CLIENTE);
+        assertEquals(403, assertThrows(AutorizacionException.class,
+                () -> servicio.listarMensajes(ajeno, 9L, 0, 20)).getEstado().value());
+        assertEquals(400, assertThrows(AutorizacionException.class,
+                () -> servicio.listarMensajes(cliente, 9L, -1, 20)).getEstado().value());
+        assertEquals(400, assertThrows(AutorizacionException.class,
+                () -> servicio.listarMensajes(cliente, 9L, 0, 101)).getEstado().value());
+        verify(mensajes, never()).findByConversacion_IdOrderByIdDesc(anyLong(), any(Pageable.class));
     }
 }

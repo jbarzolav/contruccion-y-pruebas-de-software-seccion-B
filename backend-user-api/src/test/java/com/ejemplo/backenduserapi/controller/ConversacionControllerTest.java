@@ -70,6 +70,7 @@ class ConversacionControllerTest {
     @Test void terceroNoLeeNiRespondeYListaVacia() throws Exception {
         long id = consultar();
         mvc.perform(get("/api/conversaciones/{id}", id).header("Authorization", "Bearer " + tt)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tt)).andExpect(status().isForbidden());
         mvc.perform(get("/api/conversaciones").header("Authorization", "Bearer " + tt)).andExpect(status().isOk()).andExpect(content().json("[]"));
         mvc.perform(post("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tt)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"mensaje\":\"Intruso\"}")).andExpect(status().isForbidden());
@@ -91,7 +92,48 @@ class ConversacionControllerTest {
             mvc.perform(post("/api/conversaciones/1/mensajes").header("Authorization", token).contentType(MediaType.APPLICATION_JSON).content("{}"))
                     .andExpect(status().isUnauthorized());
             mvc.perform(get("/api/conversaciones").header("Authorization", token)).andExpect(status().isUnauthorized());
+            mvc.perform(get("/api/conversaciones/1/mensajes").header("Authorization", token)).andExpect(status().isUnauthorized());
         }
+    }
+
+    @Test void muestraUltimoMensajeYPaginaElHistorialEnOrdenCronologico() throws Exception {
+        long id = consultar();
+        mvc.perform(post("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tv)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"mensaje\":\"Sí, incluye cables.\"}"))
+                .andExpect(status().isCreated());
+        mvc.perform(post("/api/conversaciones").header("Authorization", "Bearer " + tc)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("productoId", producto.getId(), "mensaje", "¿Qué medida tiene?"))))
+                .andExpect(status().isCreated());
+
+        mvc.perform(get("/api/conversaciones").header("Authorization", "Bearer " + tc))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].idConversacion").value(id))
+                .andExpect(jsonPath("$[0].ultimoMensaje.contenido").value("¿Qué medida tiene?"));
+
+        mvc.perform(get("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tc)
+                        .param("pagina", "0").param("tamano", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensajes.length()").value(2))
+                .andExpect(jsonPath("$.mensajes[0].contenido").value("¿Qué medida tiene?"))
+                .andExpect(jsonPath("$.mensajes[1].contenido").value("Sí, incluye cables."))
+                .andExpect(jsonPath("$.totalElementos").value(3))
+                .andExpect(jsonPath("$.tieneSiguiente").value(true));
+
+        mvc.perform(get("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tc)
+                        .param("pagina", "1").param("tamano", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensajes.length()").value(1))
+                .andExpect(jsonPath("$.mensajes[0].contenido").value("Incluye cables?"))
+                .andExpect(jsonPath("$.tieneSiguiente").value(false));
+    }
+
+    @Test void rechazaParametrosDePaginacionInvalidos() throws Exception {
+        long id = consultar();
+        mvc.perform(get("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tc).param("pagina", "-1"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tc).param("tamano", "101"))
+                .andExpect(status().isBadRequest());
     }
     @Test void inexistentes404() throws Exception {
         mvc.perform(post("/api/conversaciones").header("Authorization", "Bearer " + tc).contentType(MediaType.APPLICATION_JSON)
