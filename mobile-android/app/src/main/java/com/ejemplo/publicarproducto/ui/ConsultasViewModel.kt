@@ -11,7 +11,12 @@ import kotlinx.coroutines.launch
 import retrofit2.Response
 
 class ConsultasViewModel : ViewModel() {
-    var conversaciones by mutableStateOf<List<ConversacionResponse>>(emptyList()); private set
+    var conversaciones by mutableStateOf<List<ConversacionResumenResponse>>(emptyList()); private set
+    var mensajes by mutableStateOf<List<MensajeConsulta>>(emptyList()); private set
+    var paginaMensajes by mutableStateOf(0); private set
+    var tieneMensajesAnteriores by mutableStateOf(false); private set
+    var cargandoMensajes by mutableStateOf(false); private set
+    var errorMensajes by mutableStateOf<String?>(null); private set
     var cargando by mutableStateOf(false); private set
     var enviando by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null); private set
@@ -33,6 +38,22 @@ class ConsultasViewModel : ViewModel() {
             } finally { cargando = false }
         }
     }
+    fun cargarMensajes(id: Long, pagina: Int = 0) {
+        if (cargandoMensajes) return
+        cargandoMensajes = true
+        errorMensajes = null
+        viewModelScope.launch {
+            try {
+                val resultado = exigir(api.mensajes(id, pagina))
+                val cronologicos = resultado.mensajes.reversed()
+                mensajes = if (pagina == 0) cronologicos else cronologicos + mensajes
+                paginaMensajes = resultado.pagina
+                tieneMensajesAnteriores = resultado.tieneSiguiente
+            } catch (e: CancellationException) { throw e
+            } catch (e: Exception) { errorMensajes = e.message ?: "No se pudo cargar el historial."
+            } finally { cargandoMensajes = false }
+        }
+    }
     fun enviar(productoId: Long?, conversacionId: Long?) {
         if (enviando) return
         val limite = maximo ?: return
@@ -47,7 +68,10 @@ class ConsultasViewModel : ViewModel() {
                 else exigir(api.responder(requireNotNull(conversacionId), RespuestaConsultaRequest(mensaje)))
                 texto = ""
                 exito = "Mensaje enviado correctamente."
-                if (conversacionId != null) cargar(true)
+                if (conversacionId != null) {
+                    cargar(true)
+                    cargarMensajes(conversacionId)
+                }
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) { error = e.message ?: "No se pudo enviar el mensaje."
             } finally { enviando = false }

@@ -46,6 +46,7 @@ private fun FormularioMensaje(model: ConsultasViewModel, productoId: Long?, conv
 
 @Composable
 fun ConsultasScreen(esVendedor: Boolean, modifier: Modifier = Modifier) {
+    // HU38 - Muestra el último mensaje y carga el historial cronológicamente por páginas.
     val model = consultasModel()
     var seleccion by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) { model.cargar(true) }
@@ -57,13 +58,28 @@ fun ConsultasScreen(esVendedor: Boolean, modifier: Modifier = Modifier) {
         model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (!model.cargando && model.error == null && model.conversaciones.isEmpty()) Text("Aún no tienes consultas.")
         model.conversaciones.forEach { c ->
-            TextButton(onClick = { seleccion = c.idConversacion; model.texto = "" }, enabled = !model.enviando) {
-                Text("Consulta #${c.idConversacion} — ${c.productoNombre}")
+            TextButton(onClick = {
+                seleccion = c.idConversacion
+                model.texto = ""
+                model.cargarMensajes(c.idConversacion)
+            }, enabled = !model.enviando) {
+                Column {
+                    Text("Consulta #${c.idConversacion} — ${c.productoNombre}")
+                    Text(c.ultimoMensaje?.contenido ?: "Sin mensajes", maxLines = 1)
+                }
             }
         }
         model.conversaciones.find { it.idConversacion == seleccion }?.let { c ->
             Text(c.productoNombre, style = MaterialTheme.typography.titleMedium)
-            c.mensajes.forEach { m ->
+            if (model.tieneMensajesAnteriores) {
+                TextButton(onClick = { model.cargarMensajes(c.idConversacion, model.paginaMensajes + 1) },
+                    enabled = !model.cargandoMensajes) {
+                    Text(if (model.cargandoMensajes) "Cargando…" else "Cargar mensajes anteriores")
+                }
+            }
+            if (model.cargandoMensajes) CircularProgressIndicator()
+            model.errorMensajes?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            model.mensajes.forEach { m ->
                 Text("${m.emisorRol} · ${m.fecha}")
                 Text(m.contenido)
             }
