@@ -20,15 +20,17 @@ const CLASES_ESTADO = {
 // HU 07 + HU 08 + HU 20 - Tarjeta única del catálogo: la usan tanto los
 // resultados de búsqueda como las recomendaciones (mismos estilos y la
 // misma navegación hacia /producto/:id, sin duplicar componentes).
-export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar, alQuitar }) {
+export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar, alQuitar, destacada = false }) {
     const imagen = urlImagen(producto.imagenUrl)
     const agotado = producto.stock === 0
 
     return (
-        <article key={producto.id} className="catalogo-tarjeta">
+        <article key={producto.id} className={`catalogo-tarjeta${destacada ? ' catalogo-tarjeta-destacada' : ''}`}>
             <Link to={`/producto/${producto.id}`} className="catalogo-tarjeta-enlace">
                 {imagen ? (
-                    <img className="catalogo-imagen" src={imagen} alt={producto.nombre} />
+                    <div className="catalogo-imagen-marco">
+                        <img className="catalogo-imagen" src={imagen} alt={producto.nombre} />
+                    </div>
                 ) : (
                     <div className="catalogo-imagen-vacia">Sin imagen</div>
                 )}
@@ -136,12 +138,13 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
     }
 
     const idsFavoritos = new Set(favoritos.map((producto) => producto.id))
-    function renderTarjeta(producto) {
+    function renderTarjeta(producto, indice = 0) {
         return tarjetaProducto(producto, {
             puedeGuardar,
             esFavorito: idsFavoritos.has(producto.id),
             guardando: idGuardandoFavorito === producto.id,
             alGuardar: guardarFavorito,
+            destacada: indice === 0,
         })
     }
 
@@ -249,7 +252,12 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
 
     return (
         <section className="tarjeta catalogo">
-            <h2>Catálogo</h2>
+            <div className="catalogo-seccion-cabecera">
+                <div>
+                    <span className="catalogo-seccion-kicker">Descubre productos de la comunidad</span>
+                    <h2>Explora productos</h2>
+                </div>
+            </div>
             <p className="catalogo-ayuda">
                 Selecciona un producto para ver su detalle.
             </p>
