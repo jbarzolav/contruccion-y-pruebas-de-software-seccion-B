@@ -95,6 +95,7 @@ public class ConversacionService {
     }
     private ConversacionResponse respuesta(Conversacion c) {
         return new ConversacionResponse(c.getId(), c.getProducto().getId(), c.getProducto().getNombre(),
+                c.getProducto().getImagenUrl(), productoDisponible(c.getProducto()),
                 c.getFechaCreacion(), mensajes.findByConversacion_IdOrderByIdAsc(c.getId()).stream().map(MensajeResponse::desde).toList());
     }
     /** HU38 - Incluye el último mensaje sin cargar todo el historial en la lista. */
@@ -102,7 +103,12 @@ public class ConversacionService {
         MensajeResponse ultimo = mensajes.findFirstByConversacion_IdOrderByIdDesc(c.getId())
                 .map(MensajeResponse::desde).orElse(null);
         return new ConversacionResumenResponse(c.getId(), c.getProducto().getId(), c.getProducto().getNombre(),
+                c.getProducto().getImagenUrl(), productoDisponible(c.getProducto()),
                 c.getFechaCreacion(), ultimo);
+    }
+    private boolean productoDisponible(Producto producto) {
+        return "DISPONIBLE".equalsIgnoreCase(producto.getEstado())
+                && producto.getStock() != null && producto.getStock() > 0;
     }
     private void exigirParticipante(Usuario usuario, Conversacion conversacion) {
         if (!conversacion.getCliente().getId().equals(usuario.getId())
