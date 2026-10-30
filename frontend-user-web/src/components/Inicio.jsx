@@ -17,14 +17,8 @@ export default function Inicio({ actualizar }) {
                     <h1 id="catalogo-hero-titulo">Compra entre la comunidad.<br />Vende sin complicarte.</h1>
                     <p>Productos que siguen circulando entre estudiantes y profesionales Tecsup.</p>
                 </div>
-                <div className="catalogo-hero-composicion" aria-hidden="true">
-                    <div className="hero-modulo hero-modulo-principal">
-                        <span className="hero-modulo-indice">01</span>
-                        <strong>TECNOLOGÍA<br />EN CIRCULACIÓN</strong>
-                        <span className="hero-modulo-linea" />
-                        <small>Compra / Vende / Descubre</small>
-                    </div>
-                    <div className="hero-modulo hero-modulo-secundario">PT<span>24</span></div>
+                <div className="catalogo-hero-imagen" aria-hidden="true">
+                    <img src="/hero-pulgatec.png" alt="" />
                 </div>
             </section>
             <div className="barra-catalogo">

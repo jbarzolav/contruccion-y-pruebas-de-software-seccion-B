@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, Link, Route, Routes } from 'react-router-dom'
+import { HashRouter, Link, NavLink, Route, Routes } from 'react-router-dom'
 import Inicio from './components/Inicio.jsx'
 import PublicarProducto from './components/PublicarProducto.jsx'
 import EditarProducto from './components/EditarProducto.jsx'
@@ -16,7 +16,7 @@ import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import Perfil from './components/Perfil.jsx'
 import Favoritos from './components/Favoritos.jsx'
 import Conversaciones from './components/Conversaciones.jsx'
-import { obtenerSesion } from './api/auth.js'
+import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
 import { obtenerCarrito } from './api/productos.js'
@@ -73,7 +73,15 @@ export default function App() {
             if (!token) return
             try {
                 const actual = await obtenerSesion()
-                if (vigente && leerSesion()?.token === token) guardarSesion(actual)
+                let nombre = leerSesion()?.nombre
+                try {
+                    nombre = (await obtenerPerfil()).nombre
+                } catch {
+                    // La navegación puede conservarse aunque el perfil no responda.
+                }
+                if (vigente && leerSesion()?.token === token) {
+                    guardarSesion({ ...actual, nombre })
+                }
             } catch (error) {
                 if (vigente && !error.response) setAvisoSesion('No se pudo verificar la sesión. Revisa la conexión.')
             }
@@ -161,15 +169,15 @@ export default function App() {
                 <header className="app-header">
                     <img className="app-marca" src={`${import.meta.env.BASE_URL}logo-pulgatec.png`} alt="PulgaTec" width="88" height="88" />
 
-                    <nav className="nav-principal" aria-label="Navegación principal">
-                        <Link to="/">Inicio</Link>
-                        {puedePublicar && <Link to="/mis-publicaciones">Mis Publicaciones</Link>}
-                        <Link to="/premium">Plan Premium</Link>
-                        {!sesion && <Link to="/login">Iniciar sesión</Link>}
-                        {sesion && <Link to="/perfil">Mi perfil</Link>}
-                        {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <Link to="/consultas">Consultas</Link>}
-                        {sesion && tienePermiso(sesion, 'COMPRAR') && <Link to="/favoritos">Favoritos</Link>}
-                        {sesion && <span>{sesion.correo} · {sesion.rol}</span>}
+                    <nav id="navegacion-principal" className="nav-principal" aria-label="Navegación principal">
+                        <NavLink to="/" end>Inicio</NavLink>
+                        {puedePublicar && <NavLink to="/mis-publicaciones">Mis Publicaciones</NavLink>}
+                        <NavLink to="/premium">Plan Premium</NavLink>
+                        {!sesion && <NavLink to="/login">Iniciar sesión</NavLink>}
+                        {sesion && <NavLink to="/perfil">Mi perfil</NavLink>}
+                        {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <NavLink to="/consultas">Consultas</NavLink>}
+                        {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
+                        {sesion && <span className="app-usuario-nombre">{sesion.nombre || 'Mi cuenta'}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
                     </nav>

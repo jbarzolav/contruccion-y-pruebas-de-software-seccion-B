@@ -175,10 +175,10 @@ export default function Perfil() {
       setPerfil(actualizado)
       setEditando(false)
       setAviso({ tipo: 'exito', texto: 'Datos actualizados correctamente.' })
-      // El header usa la sesión local: se refresca el correo si cambió.
+      // El encabezado usa el nombre actualizado de la sesión.
       const sesion = leerSesion()
-      if (sesion && sesion.correo !== actualizado.correo) {
-        guardarSesion({ ...sesion, correo: actualizado.correo })
+      if (sesion && (sesion.correo !== actualizado.correo || sesion.nombre !== actualizado.nombre)) {
+        guardarSesion({ ...sesion, correo: actualizado.correo, nombre: actualizado.nombre })
       }
     } catch (err) {
       const estado = err?.response?.status
@@ -198,8 +198,8 @@ export default function Perfil() {
     }
   }
 
-  const inicial = perfil?.correo?.trim()[0]?.toUpperCase() || 'U'
-  const permisos = Array.isArray(perfil?.permisos) ? perfil.permisos : []
+  const nombreVisible = perfil?.nombre?.trim() || 'Completa tu perfil'
+  const inicial = nombreVisible[0]?.toUpperCase() || 'U'
 
   return (
     <section className="tarjeta perfil-tarjeta">
@@ -228,8 +228,7 @@ export default function Perfil() {
               ) : inicial}
             </div>
             <div>
-              <h3 className="perfil-correo">{perfil.correo}</h3>
-              <p className="perfil-rol">Rol: {perfil.rol}</p>
+              <h3 className="perfil-correo">{nombreVisible}</h3>
             </div>
           </div>
 
@@ -250,7 +249,7 @@ export default function Perfil() {
               <dl className="perfil-datos">
                 <div>
                   <dt>Nombre</dt>
-                  <dd>{perfil.nombre || 'Sin nombre registrado'}</dd>
+                  <dd>{perfil.nombre || 'Agrega tu nombre al perfil'}</dd>
                 </div>
                 <div>
                   <dt>Correo electrónico</dt>
@@ -260,33 +259,7 @@ export default function Perfil() {
                   <dt>Teléfono</dt>
                   <dd>{perfil.telefono || 'Sin teléfono registrado'}</dd>
                 </div>
-                <div>
-                  <dt>ID de usuario</dt>
-                  <dd>{perfil.id}</dd>
-                </div>
-                <div>
-                  <dt>Rol</dt>
-                  <dd>{perfil.rol}</dd>
-                </div>
-                <div>
-                  <dt>Permisos</dt>
-                  <dd>
-                    {permisos.length === 0 ? (
-                      <span>No hay permisos asignados</span>
-                    ) : (
-                      <ul className="perfil-permisos">
-                        {permisos.map((p) => (
-                          <li key={p}>{p}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </dd>
-                </div>
               </dl>
-
-              <p className="perfil-nota">
-                Este perfil muestra únicamente tus datos autorizados.
-              </p>
 
               <div className="botones">
                 <button type="button" className="btn-primario" onClick={iniciarEdicion}>
@@ -348,10 +321,6 @@ export default function Perfil() {
                   <span className="error" role="alert">{erroresCampo.telefono}</span>
                 )}
               </div>
-
-              <p className="perfil-nota">
-                El rol, los permisos y la contraseña no se pueden editar aquí.
-              </p>
 
               <div className="botones">
                 <button type="submit" className="btn-primario" disabled={guardando}>

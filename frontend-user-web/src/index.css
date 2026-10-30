@@ -2341,11 +2341,11 @@ body {
   color: var(--color-text-primary);
 }
 
-.app-header .nav-principal a:first-child {
+.app-header .nav-principal a.active {
   color: var(--color-text-primary);
 }
 
-.app-header .nav-principal a:first-child::after {
+.app-header .nav-principal a.active::after {
   position: absolute;
   right: 10px;
   bottom: -1px;
@@ -2776,7 +2776,7 @@ body {
     white-space: nowrap;
   }
 
-  .app-header .nav-principal a:first-child::after {
+  .app-header .nav-principal a.active::after {
     bottom: -1px;
   }
 
@@ -2859,7 +2859,7 @@ body {
   letter-spacing: 0.005em;
 }
 
-.app-header .nav-principal a:first-child::before {
+.app-header .nav-principal a.active::before {
   position: absolute;
   top: 18px;
   left: 2px;
@@ -2870,7 +2870,7 @@ body {
   content: '';
 }
 
-.app-header .nav-principal a:first-child::after {
+.app-header .nav-principal a.active::after {
   right: 12px;
   left: 12px;
   height: 2px;
@@ -3062,11 +3062,6 @@ body {
   letter-spacing: 0.13em;
 }
 
-.catalogo-seccion-kicker::before {
-  content: '01 / ';
-  color: var(--editorial-red);
-}
-
 .catalogo h2 {
   font-size: clamp(1.7rem, 2.5vw, 2.35rem);
   letter-spacing: -0.045em;
@@ -3225,7 +3220,7 @@ body {
 /* Final precedence layer for the visual refinement. */
 .app-header { min-height: 70px; }
 .app-marca { width: 58px; height: 58px; }
-.app-header .nav-principal a:first-child::before { display: none; }
+.app-header .nav-principal a.active::before { display: none; }
 
 .catalogo-hero {
   grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
@@ -3347,7 +3342,7 @@ body {
   height: 58px;
 }
 
-.app-header .nav-principal a:first-child::before {
+.app-header .nav-principal a.active::before {
   display: none;
 }
 
@@ -3956,11 +3951,6 @@ body {
   padding-left: 14px;
 }
 
-.catalogo-seccion-kicker::before {
-  content: '01 / ';
-  color: var(--editorial-red);
-}
-
 .catalogo-tarjeta-destacada {
   grid-column: span 2;
   grid-row: span 2;
@@ -4045,5 +4035,314 @@ body {
 
   .catalogo-tarjeta-destacada .catalogo-datos {
     display: flex;
+  }
+}
+
+/* Portada PulgaTec: propuesta aprobada para el catálogo público. */
+.catalogo-hero {
+  grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+  align-items: center;
+  min-height: 390px;
+  padding: 48px clamp(28px, 5vw, 68px);
+  overflow: hidden;
+}
+
+.catalogo-hero::before,
+.catalogo-hero::after {
+  display: none;
+}
+
+.catalogo-hero-copy {
+  max-width: 650px;
+}
+
+.catalogo-hero-kicker {
+  margin-bottom: 18px;
+  color: var(--editorial-red);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.catalogo-hero h1 {
+  max-width: 650px;
+  margin-bottom: 18px;
+  color: var(--editorial-ink);
+  font-size: clamp(2.6rem, 4.3vw, 4rem);
+  letter-spacing: -0.06em;
+  line-height: 1.03;
+}
+
+.catalogo-hero p {
+  max-width: 520px;
+  margin-bottom: 0;
+  color: #5f605d;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.catalogo-hero-imagen {
+  display: grid;
+  min-width: 0;
+  min-height: 260px;
+  place-items: center;
+}
+
+.catalogo-hero-imagen img {
+  display: block;
+  width: min(100%, 560px);
+  max-height: 340px;
+  object-fit: contain;
+}
+
+.catalogo-seccion-kicker::before {
+  content: none;
+}
+
+@media (max-width: 860px) {
+  .catalogo-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
+    min-height: 340px;
+    padding: 36px 30px;
+  }
+
+  .catalogo-hero h1 {
+    font-size: clamp(2.25rem, 4.7vw, 3.1rem);
+  }
+
+  .catalogo-hero-imagen {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalogo-hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    gap: 8px;
+    padding: 30px 24px 22px;
+  }
+
+  .catalogo-hero h1 {
+    max-width: 540px;
+    font-size: clamp(2.2rem, 9vw, 3rem);
+  }
+
+  .catalogo-hero p {
+    font-size: 0.95rem;
+  }
+
+  .catalogo-hero-imagen {
+    min-height: 0;
+    margin-top: 4px;
+  }
+
+  .catalogo-hero-imagen img {
+    width: min(100%, 420px);
+    max-height: 240px;
+  }
+}
+
+
+/* Navegación lateral de escritorio; en pantallas pequeñas vuelve al encabezado. */
+.contenedor {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  width: min(1600px, calc(100% - 40px));
+  max-width: none;
+  margin: 24px auto 60px;
+}
+
+.contenedor > :not(.app-header):not(.fab-chatbot):not(.chatbot-panel) {
+  grid-column: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-header {
+  position: sticky;
+  top: 20px;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+  width: 100%;
+  height: calc(100vh - 40px);
+  min-height: 500px;
+  margin: 0;
+  padding: 22px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-marca {
+  align-self: center;
+  width: 88px;
+  height: 88px;
+}
+
+.app-header .nav-principal {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.app-header .nav-principal a {
+  display: block;
+  padding: 11px 12px;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.app-header .nav-principal a:hover {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-hover);
+}
+
+.app-header .nav-principal a.active::after {
+  top: 8px;
+  right: auto;
+  bottom: 8px;
+  left: 3px;
+  width: 3px;
+  height: auto;
+  background: var(--color-brand);
+}
+
+.app-header .nav-principal .app-usuario-nombre {
+  max-width: 100%;
+  margin-top: auto;
+  padding: 16px 10px 8px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.app-header .nav-principal .btn-secundario {
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.app-header .app-acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+
+.app-header .app-acciones .btn-carrito,
+.app-header .app-acciones .btn-publicar {
+  width: 100%;
+}
+
+.perfil-rol {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .contenedor {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: min(calc(100% - 32px), 760px);
+    margin-top: 16px;
+  }
+
+  .app-header {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 10px 14px;
+  }
+
+  .app-marca {
+    width: 56px;
+    height: 56px;
+  }
+
+  .app-header .nav-principal {
+    order: 3;
+    flex: 1 0 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    overflow: visible;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .app-header .nav-principal a {
+    padding: 8px 10px;
+  }
+
+  .app-header .nav-principal .app-usuario-nombre {
+    margin: 0;
+    padding: 8px 10px;
+    border: 0;
+  }
+
+  .app-header .nav-principal .btn-secundario {
+    width: auto;
+    min-height: 40px;
+    margin: 0;
+    padding: 8px 10px;
+  }
+
+  .app-header .app-acciones {
+    order: 2;
+    flex-direction: row;
+    width: auto;
+    margin-left: auto;
+  }
+
+  .app-header .app-acciones .btn-carrito,
+  .app-header .app-acciones .btn-publicar {
+    width: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .contenedor {
+    width: min(calc(100% - 24px), 480px);
+  }
+
+  .app-header {
+    gap: 8px;
+  }
+
+  .app-header .nav-principal {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .app-header .app-acciones {
+    margin-left: auto;
   }
 }
