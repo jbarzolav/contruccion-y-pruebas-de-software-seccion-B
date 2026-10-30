@@ -15,18 +15,22 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ejemplo.publicarproducto.model.LoginResponse
 
-/** HU 26 - Registro de cuenta desde la app; al crear la cuenta vuelve al login. */
+/** HU 26 - Registro de cuenta desde la app con inicio de sesión automático. */
 @Composable
 fun RegistroScreen(
     onVolver: () -> Unit,
+    onCuentaCreada: (LoginResponse) -> Unit = {},
     viewModel: RegistroViewModel = viewModel()
 ) {
     LaunchedEffect(Unit) { viewModel.reiniciar() }
     BackHandler(onBack = onVolver)
 
     val cargando = viewModel.uiState is RegistroUiState.Loading
-    val completado = viewModel.uiState is RegistroUiState.Success
+    val exito = viewModel.uiState as? RegistroUiState.Success
+    val completado = exito != null
+    LaunchedEffect(exito) { exito?.sesion?.let(onCuentaCreada) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -49,6 +53,16 @@ fun RegistroScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (!completado) {
+                    OutlinedTextField(
+                        value = viewModel.nombre, onValueChange = viewModel::cambiarNombre,
+                        label = { Text("Nombre completo") }, singleLine = true, enabled = !cargando,
+                        isError = viewModel.errorNombre != null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    viewModel.errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     OutlinedTextField(
                         value = viewModel.correo, onValueChange = viewModel::cambiarCorreo,
                         label = { Text("Correo") }, singleLine = true, enabled = !cargando,

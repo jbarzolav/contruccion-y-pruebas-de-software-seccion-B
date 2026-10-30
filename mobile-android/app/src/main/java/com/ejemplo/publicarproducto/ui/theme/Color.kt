@@ -6,17 +6,17 @@ import androidx.compose.ui.graphics.Color
 // Paleta oficial de PulgaTec (misma que la web frontend-user-web)
 // ============================================================
 
-// Azules de marca
-val AzulPrimario = Color(0xFF2563EB)      // #2563EB - acciones y énfasis
-val AzulOscuro = Color(0xFF1E40AF)        // #1E40AF - variantes oscuras
-val AzulContenedor = Color(0xFFDBEAFE)    // fondos suaves de marca
+// Paleta editorial compartida con la web.
+val RojoPulgaTec = Color(0xFFE94B43)
+val RojoPulgaTecOscuro = Color(0xFFA92A27)
+val RojoPulgaTecSuave = Color(0xFFFCE9E6)
 
 // Neutros
-val FondoNeutro = Color(0xFFF8FAFC)       // #F8FAFC - fondo de la app
-val GrisTexto = Color(0xFF616E7C)         // texto secundario
-val GrisBorde = Color(0xFFE4E7EB)         // bordes y divisores
-val GrisTarjeta = Color(0xFFF1F5F9)       // superficies de tarjeta suaves
-val TextoPrincipal = Color(0xFF1F2933)    // texto principal
+val FondoNeutro = Color(0xFFF0EDE6)
+val GrisTexto = Color(0xFF5F605D)
+val GrisBorde = Color(0xFFD8D2C8)
+val GrisTarjeta = Color(0xFFFCFBF8)
+val TextoPrincipal = Color(0xFF181817)
 
 // Verde de precios y disponibilidad
 val VerdePrecio = Color(0xFF166534)       // #166534 - precios y éxito

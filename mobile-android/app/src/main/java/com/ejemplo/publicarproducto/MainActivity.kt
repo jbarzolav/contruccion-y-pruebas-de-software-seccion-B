@@ -213,6 +213,17 @@ class MainActivity : ComponentActivity() {
                             onVolver = {
                                 registrando = false
                                 sesionViewModel.volverAlLogin()
+                            },
+                            onCuentaCreada = { respuesta ->
+                                sesionViewModel.sesion.guardarSesion(
+                                    token = respuesta.token,
+                                    id = respuesta.id,
+                                    correo = respuesta.correo,
+                                    rol = respuesta.rol,
+                                    permisos = respuesta.permisos
+                                )
+                                registrando = false
+                                sesionViewModel.recargarYValidar()
                             }
                         )
                     } else if (usuario == null) {

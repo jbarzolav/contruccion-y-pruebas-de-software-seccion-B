@@ -1,8 +1,10 @@
 package com.ejemplo.publicarproducto.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -10,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,11 +28,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.ejemplo.publicarproducto.model.ProductoResponse
+import com.ejemplo.publicarproducto.R
 
 /**
  * HU 06 - Búsqueda de productos por nombre.
@@ -57,11 +62,34 @@ fun BuscarProductosScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Buscar productos",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "PULGATEC / COMUNIDAD TECNOLÓGICA",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Compra entre la comunidad.\nVende sin complicarte.",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Productos que siguen circulando entre estudiantes y profesionales Tecsup.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Image(
+                    painter = painterResource(R.drawable.hero_pulgatec),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(148.dp)
+                )
+            }
+        }
 
         if (puedeGuardarFavoritos) {
             OutlinedButton(
@@ -104,7 +132,7 @@ fun BuscarProductosScreen(
         OutlinedTextField(
             value = viewModel.nombre,
             onValueChange = viewModel::cambiarNombre,
-            label = { Text("Nombre del producto") },
+            label = { Text("Buscar celulares, accesorios, tecnología...") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -169,6 +197,13 @@ fun BuscarProductosScreen(
                 )
             }
         }
+
+        Text("Explora productos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(
+            "Selecciona un producto para ver su detalle.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
         when (val state = viewModel.uiState) {
             BuscarProductosUiState.Initial -> Unit

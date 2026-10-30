@@ -163,7 +163,8 @@ fun PerfilScreen(
 
 @Composable
 private fun PerfilContenido(perfil: PerfilUsuarioResponse, fotoLocalUri: Uri?) {
-    val inicial = perfil.correo.trim().firstOrNull()?.uppercaseChar() ?: 'U'
+    val nombre = perfil.nombre?.takeIf { it.isNotBlank() } ?: "Mi cuenta"
+    val inicial = nombre.firstOrNull()?.uppercaseChar() ?: 'U'
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -191,28 +192,18 @@ private fun PerfilContenido(perfil: PerfilUsuarioResponse, fotoLocalUri: Uri?) {
                 }
                 Column(modifier = Modifier.padding(start = 16.dp)) {
                     Text(
-                        text = perfil.correo,
+                        text = nombre,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(text = "Rol: ${perfil.rol}", color = Color.Gray)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            DatosFila("Nombre", perfil.nombre?.takeIf { it.isNotBlank() } ?: "Sin nombre registrado")
+            DatosFila("Nombre", nombre.takeUnless { it == "Mi cuenta" } ?: "Sin nombre registrado")
             DatosFila("Correo electrónico", perfil.correo)
             DatosFila("Teléfono", perfil.telefono?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado")
-            DatosFila("ID de usuario", perfil.id.toString())
-            DatosFila("Rol", perfil.rol)
-            DatosFilaPermisos(perfil.permisos)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Este perfil muestra únicamente tus datos autorizados.",
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
         }
     }
 }
@@ -267,13 +258,6 @@ private fun FormularioEdicionPerfil(viewModel: PerfilViewModel) {
                 modifier = Modifier.fillMaxWidth()
             )
             viewModel.errorTelefono?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "El rol, los permisos y la contraseña no se pueden editar aquí.",
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
 
             viewModel.avisoEdicion?.let { mensaje ->
                 Spacer(modifier = Modifier.height(8.dp))
@@ -428,18 +412,5 @@ private fun DatosFila(etiqueta: String, valor: String) {
         Text(text = etiqueta, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = valor, color = Color.DarkGray, fontSize = 14.sp)
-    }
-}
-
-@Composable
-private fun DatosFilaPermisos(permisos: Set<String>) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(text = "Permisos", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(4.dp))
-        if (permisos.isEmpty()) {
-            Text(text = "No hay permisos asignados", color = Color.DarkGray, fontSize = 14.sp)
-        } else {
-            permisos.forEach { p -> Text(text = "• $p", color = Color.DarkGray, fontSize = 14.sp) }
-        }
     }
 }

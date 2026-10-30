@@ -5,6 +5,7 @@ package com.ejemplo.publicarproducto.model
  * El rol nunca se envía: el backend asigna siempre CLIENTE.
  */
 data class RegistroRequest(
+    val nombre: String,
     val correo: String,
     val password: String,
     val confirmacionPassword: String

@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
+import com.ejemplo.publicarproducto.model.LoginRequest
+import com.ejemplo.publicarproducto.model.LoginResponse
 import com.ejemplo.publicarproducto.model.RegistroRequest
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
@@ -17,7 +19,7 @@ import java.io.IOException
 sealed interface RegistroUiState {
     data object Initial : RegistroUiState
     data object Loading : RegistroUiState
-    data class Success(val mensaje: String) : RegistroUiState
+    data class Success(val mensaje: String, val sesion: LoginResponse? = null) : RegistroUiState
     data class Error(val mensaje: String) : RegistroUiState
 }
 
@@ -30,6 +32,9 @@ sealed interface RegistroUiState {
  */
 class RegistroViewModel : ViewModel() {
 
+    var nombre by mutableStateOf("")
+        private set
+
     var correo by mutableStateOf("")
         private set
 
@@ -40,6 +45,9 @@ class RegistroViewModel : ViewModel() {
         private set
 
     var errorCorreo by mutableStateOf<String?>(null)
+        private set
+
+    var errorNombre by mutableStateOf<String?>(null)
         private set
 
     var errorPassword by mutableStateOf<String?>(null)
@@ -57,6 +65,12 @@ class RegistroViewModel : ViewModel() {
     fun cambiarCorreo(valor: String) {
         correo = valor
         errorCorreo = null
+        limpiarErrorGeneral()
+    }
+
+    fun cambiarNombre(valor: String) {
+        nombre = valor
+        errorNombre = null
         limpiarErrorGeneral()
     }
 
@@ -79,9 +93,11 @@ class RegistroViewModel : ViewModel() {
     }
 
     fun reiniciar() {
+        nombre = ""
         correo = ""
         password = ""
         confirmacion = ""
+        errorNombre = null
         errorCorreo = null
         errorPassword = null
         errorConfirmacion = null
@@ -91,6 +107,11 @@ class RegistroViewModel : ViewModel() {
     fun registrar() {
         if (enviando || uiState is RegistroUiState.Success) return
 
+        errorNombre = when {
+            nombre.isBlank() -> "El nombre es obligatorio"
+            nombre.trim().length > 100 -> "El nombre no puede superar 100 caracteres"
+            else -> null
+        }
         errorCorreo = when {
             correo.isBlank() -> "El correo es obligatorio"
             !CORREO_REGEX.matches(correo.trim()) ->
@@ -110,15 +131,17 @@ class RegistroViewModel : ViewModel() {
             else -> null
         }
 
-        if (errorCorreo != null || errorPassword != null || errorConfirmacion != null) return
+        if (errorNombre != null || errorCorreo != null || errorPassword != null || errorConfirmacion != null) return
 
         enviando = true
         uiState = RegistroUiState.Loading
 
         viewModelScope.launch {
+            var cuentaCreada = false
             try {
                 val respuesta = UserApiClient.authApi.registro(
                     RegistroRequest(
+                        nombre = nombre.trim(),
                         correo = correo.trim(),
                         password = password,
                         confirmacionPassword = confirmacion
@@ -127,10 +150,17 @@ class RegistroViewModel : ViewModel() {
                 val cuerpo = respuesta.body()
                 uiState = when {
                     respuesta.isSuccessful && cuerpo != null -> {
-                        // La contraseña no se conserva tras crear la cuenta.
+                        cuentaCreada = true
+                        val login = UserApiClient.authApi.login(
+                            LoginRequest(correo = correo.trim(), password = password)
+                        )
                         password = ""
                         confirmacion = ""
-                        RegistroUiState.Success(cuerpo.mensaje)
+                        if (login.isSuccessful && login.body() != null) {
+                            RegistroUiState.Success(cuerpo.mensaje, login.body())
+                        } else {
+                            RegistroUiState.Success("Cuenta creada. Inicia sesión para continuar.")
+                        }
                     }
 
                     // 409 correo duplicado y 400 validaciones traen {status, error, messages}.
@@ -145,9 +175,17 @@ class RegistroViewModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {
-                uiState = RegistroUiState.Error("No hay conexión con el servidor.")
+                if (cuentaCreada) {
+                    password = ""
+                    confirmacion = ""
+                    uiState = RegistroUiState.Success("Cuenta creada. Inicia sesión para continuar.")
+                } else uiState = RegistroUiState.Error("No hay conexión con el servidor.")
             } catch (e: Exception) {
-                uiState = RegistroUiState.Error("Ocurrió un error inesperado. Inténtalo de nuevo.")
+                if (cuentaCreada) {
+                    password = ""
+                    confirmacion = ""
+                    uiState = RegistroUiState.Success("Cuenta creada. Inicia sesión para continuar.")
+                } else uiState = RegistroUiState.Error("Ocurrió un error inesperado. Inténtalo de nuevo.")
             } finally {
                 enviando = false
             }
