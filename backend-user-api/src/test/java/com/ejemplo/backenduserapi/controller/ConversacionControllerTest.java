@@ -101,6 +101,11 @@ class ConversacionControllerTest {
         mvc.perform(post("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tv)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"mensaje\":\"Sí, incluye cables.\"}"))
                 .andExpect(status().isCreated());
+        mvc.perform(get("/api/conversaciones").header("Authorization", "Bearer " + tc))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ultimoMensaje.emisorId").value(vendedor.getId()))
+                .andExpect(jsonPath("$[0].ultimoMensaje.emisorRol").value("VENDEDOR"))
+                .andExpect(jsonPath("$[0].ultimoMensaje.contenido").value("Sí, incluye cables."));
         mvc.perform(post("/api/conversaciones").header("Authorization", "Bearer " + tc)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("productoId", producto.getId(), "mensaje", "¿Qué medida tiene?"))))
