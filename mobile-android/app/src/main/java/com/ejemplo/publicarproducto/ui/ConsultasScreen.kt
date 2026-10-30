@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.delay
 
 // El estado y los trabajos de red pertenecen a esta pantalla y se descartan al salir.
 @Composable
@@ -50,6 +51,12 @@ fun ConsultasScreen(esVendedor: Boolean, modifier: Modifier = Modifier) {
     val model = consultasModel()
     var seleccion by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) { model.cargar(true) }
+    LaunchedEffect(seleccion) {
+        while (true) {
+            delay(15000)
+            model.actualizarSilencioso(seleccion)
+        }
+    }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Consultas", style = MaterialTheme.typography.headlineSmall)

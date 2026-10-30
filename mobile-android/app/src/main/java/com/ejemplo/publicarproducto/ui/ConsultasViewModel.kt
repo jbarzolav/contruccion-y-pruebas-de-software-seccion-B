@@ -24,6 +24,7 @@ class ConsultasViewModel : ViewModel() {
     var maximo by mutableStateOf<Int?>(null); private set
     var texto by mutableStateOf("")
     private val api get() = UserApiClient.conversacionApi
+    private var actualizandoSilencioso = false
 
     fun cargar(listar: Boolean) {
         if (cargando) return
@@ -54,6 +55,27 @@ class ConsultasViewModel : ViewModel() {
             } finally { cargandoMensajes = false }
         }
     }
+
+    /** HU39 - Mantiene al día la lista y la conversación abierta sin interrumpir la lectura. */
+    fun actualizarSilencioso(conversacionSeleccionada: Long?) {
+        if (actualizandoSilencioso || cargando || cargandoMensajes || enviando) return
+        actualizandoSilencioso = true
+        viewModelScope.launch {
+            try {
+                conversaciones = exigir(api.listar())
+                if (conversacionSeleccionada != null) {
+                    val pagina = exigir(api.mensajes(conversacionSeleccionada, 0))
+                    mensajes = pagina.mensajes.reversed()
+                    paginaMensajes = pagina.pagina
+                    tieneMensajesAnteriores = pagina.tieneSiguiente
+                }
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) {
+                // El refresco periódico no debe reemplazar los errores de carga visibles.
+            } finally { actualizandoSilencioso = false }
+        }
+    }
+
     fun enviar(productoId: Long?, conversacionId: Long?) {
         if (enviando) return
         val limite = maximo ?: return

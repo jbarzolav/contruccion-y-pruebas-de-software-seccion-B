@@ -42,12 +42,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
 import com.ejemplo.publicarproducto.ui.CarritoScreen
 import com.ejemplo.publicarproducto.ui.ChatbotScreen
@@ -241,6 +244,43 @@ class MainActivity : ComponentActivity() {
                     // 0 = Inicio (catálogo/búsqueda), 1 = Mis productos,
                     // 2 = Carrito (HU 12), 3 = Chatbot (HU 16/17), 4 = Premium (HU 18)
                     var pestana by remember(usuario.id, usuario.rol) { mutableStateOf(0) }
+                    var avisoMensaje by remember(usuario.id, usuario.rol) { mutableStateOf<String?>(null) }
+
+                    // HU39 - Avisa en la navegación cuando llega un mensaje de otro participante.
+                    val tokenConversaciones = sesionViewModel.sesion.obtenerToken()
+                    LaunchedEffect(usuario.id, tokenConversaciones) {
+                        var inicializado = false
+                        val ultimosMensajes = mutableMapOf<Long, Long>()
+                        while (true) {
+                            try {
+                                val respuesta = UserApiClient.conversacionApi.listar()
+                                if (respuesta.isSuccessful) {
+                                    val lista = respuesta.body().orEmpty()
+                                    if (inicializado) {
+                                        val entrante = lista.firstOrNull { conversacion ->
+                                            val mensaje = conversacion.ultimoMensaje
+                                            mensaje != null &&
+                                                (ultimosMensajes[conversacion.idConversacion] == null ||
+                                                    ultimosMensajes[conversacion.idConversacion] != mensaje.id) &&
+                                                mensaje.emisorId != usuario.id
+                                        }
+                                        if (entrante != null) avisoMensaje = entrante.productoNombre
+                                    }
+                                    lista.forEach { conversacion ->
+                                        conversacion.ultimoMensaje?.let {
+                                            ultimosMensajes[conversacion.idConversacion] = it.id
+                                        }
+                                    }
+                                    inicializado = true
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (_: Exception) {
+                                // La navegación sigue disponible aunque falle temporalmente la conexión.
+                            }
+                            delay(15_000)
+                        }
+                    }
 
                     // Sub-pantallas fuera de la barra inferior
                     var productoDetalleId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 07
@@ -259,7 +299,9 @@ class MainActivity : ComponentActivity() {
                                 TopAppBar(
                                     actions = {
                                         if (usuario.rol in setOf("CLIENTE", "VENDEDOR")) {
-                                            TextButton(onClick = { pestana = 8 }) { Text("Consultas") }
+                                            TextButton(onClick = { pestana = 8; avisoMensaje = null }) {
+                                                Text(if (avisoMensaje == null) "Consultas" else "Nuevo mensaje · Consultas")
+                                            }
                                         }
                                     },
                                     title = {
