@@ -29,6 +29,16 @@ export default function Conversaciones() {
     }, [version, sesion?.token])
     const conversacion = lista.find(c => c.idConversacion === seleccion)
 
+    // HU39 - Actualiza silenciosamente la lista para mostrar mensajes entrantes recientes.
+    useEffect(() => {
+        if (!sesion?.token) return
+        let vigente = true
+        const intervalo = window.setInterval(() => {
+            listarConversaciones().then(data => { if (vigente) setLista(data) }).catch(() => {})
+        }, 15000)
+        return () => { vigente = false; window.clearInterval(intervalo) }
+    }, [sesion?.token])
+
     useEffect(() => {
         if (!seleccion) {
             setMensajes([])
@@ -48,7 +58,7 @@ export default function Conversaciones() {
             if (vigente) setErrorMensajes(err?.response?.data?.messages?.[0] || 'No se pudo cargar el historial.')
         }).finally(() => { if (vigente) setCargandoMensajes(false) })
         return () => { vigente = false }
-    }, [seleccion, version])
+    }, [seleccion, version, conversacion?.ultimoMensaje?.id])
 
     async function cargarAnteriores() {
         if (cargandoAnteriores || !tieneSiguiente || !seleccion) return
@@ -73,7 +83,10 @@ export default function Conversaciones() {
         {error && <p role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Reintentar</button></p>}
         {!cargando && !error && !lista.length && <p>Aún no tienes consultas.</p>}
         {!error && lista.map(c => <p key={c.idConversacion}><button onClick={() => setSeleccion(c.idConversacion)}>
-            Consulta #{c.idConversacion} — {c.productoNombre}: {c.ultimoMensaje?.contenido || 'Sin mensajes'}</button></p>)}
+            Consulta #{c.idConversacion} — {c.productoNombre}: {c.ultimoMensaje?.contenido || 'Sin mensajes'}
+            {c.ultimoMensaje && c.ultimoMensaje.emisorId !== sesion.id && c.idConversacion !== seleccion &&
+                <strong aria-label="Mensaje nuevo"> · Nuevo mensaje</strong>}
+        </button></p>)}
         {conversacion && <article>
             <h3>{conversacion.productoNombre}</h3>
             <Link to={`/producto/${conversacion.productoId}`}>Ver producto</Link>

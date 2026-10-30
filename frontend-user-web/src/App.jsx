@@ -20,6 +20,7 @@ import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
 import { obtenerCarrito } from './api/productos.js'
+import { listarConversaciones } from './api/conversaciones.js'
 
 // HU 23 - Las rutas protegidas también comprueban el permiso al abrirlas directamente.
 function AccesoProtegido({ permiso, children }) {
@@ -46,7 +47,50 @@ export default function App() {
     const puedeComprar = tienePermiso(sesion, 'COMPRAR')
     const puedePublicar = tienePermiso(sesion, 'GESTIONAR_PRODUCTOS')
     const [avisoSesion, setAvisoSesion] = useState('')
+    const [avisoMensaje, setAvisoMensaje] = useState(null)
     const [cerrandoSesion, setCerrandoSesion] = useState(false)
+
+    // HU 39 - Detecta mensajes nuevos de otros participantes mientras hay sesión.
+    useEffect(() => {
+        if (!sesion?.token || !['CLIENTE', 'VENDEDOR'].includes(sesion.rol)) {
+            setAvisoMensaje(null)
+            return
+        }
+        let vigente = true
+        let inicializado = false
+        let ultimosMensajes = new Map()
+        let consultando = false
+        async function revisarMensajes() {
+            if (consultando || document.visibilityState === 'hidden') return
+            consultando = true
+            try {
+                const conversaciones = await listarConversaciones()
+                if (!vigente) return
+                const entrante = []
+                for (const conversacion of conversaciones) {
+                    const mensaje = conversacion.ultimoMensaje
+                    if (!mensaje) continue
+                    const anterior = ultimosMensajes.get(conversacion.idConversacion)
+                    if (inicializado && (anterior === undefined || anterior !== mensaje.id) && mensaje.emisorId !== sesion.id) {
+                        entrante.push(conversacion)
+                    }
+                    ultimosMensajes.set(conversacion.idConversacion, mensaje.id)
+                }
+                inicializado = true
+                if (entrante.length) setAvisoMensaje(entrante[0])
+            } catch {
+                // La vista sigue funcionando si temporalmente no hay conexión.
+            } finally {
+                consultando = false
+            }
+        }
+        revisarMensajes()
+        const intervalo = window.setInterval(revisarMensajes, 15000)
+        return () => {
+            vigente = false
+            window.clearInterval(intervalo)
+        }
+    }, [sesion?.id, sesion?.rol, sesion?.token])
 
     async function cerrarSesion() {
         if (!sesion || cerrandoSesion || !window.confirm('¿Deseas cerrar la sesión?')) return
@@ -208,6 +252,11 @@ export default function App() {
 
                 {avisoSesion && <div className="alerta error" role="alert">{avisoSesion}
                     <button type="button" className="btn-secundario" onClick={() => setAvisoSesion('')}>Cerrar aviso</button>
+                </div>}
+                {avisoMensaje && <div className="alerta" role="status">
+                    Nuevo mensaje sobre «{avisoMensaje.productoNombre}».{' '}
+                    <Link to="/consultas" onClick={() => setAvisoMensaje(null)}>Ver consultas</Link>{' '}
+                    <button type="button" className="btn-secundario" onClick={() => setAvisoMensaje(null)}>Cerrar aviso</button>
                 </div>}
                 <Routes>
                     <Route path="/consultas" element={<AccesoAutenticado><Conversaciones key={sesion?.token} /></AccesoAutenticado>} />
