@@ -190,6 +190,27 @@ export async function confirmarCompra() {
   return data
 }
 
+// HU 41/42 - historial y experiencia de compras; identidad desde la sesión.
+export async function listarPedidos() {
+  const { data } = await apiPedidos.get('')
+  return data
+}
+
+export async function obtenerPedido(idPedido) {
+  const { data } = await apiPedidos.get(`/${idPedido}`)
+  return data
+}
+
+export async function calificarPedido(idPedido, valor) {
+  const { data } = await apiPedidos.post(`/${idPedido}/calificacion`, { valor })
+  return data
+}
+
+export async function resenarPedido(idPedido, destino, texto) {
+  const { data } = await apiPedidos.post(`/${idPedido}/resena`, { destino, texto })
+  return data
+}
+
 // HU 16 - POST /api/chatbot/recomendaciones → 200 {mensaje, productos}
 export async function consultarChatbot(consulta) {
   const { data } = await apiChatbot.post('/recomendaciones', { consulta })

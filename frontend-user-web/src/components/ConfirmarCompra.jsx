@@ -6,6 +6,7 @@ import {
     obtenerTotalCarrito
 } from '../api/productos.js'
 import { useEffect } from 'react'
+import ExperienciaCompra from './ExperienciaCompra.jsx'
 
 /**
  * HU 15 - Confirmar mi compra (Checkout).
@@ -101,6 +102,7 @@ export default function ConfirmarCompra({ onCarritoActualizado }) {
                     Total pagado: <strong>S/ {Number(pedido.total).toFixed(2)}</strong>
                 </div>
 
+                <ExperienciaCompra pedido={{ ...pedido, resenas: [], calificacion: null }} onActualizado={setPedido} />
                 <div className="botones">
                     <button type="button" onClick={() => navigate('/')}>
                         Seguir comprando

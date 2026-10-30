@@ -89,6 +89,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.experiencia-compra { margin-top: 20px; }
+.estrellas { display: flex; gap: 2px; margin: 8px 0 12px; }
+.estrella { padding: 2px 5px; background: transparent; color: #cbd2d9; font-size: 1.8rem; }
+.estrella.activa { color: #f59e0b; }
+.formulario-resena { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.formulario-resena small { color: #52606d; text-align: right; }
+.formulario-resena blockquote { margin: 0; padding: 12px; background: #f4f6f8; border-left: 4px solid #2563eb; }
+.pedido-historial { margin: 16px 0; }
+
 .btn-primario {
   background: #2563eb;
   color: #fff;

@@ -16,6 +16,7 @@ import RecuperarAcceso from './components/RecuperarAcceso.jsx'
 import Perfil from './components/Perfil.jsx'
 import Favoritos from './components/Favoritos.jsx'
 import Conversaciones from './components/Conversaciones.jsx'
+import Pedidos from './components/Pedidos.jsx'
 import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -221,6 +222,7 @@ export default function App() {
                         {sesion && <NavLink to="/perfil">Mi perfil</NavLink>}
                         {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <NavLink to="/consultas">Consultas</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
+                        {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/pedidos">Mis compras</NavLink>}
                         {sesion && <span className="app-usuario-nombre">{sesion.nombre || 'Mi cuenta'}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
@@ -320,6 +322,7 @@ export default function App() {
                     <Route path="/favoritos" element={
                         <AccesoProtegido permiso="COMPRAR"><Favoritos /></AccesoProtegido>
                     } />
+                    <Route path="/pedidos" element={<AccesoProtegido permiso="COMPRAR"><Pedidos /></AccesoProtegido>} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}
