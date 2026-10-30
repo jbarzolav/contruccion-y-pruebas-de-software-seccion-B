@@ -402,7 +402,8 @@ class MainActivity : ComponentActivity() {
                             else -> when (pestana) {
                                 8 -> androidx.compose.runtime.key(usuario.id, sesionViewModel.sesion.obtenerToken()) {
                                     com.ejemplo.publicarproducto.ui.ConsultasScreen(
-                                        esVendedor = usuario.rol == "VENDEDOR", modifier = Modifier.padding(padding))
+                                        esVendedor = usuario.rol == "VENDEDOR", modifier = Modifier.padding(padding),
+                                        onVerProducto = { productoDetalleId = it })
                                 }
                                 // HU 06/07/08/09 - Inicio: catálogo con búsqueda y orden
                                 0 -> BuscarProductosScreen(
