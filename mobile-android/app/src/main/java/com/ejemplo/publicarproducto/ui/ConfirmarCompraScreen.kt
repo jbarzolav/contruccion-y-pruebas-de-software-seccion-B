@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -322,6 +324,8 @@ private fun ComprobantePedido(
                 )
             }
 
+            ExperienciaCompra(viewModel)
+
             Button(
                 onClick = {
                     viewModel.reiniciar()
@@ -332,5 +336,35 @@ private fun ComprobantePedido(
                 Text("Seguir comprando")
             }
         }
+    }
+}
+
+@Composable
+private fun ExperienciaCompra(viewModel: ConfirmarCompraViewModel) {
+    val pedido = viewModel.pedido ?: return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Text("Tu experiencia", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(if (pedido.calificacion != null) "Calificación guardada" else "Calificar compra")
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            (1..5).forEach { numero ->
+                TextButton(enabled = pedido.calificacion == null && !viewModel.guardandoExperiencia,
+                    onClick = { viewModel.valorCalificacion = numero }) { Text(if (numero <= viewModel.valorCalificacion) "★" else "☆", fontSize = 24.sp) }
+            }
+        }
+        if (pedido.calificacion == null) Button(enabled = viewModel.valorCalificacion in 1..5 && !viewModel.guardandoExperiencia,
+            onClick = { viewModel.calificar(viewModel.valorCalificacion) }) { Text(if (viewModel.guardandoExperiencia) "Guardando..." else "Guardar calificación") }
+        val existente = pedido.resenas.orEmpty().firstOrNull { it.destino == viewModel.destinoResena }
+        if (existente != null) Text("Reseña ${viewModel.destinoResena.lowercase()}: ${existente.texto}")
+        else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(enabled = !viewModel.guardandoExperiencia, onClick = { viewModel.destinoResena = if (viewModel.destinoResena == "PRODUCTO") "VENDEDOR" else "PRODUCTO" }) { Text(viewModel.destinoResena) }
+            }
+            OutlinedTextField(value = viewModel.textoResena, onValueChange = { if (it.length <= 1000) viewModel.textoResena = it },
+                label = { Text("Reseña") }, supportingText = { Text("${viewModel.textoResena.length} / 1000") },
+                enabled = !viewModel.guardandoExperiencia, modifier = Modifier.fillMaxWidth())
+            Button(enabled = viewModel.textoResena.trim().isNotEmpty() && !viewModel.guardandoExperiencia,
+                onClick = { viewModel.resenar() }) { Text(if (viewModel.guardandoExperiencia) "Publicando..." else "Publicar reseña") }
+        }
+        viewModel.mensajeExperiencia?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }

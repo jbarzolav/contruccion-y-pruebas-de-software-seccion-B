@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.CalificacionRequest
+import com.ejemplo.publicarproducto.model.ResenaRequest
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -48,6 +50,12 @@ class ConfirmarCompraViewModel : ViewModel() {
 
     var mensajeError by mutableStateOf<String?>(null)
         private set
+
+    var valorCalificacion by mutableStateOf(0)
+    var destinoResena by mutableStateOf("PRODUCTO")
+    var textoResena by mutableStateOf("")
+    var guardandoExperiencia by mutableStateOf(false)
+    var mensajeExperiencia by mutableStateOf<String?>(null)
 
     /** Carga el resumen final: ítems + total calculado por el servidor. */
     fun cargarResumen() {
@@ -109,6 +117,33 @@ class ConfirmarCompraViewModel : ViewModel() {
     fun reiniciar() {
         pedido = null
         cargarResumen()
+    }
+
+    fun calificar(valor: Int) {
+        if (pedido?.idPedido == null || guardandoExperiencia || pedido?.calificacion != null) return
+        valorCalificacion = valor; guardandoExperiencia = true; mensajeExperiencia = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.calificarPedido(pedido!!.idPedido!!, CalificacionRequest(valor))
+                if (respuesta.isSuccessful && respuesta.body() != null) pedido = respuesta.body()!! else mensajeExperiencia = mensajeDeError(respuesta)
+            } catch (e: Exception) { mensajeExperiencia = e.message ?: "No se pudo guardar la calificación." }
+            finally { guardandoExperiencia = false }
+        }
+    }
+
+    fun resenar() {
+        val id = pedido?.idPedido ?: return
+        val texto = textoResena.trim()
+        if (guardandoExperiencia || texto.isEmpty() || texto.length > 1000) return
+        guardandoExperiencia = true; mensajeExperiencia = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.resenarPedido(id, ResenaRequest(destinoResena, texto))
+                if (respuesta.isSuccessful && respuesta.body() != null) { pedido = respuesta.body()!!; textoResena = "" }
+                else mensajeExperiencia = mensajeDeError(respuesta)
+            } catch (e: Exception) { mensajeExperiencia = e.message ?: "No se pudo publicar la reseña." }
+            finally { guardandoExperiencia = false }
+        }
     }
 
     /** Lee {status, error, messages} del backend para mostrar la regla violada. */

@@ -11,6 +11,8 @@ import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.CalificacionRequest
+import com.ejemplo.publicarproducto.model.ResenaRequest
 import com.ejemplo.publicarproducto.model.PlanPremiumResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
@@ -161,6 +163,13 @@ interface ProductoApi {
     // HU 15 - POST /api/pedidos → 201 comprobante (400 si el carrito está vacío o falta stock)
     @POST("api/pedidos")
     suspend fun confirmarCompra(): Response<PedidoResponse>
+
+    // HU 41/42 - la identidad se toma del Bearer y el pedido del path.
+    @POST("api/pedidos/{idPedido}/calificacion")
+    suspend fun calificarPedido(@Path("idPedido") idPedido: Long, @Body request: CalificacionRequest): Response<PedidoResponse>
+
+    @POST("api/pedidos/{idPedido}/resena")
+    suspend fun resenarPedido(@Path("idPedido") idPedido: Long, @Body request: ResenaRequest): Response<PedidoResponse>
 
     // HU 16 - POST /api/chatbot/recomendaciones  { consulta } → 200 {mensaje, productos}
     @POST("api/chatbot/recomendaciones")
