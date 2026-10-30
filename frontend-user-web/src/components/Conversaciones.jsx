@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listarConversaciones, listarMensajesConversacion, responderConsulta } from '../api/conversaciones.js'
+import { urlImagen } from '../api/productos.js'
 import { useSesion } from '../api/sesion.js'
 import FormularioConsulta from './FormularioConsulta.jsx'
 
@@ -82,14 +83,33 @@ export default function Conversaciones() {
         {cargando && <p role="status">Cargando consultas…</p>}
         {error && <p role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Reintentar</button></p>}
         {!cargando && !error && !lista.length && <p>Aún no tienes consultas.</p>}
-        {!error && lista.map(c => <p key={c.idConversacion}><button onClick={() => setSeleccion(c.idConversacion)}>
-            Consulta #{c.idConversacion} — {c.productoNombre}: {c.ultimoMensaje?.contenido || 'Sin mensajes'}
-            {c.ultimoMensaje && c.ultimoMensaje.emisorId !== sesion.id && c.idConversacion !== seleccion &&
-                <strong aria-label="Mensaje nuevo"> · Nuevo mensaje</strong>}
-        </button></p>)}
+        {!error && lista.map(c => <div className="consulta-producto-fila" key={c.idConversacion}>
+            <button className="consulta-producto-seleccion" onClick={() => setSeleccion(c.idConversacion)}>
+                {urlImagen(c.productoImagenUrl)
+                    ? <img className="consulta-producto-imagen" src={urlImagen(c.productoImagenUrl)} alt={`Imagen de ${c.productoNombre}`} />
+                    : <span className="consulta-producto-sin-imagen">Sin imagen</span>}
+                <span className="consulta-producto-resumen">
+                    <strong>Consulta #{c.idConversacion} — {c.productoNombre}</strong>
+                    <span>{c.ultimoMensaje?.contenido || 'Sin mensajes'}
+                        {c.ultimoMensaje && c.ultimoMensaje.emisorId !== sesion.id && c.idConversacion !== seleccion &&
+                            <strong aria-label="Mensaje nuevo"> · Nuevo mensaje</strong>}
+                    </span>
+                </span>
+            </button>
+            {c.productoDisponible === false && <span className="consulta-producto-estado">Producto ya no disponible</span>}
+        </div>)}
         {conversacion && <article>
-            <h3>{conversacion.productoNombre}</h3>
-            <Link to={`/producto/${conversacion.productoId}`}>Ver producto</Link>
+            <div className="consulta-producto-encabezado">
+                {urlImagen(conversacion.productoImagenUrl)
+                    ? <img className="consulta-producto-imagen" src={urlImagen(conversacion.productoImagenUrl)} alt={`Imagen de ${conversacion.productoNombre}`} />
+                    : <span className="consulta-producto-sin-imagen">Sin imagen</span>}
+                <div>
+                    <h3>{conversacion.productoNombre}</h3>
+                    {conversacion.productoDisponible !== false
+                        ? <Link to={`/producto/${conversacion.productoId}`}>Ver producto</Link>
+                        : <span className="consulta-producto-estado">Producto ya no disponible</span>}
+                </div>
+            </div>
             {tieneSiguiente && <button onClick={cargarAnteriores} disabled={cargandoAnteriores}>
                 {cargandoAnteriores ? 'Cargando mensajes…' : 'Cargar mensajes anteriores'}
             </button>}

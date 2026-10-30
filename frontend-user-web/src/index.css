@@ -4346,3 +4346,66 @@ body {
     margin-left: auto;
   }
 }
+
+.consulta-producto-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.consulta-producto-seleccion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-align: left;
+}
+
+.consulta-producto-imagen,
+.consulta-producto-sin-imagen {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--color-fondo-suave, #f2f0ec);
+}
+
+.consulta-producto-sin-imagen {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  color: #666;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.consulta-producto-resumen {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.consulta-producto-resumen > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consulta-producto-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.consulta-producto-encabezado h3 {
+  margin: 0 0 6px;
+}
+
+.consulta-producto-estado {
+  color: #76531c;
+  font-size: 0.9rem;
+}
