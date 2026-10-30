@@ -18,6 +18,7 @@ import com.ejemplo.backenduserapi.exception.ProductoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.FavoritoNoEncontradoException;
 import com.ejemplo.backenduserapi.exception.PropietarioInvalidoException;
 import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
+import com.ejemplo.backenduserapi.exception.ExperienciaCompraException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -186,6 +187,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AutorizacionException.class)
     public ResponseEntity<Map<String, Object>> handleAutorizacion(AutorizacionException ex) {
         return responder(ex.getEstado(), "Autorización", List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ExperienciaCompraException.class)
+    public ResponseEntity<Map<String, Object>> handleExperienciaCompra(ExperienciaCompraException ex) {
+        return responder(ex.getEstado(), "Experiencia de compra inválida", List.of(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
