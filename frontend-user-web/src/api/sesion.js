@@ -9,18 +9,23 @@ export function leerSesion() {
   try { permisos = JSON.parse(localStorage.getItem('pulgatec_permisos') || '[]') } catch { /* Sesión antigua. */ }
   return { token, id: Number(localStorage.getItem('pulgatec_usuario_id')),
     correo: localStorage.getItem('pulgatec_usuario_correo'),
+    nombre: localStorage.getItem('pulgatec_usuario_nombre'),
     rol: localStorage.getItem('pulgatec_rol'), permisos: Array.isArray(permisos) ? permisos : [] }
 }
 export function guardarSesion(usuario) {
+  const tokenAnterior = localStorage.getItem('pulgatec_token')
+  const nuevaSesion = usuario.token && usuario.token !== tokenAnterior
   if (usuario.token) localStorage.setItem('pulgatec_token', usuario.token)
   localStorage.setItem('pulgatec_usuario_id', String(usuario.id))
   localStorage.setItem('pulgatec_usuario_correo', usuario.correo)
+  if (usuario.nombre != null) localStorage.setItem('pulgatec_usuario_nombre', usuario.nombre)
+  else if (nuevaSesion) localStorage.removeItem('pulgatec_usuario_nombre')
   localStorage.setItem('pulgatec_rol', usuario.rol)
   localStorage.setItem('pulgatec_permisos', JSON.stringify(usuario.permisos || []))
   window.dispatchEvent(new Event('pulgatec-sesion'))
 }
 export function limpiarSesion() {
-  for (const clave of ['token', 'usuario_id', 'usuario_correo', 'rol', 'permisos']) {
+  for (const clave of ['token', 'usuario_id', 'usuario_correo', 'usuario_nombre', 'rol', 'permisos']) {
     localStorage.removeItem(`pulgatec_${clave}`)
   }
   window.dispatchEvent(new Event('pulgatec-sesion'))

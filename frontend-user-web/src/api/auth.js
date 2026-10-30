@@ -18,8 +18,8 @@ export async function login(correo, password) {
 
 // HU 26 - POST /api/auth/registro → { mensaje }
 // 201 si la cuenta se crea; 409 si el correo ya está registrado.
-export async function registrar(correo, password, confirmacionPassword) {
-  const { data } = await apiAuth.post('/registro', { correo, password, confirmacionPassword })
+export async function registrar(nombre, correo, password, confirmacionPassword) {
+  const { data } = await apiAuth.post('/registro', { nombre, correo, password, confirmacionPassword })
   return data
 }
 

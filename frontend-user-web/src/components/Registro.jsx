@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { registrar } from '../api/auth.js'
+import { login, registrar } from '../api/auth.js'
+import { guardarSesion } from '../api/sesion.js'
 
 /**
  * HU 26 - Registro de cuenta.
  *
- * Consume POST /api/auth/registro y, al crear la cuenta, regresa al
- * login con la confirmación. El rol lo asigna siempre el backend
- * (CLIENTE) y la contraseña nunca se almacena en el navegador.
+ * Consume POST /api/auth/registro e inicia sesión tras crear la cuenta.
+ * El rol lo asigna siempre el backend y la contraseña no se almacena.
  */
 export default function Registro() {
+  const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [confirmacion, setConfirmacion] = useState('')
@@ -24,6 +25,12 @@ export default function Registro() {
   // HU 26 - Validación local antes de llamar al backend.
   const validar = () => {
     const errs = {}
+
+    if (!nombre.trim()) {
+      errs.nombre = 'El nombre es obligatorio'
+    } else if (nombre.trim().length > 100) {
+      errs.nombre = 'El nombre no puede superar 100 caracteres'
+    }
 
     if (!correo.trim()) {
       errs.correo = 'El correo es obligatorio'
@@ -77,12 +84,19 @@ export default function Registro() {
     enviandoRef.current = true
     setCargando(true)
 
+    let cuentaCreada = false
     try {
-      await registrar(correo.trim(), password, confirmacion)
-
-      // HU 26 - Sin token automático: la confirmación viaja al login.
-      navigate('/login', { state: { mensaje: 'Cuenta creada correctamente. Ya puedes iniciar sesión.' } })
+      await registrar(nombre.trim(), correo.trim(), password, confirmacion)
+      cuentaCreada = true
+      const sesion = await login(correo.trim(), password)
+      guardarSesion({ ...sesion, nombre: nombre.trim() })
+      navigate('/')
     } catch (error) {
+      if (cuentaCreada) {
+        navigate('/login', { state: { mensaje: 'Cuenta creada correctamente. Inicia sesión para continuar.' } })
+        return
+      }
+
       const estado = error.response?.status
       const mensajes = error.response?.data?.messages
 
@@ -110,6 +124,21 @@ export default function Registro() {
       <h2>Crear cuenta</h2>
 
       <form onSubmit={handleSubmit} noValidate>
+        <div className="campo">
+          <label htmlFor="nombre">Nombre completo *</label>
+          <input
+            id="nombre"
+            name="nombre"
+            type="text"
+            autoComplete="name"
+            maxLength={100}
+            placeholder="Tu nombre completo"
+            value={nombre}
+            onChange={handleChange(setNombre, 'nombre')}
+          />
+          {errores.nombre && <span className="error">{errores.nombre}</span>}
+        </div>
+
         <div className="campo">
           <label htmlFor="correo">Correo *</label>
           <input
