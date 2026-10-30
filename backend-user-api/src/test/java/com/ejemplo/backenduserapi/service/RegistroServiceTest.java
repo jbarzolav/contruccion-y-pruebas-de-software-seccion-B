@@ -34,7 +34,7 @@ class RegistroServiceTest {
     }
 
     private RegistroRequest solicitud(String correo, String password, String confirmacion) {
-        return new RegistroRequest(correo, password, confirmacion);
+        return new RegistroRequest("Nombre de prueba", correo, password, confirmacion);
     }
 
     @Test
@@ -53,6 +53,7 @@ class RegistroServiceTest {
         assertTrue(guardado.getPasswordHash().startsWith("$2"));
         assertTrue(encoder.matches("Clave123*", guardado.getPasswordHash()));
         assertEquals(Rol.CLIENTE, guardado.getRol());
+        assertEquals("Nombre de prueba", guardado.getNombre());
     }
 
     @Test

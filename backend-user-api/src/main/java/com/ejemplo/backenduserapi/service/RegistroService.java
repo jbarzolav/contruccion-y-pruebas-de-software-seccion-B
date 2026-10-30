@@ -43,7 +43,9 @@ public class RegistroService {
         if (usuarios.findByCorreoIgnoreCase(correo).isPresent()) {
             throw new CorreoYaRegistradoException("El correo ya está registrado.");
         }
-        usuarios.save(new Usuario(correo, encoder.encode(solicitud.getPassword())));
+        Usuario usuario = new Usuario(correo, encoder.encode(solicitud.getPassword()));
+        usuario.setNombre(solicitud.getNombre().trim());
+        usuarios.save(usuario);
         return new AuthMessageResponse(MENSAJE_CUENTA_CREADA);
     }
 }

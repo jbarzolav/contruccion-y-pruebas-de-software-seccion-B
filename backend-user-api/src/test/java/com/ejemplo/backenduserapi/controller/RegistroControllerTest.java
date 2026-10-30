@@ -45,7 +45,7 @@ class RegistroControllerTest {
     private PasswordEncoder encoder;
 
     private String cuerpo(String correo, String password, String confirmacion) {
-        return "{\"correo\":\"" + correo + "\",\"password\":\"" + password
+        return "{\"nombre\":\"Nombre de prueba\",\"correo\":\"" + correo + "\",\"password\":\"" + password
                 + "\",\"confirmacionPassword\":\"" + confirmacion + "\"}";
     }
 
@@ -79,6 +79,7 @@ class RegistroControllerTest {
         assertTrue(guardado.isPresent(), "La cuenta debe existir con el correo normalizado");
         Usuario usuario = guardado.get();
         assertEquals("cliente.mayus@pulgatec.com", usuario.getCorreo());
+        assertEquals("Nombre de prueba", usuario.getNombre());
         assertEquals(Rol.CLIENTE, usuario.getRol());
         assertNotEquals("Clave123*", usuario.getPasswordHash());
         assertTrue(encoder.matches("Clave123*", usuario.getPasswordHash()));
@@ -100,7 +101,7 @@ class RegistroControllerTest {
     // ============================================================
     @Test
     void noPermiteAsignarAdministradorDesdeElCuerpo() throws Exception {
-        String conRol = "{\"correo\":\"intento-admin@pulgatec.com\",\"password\":\"Clave123*\","
+        String conRol = "{\"nombre\":\"Intento Admin\",\"correo\":\"intento-admin@pulgatec.com\",\"password\":\"Clave123*\","
                 + "\"confirmacionPassword\":\"Clave123*\",\"rol\":\"ADMINISTRADOR\"}";
 
         mockMvc.perform(post(REGISTRO)
@@ -144,6 +145,12 @@ class RegistroControllerTest {
     @Test
     void camposVaciosDevuelven400() throws Exception {
         mockMvc.perform(post(REGISTRO).contentType(MediaType.APPLICATION_JSON).content(cuerpo("", "Clave123*", "Clave123*")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        mockMvc.perform(post(REGISTRO).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\" \",\"correo\":\"valido@pulgatec.com\",\"password\":\"Clave123*\","
+                                + "\"confirmacionPassword\":\"Clave123*\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
 
