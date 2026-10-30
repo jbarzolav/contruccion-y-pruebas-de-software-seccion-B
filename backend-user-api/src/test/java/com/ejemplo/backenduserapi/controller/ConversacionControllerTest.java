@@ -38,7 +38,8 @@ class ConversacionControllerTest {
     @BeforeEach void preparar() {
         cliente = usuario(Rol.CLIENTE); vendedor = usuario(Rol.VENDEDOR); tercero = usuario(Rol.VENDEDOR);
         tc = tokens.generarToken(cliente.getId()); tv = tokens.generarToken(vendedor.getId()); tt = tokens.generarToken(tercero.getId());
-        producto = productos.saveAndFlush(new Producto(null, "Producto consulta", "Descripción", BigDecimal.TEN, 5, "Tecnología", "DISPONIBLE", null, vendedor.getId()));
+        producto = productos.saveAndFlush(new Producto(null, "Producto consulta", "Descripción", BigDecimal.TEN, 5,
+                "Tecnología", "DISPONIBLE", "/imagenes/producto-consulta.jpg", vendedor.getId()));
     }
     @AfterEach void limpiar() {
         mensajes.deleteAll(); conversaciones.deleteAll(); productos.deleteById(producto.getId());
@@ -61,7 +62,10 @@ class ConversacionControllerTest {
                 .content("{\"mensaje\":\"Sí, incluye cables\",\"emisorId\":999}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.emisorId").value(vendedor.getId())).andExpect(jsonPath("$.fecha").isNotEmpty());
         mvc.perform(get("/api/conversaciones/{id}", id).header("Authorization", "Bearer " + tc))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.mensajes.length()").value(3));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.mensajes.length()").value(3))
+                .andExpect(jsonPath("$.productoId").value(producto.getId()))
+                .andExpect(jsonPath("$.productoImagenUrl").value("/imagenes/producto-consulta.jpg"))
+                .andExpect(jsonPath("$.productoDisponible").value(true));
         mvc.perform(get("/api/conversaciones").header("Authorization", "Bearer " + tv))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].idConversacion").value(id));
         assertEquals(5, productos.findById(producto.getId()).orElseThrow().getStock());
@@ -105,7 +109,9 @@ class ConversacionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].ultimoMensaje.emisorId").value(vendedor.getId()))
                 .andExpect(jsonPath("$[0].ultimoMensaje.emisorRol").value("VENDEDOR"))
-                .andExpect(jsonPath("$[0].ultimoMensaje.contenido").value("Sí, incluye cables."));
+                .andExpect(jsonPath("$[0].ultimoMensaje.contenido").value("Sí, incluye cables."))
+                .andExpect(jsonPath("$[0].productoImagenUrl").value("/imagenes/producto-consulta.jpg"))
+                .andExpect(jsonPath("$[0].productoDisponible").value(true));
         mvc.perform(post("/api/conversaciones").header("Authorization", "Bearer " + tc)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("productoId", producto.getId(), "mensaje", "¿Qué medida tiene?"))))
@@ -131,6 +137,24 @@ class ConversacionControllerTest {
                 .andExpect(jsonPath("$.mensajes.length()").value(1))
                 .andExpect(jsonPath("$.mensajes[0].contenido").value("Incluye cables?"))
                 .andExpect(jsonPath("$.tieneSiguiente").value(false));
+    }
+
+    @Test void conversacionConservaProductoRetiradoYSuImagen() throws Exception {
+        long id = consultar();
+        producto.setEstado("RETIRADO");
+        productos.saveAndFlush(producto);
+
+        mvc.perform(get("/api/conversaciones").header("Authorization", "Bearer " + tc))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].productoId").value(producto.getId()))
+                .andExpect(jsonPath("$[0].productoImagenUrl").value("/imagenes/producto-consulta.jpg"))
+                .andExpect(jsonPath("$[0].productoDisponible").value(false));
+        mvc.perform(get("/api/conversaciones/{id}", id).header("Authorization", "Bearer " + tc))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productoId").value(producto.getId()))
+                .andExpect(jsonPath("$.productoNombre").value("Producto consulta"))
+                .andExpect(jsonPath("$.productoImagenUrl").value("/imagenes/producto-consulta.jpg"))
+                .andExpect(jsonPath("$.productoDisponible").value(false));
     }
 
     @Test void rechazaParametrosDePaginacionInvalidos() throws Exception {
