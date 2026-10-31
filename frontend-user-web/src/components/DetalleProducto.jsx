@@ -10,6 +10,7 @@ import {
     consultarEstadoFavorito,
     obtenerDisponibilidadProducto,
     obtenerProducto,
+    obtenerResumenCalificacionesVendedor,
     urlImagen,
 } from '../api/productos.js'
 
@@ -34,6 +35,9 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
     const [disponibilidad, setDisponibilidad] = useState(null)
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
+    const [resumenVendedor, setResumenVendedor] = useState(null)
+    const [cargandoResumenVendedor, setCargandoResumenVendedor] = useState(false)
+    const [errorResumenVendedor, setErrorResumenVendedor] = useState('')
 
     // HU 11 - Estado visual del carrito
     const [cantidad, setCantidad] = useState(1)
@@ -112,6 +116,26 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
             vigente = false
         }
     }, [idProducto])
+
+    useEffect(() => {
+        if (!producto?.vendedorId) {
+            setResumenVendedor(null)
+            setCargandoResumenVendedor(false)
+            setErrorResumenVendedor('')
+            return undefined
+        }
+
+        let vigente = true
+        setResumenVendedor(null)
+        setCargandoResumenVendedor(true)
+        setErrorResumenVendedor('')
+        obtenerResumenCalificacionesVendedor(producto.vendedorId)
+            .then((resumen) => { if (vigente) setResumenVendedor(resumen) })
+            .catch(() => { if (vigente) setErrorResumenVendedor('No se pudieron cargar las calificaciones del vendedor.') })
+            .finally(() => { if (vigente) setCargandoResumenVendedor(false) })
+
+        return () => { vigente = false }
+    }, [producto?.vendedorId])
 
     // HU 11 / HU 15 - Agregar al carrito y permitir compra directa
     async function handleAgregarAlCarrito(comprarAhora = false) {
@@ -256,6 +280,44 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                             <strong>ID del producto:</strong> #{producto.id}
                         </li>
                     </ul>
+
+                    {/* HU 43 - Resumen público del vendedor asociado al producto. */}
+                    <section className="resumen-calificaciones-vendedor" aria-live="polite">
+                        <h3>Calificaciones del vendedor</h3>
+                        {cargandoResumenVendedor ? (
+                            <p>Cargando calificaciones…</p>
+                        ) : errorResumenVendedor ? (
+                            <p role="status">{errorResumenVendedor}</p>
+                        ) : resumenVendedor ? (
+                            <>
+                                {resumenVendedor.cantidad === 0 ? (
+                                    <p>Este vendedor aún no tiene calificaciones.</p>
+                                ) : (
+                                    <p className="calificaciones-promedio">
+                                        <strong>{Number(resumenVendedor.promedio).toFixed(2)} / 5</strong>
+                                        {' · '}{resumenVendedor.cantidad} calificaciones
+                                    </p>
+                                )}
+                                <ul className="calificaciones-distribucion" aria-label="Distribución de calificaciones">
+                                    {[5, 4, 3, 2, 1].map((valor) => {
+                                        const total = Number(resumenVendedor.distribucion?.[valor] || 0)
+                                        const porcentaje = resumenVendedor.cantidad > 0
+                                            ? (total / resumenVendedor.cantidad) * 100
+                                            : 0
+                                        return (
+                                            <li key={valor}>
+                                                <span>{valor} estrellas</span>
+                                                <span className="calificaciones-barra" aria-hidden="true">
+                                                    <span style={{ width: `${porcentaje}%` }} />
+                                                </span>
+                                                <span>{total}</span>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </>
+                        ) : null}
+                    </section>
 
                     <h3>Descripción</h3>
                     <p className="detalle-descripcion">

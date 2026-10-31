@@ -1938,6 +1938,52 @@ a.btn-secundario:hover {
   padding: 14px 0;
 }
 
+.resumen-calificaciones-vendedor {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.resumen-calificaciones-vendedor h3 {
+  margin: 0 0 8px;
+}
+
+.calificaciones-promedio {
+  margin: 0 0 12px;
+}
+
+.calificaciones-distribucion {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calificaciones-distribucion li {
+  display: grid;
+  grid-template-columns: 90px minmax(60px, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.calificaciones-barra {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.calificaciones-barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-brand);
+}
+
 .login-tarjeta {
   width: min(100%, 460px);
   margin: 48px auto;

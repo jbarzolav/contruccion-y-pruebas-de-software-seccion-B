@@ -52,6 +52,7 @@ const apiFavoritos = configurarSesion(axios.create({
 // HU 23 - Autenticación en publicaciones, imágenes, carrito y pedidos.
 for (const servicio of [api, apiArchivos, apiCarrito, apiPedidos]) configurarSesion(servicio)
 const apiVendedor = configurarSesion(axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 }))
+const apiCalificacionesPublicas = axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 })
 
 // HU 01 - POST /api/productos
 export async function crearProducto(producto) {
@@ -92,6 +93,12 @@ export async function obtenerMisProductos(vendedorId = usuarioActualId()) {
   const { data } = await apiVendedor.get('/me/productos', {
     params: { vendedorId },
   })
+  return data
+}
+
+// HU 43 - GET público con el resumen de calificaciones de un vendedor.
+export async function obtenerResumenCalificacionesVendedor(vendedorId) {
+  const { data } = await apiCalificacionesPublicas.get(`/${vendedorId}/calificaciones/resumen`)
   return data
 }
 
