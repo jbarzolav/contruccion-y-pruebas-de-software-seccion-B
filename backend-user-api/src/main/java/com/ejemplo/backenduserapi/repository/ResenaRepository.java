@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface ResenaRepository extends JpaRepository<Resena, Long> {
     List<Resena> findByPedidoIdOrderByFechaCreacionAsc(Long pedidoId);
+    List<Resena> findByProductoIdAndDestinoTipoOrderByFechaCreacionDescIdDesc(Long productoId, String destinoTipo);
     Optional<Resena> findByPedidoIdAndDestinoTipo(Long pedidoId, String destinoTipo);
     boolean existsByPedidoIdAndDestinoTipo(Long pedidoId, String destinoTipo);
 }
