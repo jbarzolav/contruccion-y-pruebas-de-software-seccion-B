@@ -1,6 +1,7 @@
 package com.ejemplo.publicarproducto.network
 
 import com.ejemplo.publicarproducto.model.CarritoTotalResponse
+import com.ejemplo.publicarproducto.model.CalificacionesVendedorResumenResponse
 import com.ejemplo.publicarproducto.model.ChatbotRequest
 import com.ejemplo.publicarproducto.model.ChatbotResponse
 import com.ejemplo.publicarproducto.model.DestacarRequest
@@ -58,6 +59,12 @@ interface ProductoApi {
     suspend fun obtenerProducto(
         @Path("idProducto") idProducto: Long
     ): Response<ProductoResponse>
+
+    // HU 43 - GET público con el resumen de calificaciones del vendedor.
+    @GET("api/vendedores/{vendedorId}/calificaciones/resumen")
+    suspend fun obtenerResumenCalificacionesVendedor(
+        @Path("vendedorId") vendedorId: Long
+    ): Response<CalificacionesVendedorResumenResponse>
 
     // HU 05 - GET /api/vendedores/me/productos?vendedorId=1
     @GET("api/vendedores/me/productos")

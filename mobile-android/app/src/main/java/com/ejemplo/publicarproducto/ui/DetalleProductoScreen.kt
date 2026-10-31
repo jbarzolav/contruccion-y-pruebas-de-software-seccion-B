@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -228,6 +229,9 @@ private fun DetalleContenido(
         }
     }
 
+    // HU 43 - Resumen público del vendedor asociado al producto.
+    ResumenCalificacionesVendedor(viewModel)
+
     Text(
         text = "Descripción",
         style = MaterialTheme.typography.titleMedium,
@@ -380,6 +384,69 @@ private fun DetalleContenido(
             )
         }
     }
+    }
+}
+
+@Composable
+private fun ResumenCalificacionesVendedor(viewModel: DetalleProductoViewModel) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Calificaciones del vendedor", fontWeight = FontWeight.Bold)
+            when {
+                viewModel.cargandoResumenCalificaciones -> Text("Cargando calificaciones…")
+                viewModel.errorResumenCalificaciones != null -> Text(
+                    viewModel.errorResumenCalificaciones.orEmpty(),
+                    color = MaterialTheme.colorScheme.error
+                )
+                viewModel.resumenCalificacionesVendedor != null -> {
+                    val resumen = viewModel.resumenCalificacionesVendedor!!
+                    if (resumen.cantidad == 0L) {
+                        Text("Este vendedor aún no tiene calificaciones.")
+                    } else {
+                        Text(
+                            "${resumen.promedio.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()} / 5 · " +
+                                    "${resumen.cantidad} calificaciones",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    (5 downTo 1).forEach { valor ->
+                        val total = resumen.distribucion[valor.toString()] ?: 0L
+                        val fraccion = if (resumen.cantidad > 0L) {
+                            (total.toFloat() / resumen.cantidad).coerceIn(0f, 1f)
+                        } else 0f
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("$valor estrellas", fontSize = 12.sp, modifier = Modifier.width(76.dp))
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraccion)
+                                        .height(8.dp)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
+                            Text(total.toString(), fontSize = 12.sp, modifier = Modifier.width(20.dp))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

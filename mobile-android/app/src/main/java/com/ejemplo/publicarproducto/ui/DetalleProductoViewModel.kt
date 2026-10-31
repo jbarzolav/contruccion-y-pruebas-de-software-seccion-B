@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
+import com.ejemplo.publicarproducto.model.CalificacionesVendedorResumenResponse
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
@@ -33,6 +34,13 @@ class DetalleProductoViewModel : ViewModel() {
         private set
 
     var uiState by mutableStateOf<DetalleProductoUiState>(DetalleProductoUiState.Loading)
+        private set
+
+    var resumenCalificacionesVendedor by mutableStateOf<CalificacionesVendedorResumenResponse?>(null)
+        private set
+    var cargandoResumenCalificaciones by mutableStateOf(false)
+        private set
+    var errorResumenCalificaciones by mutableStateOf<String?>(null)
         private set
 
     // HU 11 - selector de cantidad del detalle
@@ -113,6 +121,9 @@ class DetalleProductoViewModel : ViewModel() {
 
     fun cargarProducto(idProducto: Long) {
         uiState = DetalleProductoUiState.Loading
+        resumenCalificacionesVendedor = null
+        cargandoResumenCalificaciones = false
+        errorResumenCalificaciones = null
 
         // al abrir otro producto se limpia el estado del carrito
         cantidad = 1
@@ -136,6 +147,7 @@ class DetalleProductoViewModel : ViewModel() {
                     producto = respuestaProducto.body()
                     disponibilidad = respuestaDisponibilidad.body()
                     uiState = DetalleProductoUiState.Success
+                    producto?.vendedorId?.let(::cargarResumenCalificacionesVendedor)
                 } else {
                     producto = null
                     disponibilidad = null
@@ -160,6 +172,25 @@ class DetalleProductoViewModel : ViewModel() {
                 uiState = DetalleProductoUiState.Error(
                     "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
                 )
+            }
+        }
+    }
+
+    private fun cargarResumenCalificacionesVendedor(vendedorId: Long) {
+        cargandoResumenCalificaciones = true
+        errorResumenCalificaciones = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.obtenerResumenCalificacionesVendedor(vendedorId)
+                if (respuesta.isSuccessful && respuesta.body() != null) {
+                    resumenCalificacionesVendedor = respuesta.body()
+                } else {
+                    errorResumenCalificaciones = "No se pudieron cargar las calificaciones del vendedor."
+                }
+            } catch (e: Exception) {
+                errorResumenCalificaciones = "No se pudieron cargar las calificaciones del vendedor."
+            } finally {
+                cargandoResumenCalificaciones = false
             }
         }
     }
