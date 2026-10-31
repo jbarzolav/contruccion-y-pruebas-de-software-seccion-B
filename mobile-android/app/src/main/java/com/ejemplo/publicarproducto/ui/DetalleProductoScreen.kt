@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import com.ejemplo.publicarproducto.model.DisponibilidadProductoResponse
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.ui.theme.AmbarFondo
@@ -251,6 +253,9 @@ private fun DetalleContenido(
         )
     }
 
+    // HU 44 - Reseñas públicas asociadas a compras de este producto.
+    ResenasProducto(viewModel)
+
     if (!disponibilidad.disponible) {
         Surface(
             color = RojoErrorFondo,
@@ -443,6 +448,49 @@ private fun ResumenCalificacionesVendedor(viewModel: DetalleProductoViewModel) {
                             }
                             Text(total.toString(), fontSize = 12.sp, modifier = Modifier.width(20.dp))
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResenasProducto(viewModel: DetalleProductoViewModel) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text("Reseñas de compradores", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        when {
+            viewModel.cargandoResenasProducto -> Text("Cargando reseñas…")
+            viewModel.errorResenasProducto != null -> Text(
+                viewModel.errorResenasProducto.orEmpty(),
+                color = MaterialTheme.colorScheme.error
+            )
+            viewModel.resenasProducto.isEmpty() -> Text("Este producto aún no tiene reseñas.")
+            else -> viewModel.resenasProducto.forEach { resena ->
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(resena.nombreAutor.ifBlank { "Usuario" }, fontWeight = FontWeight.SemiBold)
+                        val calificacion = resena.calificacion?.let { "$it / 5 estrellas" } ?: "Sin calificación"
+                        val fecha = runCatching {
+                            LocalDateTime.parse(resena.fecha)
+                                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        }.getOrElse { resena.fecha.take(10) }
+                        Text(
+                            "$calificacion · $fecha",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                        Text(resena.texto, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
                     }
                 }
             }

@@ -10,6 +10,7 @@ import com.ejemplo.publicarproducto.model.CalificacionesVendedorResumenResponse
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
+import com.ejemplo.publicarproducto.model.ResenaProductoPublicaResponse
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -41,6 +42,12 @@ class DetalleProductoViewModel : ViewModel() {
     var cargandoResumenCalificaciones by mutableStateOf(false)
         private set
     var errorResumenCalificaciones by mutableStateOf<String?>(null)
+        private set
+    var resenasProducto by mutableStateOf<List<ResenaProductoPublicaResponse>>(emptyList())
+        private set
+    var cargandoResenasProducto by mutableStateOf(false)
+        private set
+    var errorResenasProducto by mutableStateOf<String?>(null)
         private set
 
     // HU 11 - selector de cantidad del detalle
@@ -124,6 +131,9 @@ class DetalleProductoViewModel : ViewModel() {
         resumenCalificacionesVendedor = null
         cargandoResumenCalificaciones = false
         errorResumenCalificaciones = null
+        resenasProducto = emptyList()
+        cargandoResenasProducto = false
+        errorResenasProducto = null
 
         // al abrir otro producto se limpia el estado del carrito
         cantidad = 1
@@ -148,6 +158,7 @@ class DetalleProductoViewModel : ViewModel() {
                     disponibilidad = respuestaDisponibilidad.body()
                     uiState = DetalleProductoUiState.Success
                     producto?.vendedorId?.let(::cargarResumenCalificacionesVendedor)
+                    cargarResenasProducto(idProducto)
                 } else {
                     producto = null
                     disponibilidad = null
@@ -191,6 +202,25 @@ class DetalleProductoViewModel : ViewModel() {
                 errorResumenCalificaciones = "No se pudieron cargar las calificaciones del vendedor."
             } finally {
                 cargandoResumenCalificaciones = false
+            }
+        }
+    }
+
+    private fun cargarResenasProducto(productoId: Long) {
+        cargandoResenasProducto = true
+        errorResenasProducto = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.obtenerResenasProducto(productoId)
+                if (respuesta.isSuccessful) {
+                    resenasProducto = respuesta.body().orEmpty()
+                } else {
+                    errorResenasProducto = "No se pudieron cargar las reseñas del producto."
+                }
+            } catch (e: Exception) {
+                errorResenasProducto = "No se pudieron cargar las reseñas del producto."
+            } finally {
+                cargandoResenasProducto = false
             }
         }
     }

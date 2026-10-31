@@ -17,6 +17,7 @@ import com.ejemplo.publicarproducto.model.ResenaRequest
 import com.ejemplo.publicarproducto.model.PlanPremiumResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
+import com.ejemplo.publicarproducto.model.ResenaProductoPublicaResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -65,6 +66,12 @@ interface ProductoApi {
     suspend fun obtenerResumenCalificacionesVendedor(
         @Path("vendedorId") vendedorId: Long
     ): Response<CalificacionesVendedorResumenResponse>
+
+    // HU 44 - GET público con las reseñas de un producto.
+    @GET("api/productos/{idProducto}/resenas")
+    suspend fun obtenerResenasProducto(
+        @Path("idProducto") idProducto: Long
+    ): Response<List<ResenaProductoPublicaResponse>>
 
     // HU 05 - GET /api/vendedores/me/productos?vendedorId=1
     @GET("api/vendedores/me/productos")
