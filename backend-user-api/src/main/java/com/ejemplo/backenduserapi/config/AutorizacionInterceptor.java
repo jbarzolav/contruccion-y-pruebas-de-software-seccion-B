@@ -18,9 +18,11 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if ("OPTIONS".equals(request.getMethod())) return true;
         String ruta = request.getRequestURI().substring(request.getContextPath().length());
+        if (esResumenPublicoCalificaciones(request, ruta)) return true;
         String permiso = null;
         if (ruta.startsWith("/api/usuarios/me/favoritos")) permiso = "COMPRAR";
-        else if (ruta.startsWith("/api/vendedores/") || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
+        else if (ruta.startsWith("/api/vendedores/")
+                || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/carrito/") || ruta.equals("/api/pedidos")
                 || ruta.startsWith("/api/pedidos/")) permiso = "COMPRAR";
         if (permiso == null && !ruta.equals("/api/auth/me") && !ruta.equals("/api/usuarios/me")
@@ -42,5 +44,10 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
                 throw new AutorizacionException(HttpStatus.FORBIDDEN, "El ítem pertenece a otro cliente.");
         }
         return true;
+    }
+
+    private boolean esResumenPublicoCalificaciones(HttpServletRequest request, String ruta) {
+        return "GET".equals(request.getMethod())
+                && ruta.matches("/api/vendedores/[^/]+/calificaciones/resumen");
     }
 }
