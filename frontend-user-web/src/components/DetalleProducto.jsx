@@ -11,6 +11,7 @@ import {
     obtenerDisponibilidadProducto,
     obtenerProducto,
     obtenerResumenCalificacionesVendedor,
+    obtenerResenasProducto,
     urlImagen,
 } from '../api/productos.js'
 
@@ -38,6 +39,9 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
     const [resumenVendedor, setResumenVendedor] = useState(null)
     const [cargandoResumenVendedor, setCargandoResumenVendedor] = useState(false)
     const [errorResumenVendedor, setErrorResumenVendedor] = useState('')
+    const [resenasProducto, setResenasProducto] = useState([])
+    const [cargandoResenas, setCargandoResenas] = useState(true)
+    const [errorResenas, setErrorResenas] = useState('')
 
     // HU 11 - Estado visual del carrito
     const [cantidad, setCantidad] = useState(1)
@@ -136,6 +140,19 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
 
         return () => { vigente = false }
     }, [producto?.vendedorId])
+
+    useEffect(() => {
+        let vigente = true
+        setResenasProducto([])
+        setCargandoResenas(true)
+        setErrorResenas('')
+        obtenerResenasProducto(idProducto)
+            .then((resenas) => { if (vigente) setResenasProducto(Array.isArray(resenas) ? resenas : []) })
+            .catch(() => { if (vigente) setErrorResenas('No se pudieron cargar las reseñas del producto.') })
+            .finally(() => { if (vigente) setCargandoResenas(false) })
+
+        return () => { vigente = false }
+    }, [idProducto])
 
     // HU 11 / HU 15 - Agregar al carrito y permitir compra directa
     async function handleAgregarAlCarrito(comprarAhora = false) {
@@ -333,6 +350,35 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                     )}
                 </div>
             </div>
+
+            {/* HU 44 - Reseñas públicas de compradores verificadas mediante su compra. */}
+            <section className="resenas-producto-publicas" aria-live="polite">
+                <h3>Reseñas de compradores</h3>
+                {cargandoResenas ? (
+                    <p>Cargando reseñas…</p>
+                ) : errorResenas ? (
+                    <p role="status">{errorResenas}</p>
+                ) : resenasProducto.length === 0 ? (
+                    <p>Este producto aún no tiene reseñas.</p>
+                ) : (
+                    <ul className="lista-resenas-producto">
+                        {resenasProducto.map((resena) => (
+                            <li key={resena.id}>
+                                <div className="resena-producto-meta">
+                                    <strong>{resena.nombreAutor || 'Usuario'}</strong>
+                                    <span>
+                                        {resena.calificacion == null
+                                            ? 'Sin calificación'
+                                            : `${resena.calificacion} / 5 estrellas`}
+                                        {' · '}{new Date(resena.fecha).toLocaleDateString('es-PE')}
+                                    </span>
+                                </div>
+                                <p>{resena.texto}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
 
             {puedeComprar && (
                 <div className="detalle-favorito">

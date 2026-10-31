@@ -1984,6 +1984,48 @@ a.btn-secundario:hover {
   background: var(--color-brand);
 }
 
+.resenas-producto-publicas {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.resenas-producto-publicas h3 {
+  margin: 0 0 12px;
+}
+
+.lista-resenas-producto {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-resenas-producto li {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.resena-producto-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.resena-producto-meta span {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.lista-resenas-producto li p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
 .login-tarjeta {
   width: min(100%, 460px);
   margin: 48px auto;
