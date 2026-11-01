@@ -49,6 +49,12 @@ public class PedidoController {
         return experienciaCompraService.listarPedidos((Usuario) httpRequest.getAttribute("usuarioSesion"));
     }
 
+    /** HU 46 - Lista explícita de pedidos propios; la identidad sale del Bearer. */
+    @GetMapping("/me")
+    public List<PedidoExperienciaResponse> listarMisPedidos(HttpServletRequest httpRequest) {
+        return experienciaCompraService.listarPedidos((Usuario) httpRequest.getAttribute("usuarioSesion"));
+    }
+
     @GetMapping("/{idPedido}")
     public PedidoExperienciaResponse obtenerPedido(@PathVariable Long idPedido, HttpServletRequest httpRequest) {
         return experienciaCompraService.obtenerPedido(idPedido,

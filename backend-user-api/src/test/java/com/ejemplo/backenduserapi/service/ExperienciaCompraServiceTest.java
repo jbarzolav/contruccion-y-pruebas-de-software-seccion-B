@@ -2,6 +2,7 @@ package com.ejemplo.backenduserapi.service;
 
 import com.ejemplo.backenduserapi.dto.CalificacionRequest;
 import com.ejemplo.backenduserapi.dto.ResenaRequest;
+import com.ejemplo.backenduserapi.dto.ResenaEdicionRequest;
 import com.ejemplo.backenduserapi.entity.DetallePedido;
 import com.ejemplo.backenduserapi.entity.Pedido;
 import com.ejemplo.backenduserapi.entity.Producto;
@@ -99,6 +100,45 @@ class ExperienciaCompraServiceTest {
         assertEquals("llegó bien", captor.getValue().getTexto());
         assertThrows(ExperienciaCompraException.class,
                 () -> servicio.resenar(20L, requestResena("OTRO", "texto"), cliente));
+    }
+
+    @Test
+    void editaSoloElTextoDeUnaResenaPropia() {
+        com.ejemplo.backenduserapi.entity.Resena resena = new com.ejemplo.backenduserapi.entity.Resena(
+                pedido, 10L, "PRODUCTO", 30L, null, "texto anterior", LocalDateTime.now());
+        when(resenas.findById(50L)).thenReturn(Optional.of(resena));
+        ResenaEdicionRequest request = new ResenaEdicionRequest();
+        request.setTexto("  texto actualizado  ");
+
+        var respuesta = servicio.editarResena(50L, request, cliente);
+
+        assertEquals("texto actualizado", respuesta.texto());
+        assertEquals("PRODUCTO", respuesta.destino());
+        assertEquals(30L, respuesta.productoId());
+        verify(resenas).save(resena);
+    }
+
+    @Test
+    void noPermiteEditarResenaAjenaNiTextoVacio() {
+        com.ejemplo.backenduserapi.entity.Resena resena = new com.ejemplo.backenduserapi.entity.Resena(
+                pedido, 99L, "PRODUCTO", 30L, null, "texto", LocalDateTime.now());
+        when(resenas.findById(50L)).thenReturn(Optional.of(resena));
+        ResenaEdicionRequest request = new ResenaEdicionRequest();
+        request.setTexto("nuevo");
+        assertThrows(ExperienciaCompraException.class, () -> servicio.editarResena(50L, request, cliente));
+
+        resena = new com.ejemplo.backenduserapi.entity.Resena(
+                pedido, 10L, "PRODUCTO", 30L, null, "texto", LocalDateTime.now());
+        when(resenas.findById(51L)).thenReturn(Optional.of(resena));
+        request.setTexto("   ");
+        assertThrows(ExperienciaCompraException.class, () -> servicio.editarResena(51L, request, cliente));
+    }
+
+    @Test
+    void listaPedidosUsaLaIdentidadDeSesionYLaConsultaOrdenada() {
+        when(pedidos.findByClienteIdOrderByFechaDesc(10L)).thenReturn(List.of(pedido));
+        assertEquals(1, servicio.listarPedidos(cliente).size());
+        verify(pedidos).findByClienteIdOrderByFechaDesc(10L);
     }
 
     private CalificacionRequest requestCalificacion(int valor) {

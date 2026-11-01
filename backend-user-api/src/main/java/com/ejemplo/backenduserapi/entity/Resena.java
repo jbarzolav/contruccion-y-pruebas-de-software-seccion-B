@@ -37,6 +37,9 @@ public class Resena {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "fecha_modificacion")
+    private LocalDateTime fechaModificacion;
+
     public Resena() {
     }
 
@@ -58,5 +61,8 @@ public class Resena {
     public Long getProductoId() { return productoId; }
     public Long getVendedorId() { return vendedorId; }
     public String getTexto() { return texto; }
+    public void setTexto(String texto) { this.texto = texto; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public LocalDateTime getFechaModificacion() { return fechaModificacion; }
+    public void setFechaModificacion(LocalDateTime fechaModificacion) { this.fechaModificacion = fechaModificacion; }
 }

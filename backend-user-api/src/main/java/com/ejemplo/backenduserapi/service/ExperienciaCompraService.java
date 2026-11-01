@@ -5,6 +5,7 @@ import com.ejemplo.backenduserapi.dto.CalificacionResponse;
 import com.ejemplo.backenduserapi.dto.DetallePedidoResponse;
 import com.ejemplo.backenduserapi.dto.PedidoExperienciaResponse;
 import com.ejemplo.backenduserapi.dto.ResenaRequest;
+import com.ejemplo.backenduserapi.dto.ResenaEdicionRequest;
 import com.ejemplo.backenduserapi.dto.ResenaResponse;
 import com.ejemplo.backenduserapi.entity.Calificacion;
 import com.ejemplo.backenduserapi.entity.DetallePedido;
@@ -108,6 +109,30 @@ public class ExperienciaCompraService {
         return toResponse(pedido);
     }
 
+    @Transactional
+    public ResenaResponse editarResena(Long idResena, ResenaEdicionRequest request, Usuario usuario) {
+        exigirCliente(usuario);
+        if (idResena == null || idResena < 1) {
+            throw error(HttpStatus.NOT_FOUND, "Reseña no encontrada.");
+        }
+        Resena resena = resenaRepository.findById(idResena)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Reseña no encontrada."));
+        if (!usuario.getId().equals(resena.getAutorId())) {
+            throw error(HttpStatus.FORBIDDEN, "No puedes editar una reseña de otro cliente.");
+        }
+        String texto = request.getTexto() == null ? "" : request.getTexto().trim();
+        if (texto.isBlank()) {
+            throw error(HttpStatus.BAD_REQUEST, "La reseña no puede estar vacía.");
+        }
+        if (texto.length() > MAXIMO_RESENA) {
+            throw error(HttpStatus.BAD_REQUEST, "La reseña no puede superar 1000 caracteres.");
+        }
+        resena.setTexto(texto);
+        resena.setFechaModificacion(LocalDateTime.now());
+        resenaRepository.save(resena);
+        return toResenaResponse(resena);
+    }
+
     private Pedido pedidoPropio(Long idPedido, Usuario usuario) {
         exigirCliente(usuario);
         if (idPedido == null || idPedido < 1) {
@@ -168,10 +193,15 @@ public class ExperienciaCompraService {
                 .map(item -> new CalificacionResponse(item.getId(), pedido.getId(), item.getValor(), item.getFechaCreacion()))
                 .orElse(null);
         List<ResenaResponse> resenas = resenaRepository.findByPedidoIdOrderByFechaCreacionAsc(pedido.getId())
-                .stream().map(item -> new ResenaResponse(item.getId(), pedido.getId(), item.getDestinoTipo(),
-                        item.getProductoId(), item.getVendedorId(), item.getTexto(), item.getFechaCreacion())).toList();
+                .stream().map(this::toResenaResponse).toList();
         return new PedidoExperienciaResponse(pedido.getId(), pedido.getClienteId(), pedido.getFecha(),
                 pedido.getTotal(), detalles, calificacion, resenas);
+    }
+
+    private ResenaResponse toResenaResponse(Resena resena) {
+        return new ResenaResponse(resena.getId(), resena.getPedido().getId(), resena.getDestinoTipo(),
+                resena.getProductoId(), resena.getVendedorId(), resena.getTexto(),
+                resena.getFechaCreacion(), resena.getFechaModificacion());
     }
 
     private ExperienciaCompraException error(HttpStatus estado, String mensaje) {
