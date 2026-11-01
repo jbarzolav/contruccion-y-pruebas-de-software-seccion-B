@@ -62,6 +62,7 @@ import com.ejemplo.publicarproducto.ui.PerfilScreen
 import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
+import com.ejemplo.publicarproducto.ui.MisPedidosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
 import com.ejemplo.publicarproducto.ui.theme.PulgaTecTheme
@@ -81,7 +82,8 @@ private val PESTANAS = listOf(
     Pestana(4, "Premium", Icons.Default.WorkspacePremium),
     Pestana(5, "Roles", Icons.Default.ManageAccounts),
     Pestana(6, "Auditoría", Icons.Default.History),
-    Pestana(7, "Mi perfil", Icons.Default.Person)
+    Pestana(7, "Mi perfil", Icons.Default.Person),
+    Pestana(9, "Pedidos", Icons.Default.History)
 )
 
 /**
@@ -143,6 +145,7 @@ class MainActivity : ComponentActivity() {
                             2 -> puedeComprar
                             5, 6 -> puedeAdministrar
                             7 -> usuario != null
+                            9 -> puedeComprar
                             else -> true
                         }
                     }
@@ -450,6 +453,12 @@ class MainActivity : ComponentActivity() {
 
                                 // HU 27 - Mi perfil
                                 7 -> PerfilScreen(
+                                    onVolver = { pestana = 0 },
+                                    modifier = Modifier.padding(padding)
+                                )
+
+                                // HU 46 - pedidos propios y detalle con edición de reseñas.
+                                9 -> MisPedidosScreen(
                                     onVolver = { pestana = 0 },
                                     modifier = Modifier.padding(padding)
                                 )

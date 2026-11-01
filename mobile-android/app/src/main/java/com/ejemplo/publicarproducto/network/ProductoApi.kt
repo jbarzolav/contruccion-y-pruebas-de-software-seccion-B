@@ -14,6 +14,8 @@ import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ResenaRequest
+import com.ejemplo.publicarproducto.model.ResenaResponse
+import com.ejemplo.publicarproducto.model.ResenaEdicionRequest
 import com.ejemplo.publicarproducto.model.PlanPremiumResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
@@ -184,6 +186,14 @@ interface ProductoApi {
 
     @POST("api/pedidos/{idPedido}/resena")
     suspend fun resenarPedido(@Path("idPedido") idPedido: Long, @Body request: ResenaRequest): Response<PedidoResponse>
+
+    // HU 46 - pedidos propios; el cliente se deriva del Bearer.
+    @GET("api/pedidos/me")
+    suspend fun listarMisPedidos(): Response<List<PedidoResponse>>
+
+    // HU 45 - solo actualiza el texto de una reseña propia.
+    @PUT("api/resenas/{idResena}")
+    suspend fun editarResena(@Path("idResena") idResena: Long, @Body request: ResenaEdicionRequest): Response<ResenaResponse>
 
     // HU 16 - POST /api/chatbot/recomendaciones  { consulta } → 200 {mensaje, productos}
     @POST("api/chatbot/recomendaciones")

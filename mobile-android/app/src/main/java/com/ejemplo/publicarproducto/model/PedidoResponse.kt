@@ -18,9 +18,11 @@ data class PedidoResponse(
 
 data class CalificacionResponse(val id: Long?, val idPedido: Long?, val valor: Int?, val fecha: String?)
 data class ResenaResponse(val id: Long?, val idPedido: Long?, val destino: String?, val productoId: Long?,
-                          val vendedorId: Long?, val texto: String?, val fecha: String?)
+                          val vendedorId: Long?, val texto: String?, val fecha: String?,
+                          val fechaModificacion: String? = null)
 data class CalificacionRequest(val valor: Int)
 data class ResenaRequest(val destino: String, val texto: String)
+data class ResenaEdicionRequest(val texto: String)
 
 /**
  * Línea del comprobante: precioUnitario congelado al momento de la compra.
