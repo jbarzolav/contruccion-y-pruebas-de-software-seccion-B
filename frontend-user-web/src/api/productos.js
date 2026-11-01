@@ -28,6 +28,11 @@ const apiPedidos = axios.create({
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })
+const apiResenasPropias = axios.create({
+  baseURL: `${API_URL}/api/resenas`,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+})
 
 // Servicio del chatbot (HU 16 - recomendaciones)
 const apiChatbot = axios.create({
@@ -50,7 +55,7 @@ const apiFavoritos = configurarSesion(axios.create({
 }))
 
 // HU 23 - Autenticación en publicaciones, imágenes, carrito y pedidos.
-for (const servicio of [api, apiArchivos, apiCarrito, apiPedidos]) configurarSesion(servicio)
+for (const servicio of [api, apiArchivos, apiCarrito, apiPedidos, apiResenasPropias]) configurarSesion(servicio)
 const apiVendedor = configurarSesion(axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 }))
 const apiCalificacionesPublicas = axios.create({ baseURL: `${API_URL}/api/vendedores`, timeout: 10000 })
 const apiResenasPublicas = axios.create({ baseURL: `${API_URL}/api/productos`, timeout: 10000 })
@@ -206,7 +211,13 @@ export async function confirmarCompra() {
 
 // HU 41/42 - historial y experiencia de compras; identidad desde la sesión.
 export async function listarPedidos() {
-  const { data } = await apiPedidos.get('')
+  const { data } = await apiPedidos.get('/me')
+  return data
+}
+
+// HU 45 - PUT /api/resenas/{idResena}; autor tomado de la sesión.
+export async function editarResena(idResena, texto) {
+  const { data } = await apiResenasPropias.put(`/${idResena}`, { texto })
   return data
 }
 

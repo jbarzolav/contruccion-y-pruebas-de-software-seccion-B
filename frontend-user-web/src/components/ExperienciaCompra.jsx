@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { calificarPedido, resenarPedido } from '../api/productos.js'
+import { calificarPedido, editarResena, resenarPedido } from '../api/productos.js'
 
 export default function ExperienciaCompra({ pedido, onActualizado }) {
   const [valor, setValor] = useState(pedido.calificacion?.valor || 0)
@@ -8,6 +8,8 @@ export default function ExperienciaCompra({ pedido, onActualizado }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
+  const [editandoId, setEditandoId] = useState(null)
+  const [textoEdicion, setTextoEdicion] = useState('')
   const reseñaActual = (pedido.resenas || []).find((item) => item.destino === destino)
 
   async function guardarCalificacion() {
@@ -31,6 +33,18 @@ export default function ExperienciaCompra({ pedido, onActualizado }) {
     } finally { setGuardando(false) }
   }
 
+  async function guardarEdicion(evento) {
+    evento.preventDefault()
+    if (guardando || !textoEdicion.trim() || textoEdicion.length > 1000) return
+    try {
+      setGuardando(true); setError(''); setExito('')
+      const actualizada = await editarResena(editandoId, textoEdicion)
+      const actualizado = { ...pedido, resenas: (pedido.resenas || []).map((item) => item.id === actualizada.id ? actualizada : item) }
+      onActualizado?.(actualizado); setEditandoId(null); setExito('Reseña actualizada correctamente.')
+    } catch (err) { setError(err?.response?.data?.messages?.[0] || 'No se pudo actualizar la reseña.')
+    } finally { setGuardando(false) }
+  }
+
   return <section className="experiencia-compra tarjeta">
     <h3>Tu experiencia</h3>
     <div className="calificacion-compra">
@@ -49,7 +63,13 @@ export default function ExperienciaCompra({ pedido, onActualizado }) {
       <select id={`destino-${pedido.idPedido}`} value={destino} disabled={!!reseñaActual || guardando} onChange={(e) => setDestino(e.target.value)}>
         <option value="PRODUCTO">Producto</option><option value="VENDEDOR">Vendedor</option>
       </select>
-      {reseñaActual ? <blockquote>{reseñaActual.texto}</blockquote> : <>
+      {reseñaActual ? (editandoId === reseñaActual.id ? <div className="formulario-resena">
+        <textarea value={textoEdicion} maxLength={1000} disabled={guardando} onChange={(e) => setTextoEdicion(e.target.value)} rows="4" />
+        <small>{textoEdicion.length} / 1000</small>
+        <div className="botones"><button type="button" className="btn-primario" disabled={guardando || !textoEdicion.trim()} onClick={guardarEdicion}>{guardando ? 'Guardando...' : 'Guardar cambios'}</button>
+          <button type="button" className="btn-secundario" disabled={guardando} onClick={() => setEditandoId(null)}>Cancelar</button></div>
+      </div> : <><blockquote>{reseñaActual.texto}</blockquote>
+        <button type="button" className="btn-secundario" disabled={guardando} onClick={() => { setEditandoId(reseñaActual.id); setTextoEdicion(reseñaActual.texto) }}>Editar reseña</button></>) : <>
         <textarea value={texto} maxLength={1000} disabled={guardando} onChange={(e) => setTexto(e.target.value)}
           placeholder="Cuéntanos tu experiencia (máximo 1000 caracteres)" rows="4" />
         <small>{texto.length} / 1000</small>
