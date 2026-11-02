@@ -17,6 +17,7 @@ import Perfil from './components/Perfil.jsx'
 import Favoritos from './components/Favoritos.jsx'
 import Conversaciones from './components/Conversaciones.jsx'
 import Pedidos from './components/Pedidos.jsx'
+import PedidosRecibidos from './components/PedidosRecibidos.jsx'
 import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -35,6 +36,13 @@ function AccesoProtegido({ permiso, children }) {
 function AccesoAutenticado({ children }) {
     const sesion = useSesion()
     if (!sesion) return <section className="tarjeta"><p>Debes iniciar sesión para continuar.</p><Link to="/login">Iniciar sesión</Link></section>
+    return children
+}
+
+function AccesoVendedor({ children }) {
+    const sesion = useSesion()
+    if (!sesion) return <section className="tarjeta"><p>Debes iniciar sesión para continuar.</p><Link to="/login">Iniciar sesión</Link></section>
+    if (sesion.rol !== 'VENDEDOR') return <section className="tarjeta"><p>Esta sección es solo para vendedores.</p><Link to="/">Volver al inicio</Link></section>
     return children
 }
 
@@ -223,6 +231,7 @@ export default function App() {
                         {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <NavLink to="/consultas">Consultas</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/pedidos">Mis compras</NavLink>}
+                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/pedidos-recibidos">Pedidos recibidos</NavLink>}
                         {sesion && <span className="app-usuario-nombre">{sesion.nombre || 'Mi cuenta'}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
@@ -323,6 +332,7 @@ export default function App() {
                         <AccesoProtegido permiso="COMPRAR"><Favoritos /></AccesoProtegido>
                     } />
                     <Route path="/pedidos" element={<AccesoProtegido permiso="COMPRAR"><Pedidos /></AccesoProtegido>} />
+                    <Route path="/pedidos-recibidos" element={<AccesoVendedor><PedidosRecibidos /></AccesoVendedor>} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}
