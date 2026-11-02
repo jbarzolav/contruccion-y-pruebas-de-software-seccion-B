@@ -141,6 +141,25 @@ class ExperienciaCompraServiceTest {
         verify(pedidos).findByClienteIdOrderByFechaDesc(10L);
     }
 
+    @Test
+    void consultaEstadoYFechaDelPedidoPropio() {
+        when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
+
+        var estado = servicio.consultarEstado(20L, cliente);
+
+        assertEquals(20L, estado.idPedido());
+        assertEquals("REGISTRADO", estado.estado());
+        assertEquals(pedido.getFecha(), estado.fechaActualizacion());
+    }
+
+    @Test
+    void noPermiteConsultarEstadoDePedidoAjeno() {
+        pedido.setClienteId(99L);
+        when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
+
+        assertThrows(ExperienciaCompraException.class, () -> servicio.consultarEstado(20L, cliente));
+    }
+
     private CalificacionRequest requestCalificacion(int valor) {
         CalificacionRequest request = new CalificacionRequest(); request.setValor(valor); return request;
     }
