@@ -3,6 +3,7 @@ package com.ejemplo.backenduserapi.service;
 import com.ejemplo.backenduserapi.dto.CalificacionRequest;
 import com.ejemplo.backenduserapi.dto.CalificacionResponse;
 import com.ejemplo.backenduserapi.dto.DetallePedidoResponse;
+import com.ejemplo.backenduserapi.dto.EstadoPedidoResponse;
 import com.ejemplo.backenduserapi.dto.PedidoExperienciaResponse;
 import com.ejemplo.backenduserapi.dto.ResenaRequest;
 import com.ejemplo.backenduserapi.dto.ResenaEdicionRequest;
@@ -61,6 +62,12 @@ public class ExperienciaCompraService {
     @Transactional(readOnly = true)
     public PedidoExperienciaResponse obtenerPedido(Long idPedido, Usuario usuario) {
         return toResponse(pedidoPropio(idPedido, usuario));
+    }
+
+    @Transactional(readOnly = true)
+    public EstadoPedidoResponse consultarEstado(Long idPedido, Usuario usuario) {
+        Pedido pedido = pedidoPropio(idPedido, usuario);
+        return new EstadoPedidoResponse(pedido.getId(), pedido.getEstado(), pedido.getFechaActualizacionEstado());
     }
 
     @Transactional
@@ -195,7 +202,8 @@ public class ExperienciaCompraService {
         List<ResenaResponse> resenas = resenaRepository.findByPedidoIdOrderByFechaCreacionAsc(pedido.getId())
                 .stream().map(this::toResenaResponse).toList();
         return new PedidoExperienciaResponse(pedido.getId(), pedido.getClienteId(), pedido.getFecha(),
-                pedido.getTotal(), detalles, calificacion, resenas);
+                pedido.getTotal(), detalles, calificacion, resenas,
+                pedido.getEstado(), pedido.getFechaActualizacionEstado());
     }
 
     private ResenaResponse toResenaResponse(Resena resena) {

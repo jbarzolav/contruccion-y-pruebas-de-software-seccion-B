@@ -6,6 +6,7 @@ import com.ejemplo.backenduserapi.dto.CalificacionRequest;
 import com.ejemplo.backenduserapi.dto.ResenaRequest;
 import com.ejemplo.backenduserapi.dto.PedidoExperienciaResponse;
 import com.ejemplo.backenduserapi.dto.PedidoResponse;
+import com.ejemplo.backenduserapi.dto.EstadoPedidoResponse;
 import com.ejemplo.backenduserapi.service.ExperienciaCompraService;
 import com.ejemplo.backenduserapi.service.PedidoService;
 import jakarta.validation.Valid;
@@ -58,6 +59,13 @@ public class PedidoController {
     @GetMapping("/{idPedido}")
     public PedidoExperienciaResponse obtenerPedido(@PathVariable Long idPedido, HttpServletRequest httpRequest) {
         return experienciaCompraService.obtenerPedido(idPedido,
+                (Usuario) httpRequest.getAttribute("usuarioSesion"));
+    }
+
+    /** HU 47 - Consulta el estado vigente del pedido autenticado. */
+    @GetMapping("/{idPedido}/estado")
+    public EstadoPedidoResponse consultarEstado(@PathVariable Long idPedido, HttpServletRequest httpRequest) {
+        return experienciaCompraService.consultarEstado(idPedido,
                 (Usuario) httpRequest.getAttribute("usuarioSesion"));
     }
 

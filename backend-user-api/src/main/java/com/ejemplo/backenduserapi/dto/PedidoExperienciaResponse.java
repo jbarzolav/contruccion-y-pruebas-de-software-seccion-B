@@ -8,5 +8,6 @@ import java.util.List;
 public record PedidoExperienciaResponse(Long idPedido, Long clienteId, LocalDateTime fecha,
                                         BigDecimal total, List<DetallePedidoResponse> detalles,
                                         CalificacionResponse calificacion,
-                                        List<ResenaResponse> resenas) {
+                                        List<ResenaResponse> resenas,
+                                        String estado, LocalDateTime fechaActualizacion) {
 }

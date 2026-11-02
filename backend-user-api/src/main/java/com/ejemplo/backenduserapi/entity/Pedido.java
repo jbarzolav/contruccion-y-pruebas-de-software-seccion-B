@@ -27,6 +27,12 @@ public class Pedido {
     @Column(nullable = false)
     private LocalDateTime fecha;
 
+    // HU 47 - Estado inicial de la compra y fecha de su último cambio.
+    @Column(length = 30)
+    private String estado;
+
+    private LocalDateTime fechaActualizacionEstado;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
@@ -39,6 +45,8 @@ public class Pedido {
     public Pedido(Long clienteId, LocalDateTime fecha) {
         this.clienteId = clienteId;
         this.fecha = fecha;
+        this.estado = "REGISTRADO";
+        this.fechaActualizacionEstado = fecha;
         this.total = BigDecimal.ZERO;
     }
 
@@ -64,6 +72,15 @@ public class Pedido {
 
     public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
+    }
+
+    public String getEstado() { return estado == null ? "REGISTRADO" : estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+    public LocalDateTime getFechaActualizacionEstado() {
+        return fechaActualizacionEstado == null ? fecha : fechaActualizacionEstado;
+    }
+    public void setFechaActualizacionEstado(LocalDateTime fechaActualizacionEstado) {
+        this.fechaActualizacionEstado = fechaActualizacionEstado;
     }
 
     public BigDecimal getTotal() {
