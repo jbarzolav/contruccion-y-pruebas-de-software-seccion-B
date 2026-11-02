@@ -13,6 +13,7 @@ import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.EstadoPedidoResponse
+import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
 import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ResenaRequest
 import com.ejemplo.publicarproducto.model.ResenaResponse
@@ -195,6 +196,10 @@ interface ProductoApi {
     // HU 47 - Actualiza en pantalla el estado consultado del pedido propio.
     @GET("api/pedidos/{idPedido}/estado")
     suspend fun consultarEstadoPedido(@Path("idPedido") idPedido: Long): Response<EstadoPedidoResponse>
+
+    // HU 48 - Lista pedidos y solo sus líneas correspondientes al vendedor autenticado.
+    @GET("api/vendedores/me/pedidos")
+    suspend fun listarPedidosRecibidos(): Response<List<PedidoVendedorResponse>>
 
     // HU 45 - solo actualiza el texto de una reseña propia.
     @PUT("api/resenas/{idResena}")

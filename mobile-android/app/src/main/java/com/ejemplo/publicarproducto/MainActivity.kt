@@ -63,6 +63,7 @@ import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.MisPedidosScreen
+import com.ejemplo.publicarproducto.ui.PedidosRecibidosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
 import com.ejemplo.publicarproducto.ui.theme.PulgaTecTheme
@@ -83,7 +84,8 @@ private val PESTANAS = listOf(
     Pestana(5, "Roles", Icons.Default.ManageAccounts),
     Pestana(6, "Auditoría", Icons.Default.History),
     Pestana(7, "Mi perfil", Icons.Default.Person),
-    Pestana(9, "Pedidos", Icons.Default.History)
+    Pestana(9, "Pedidos", Icons.Default.History),
+    Pestana(10, "Ventas", Icons.Default.History)
 )
 
 /**
@@ -146,6 +148,7 @@ class MainActivity : ComponentActivity() {
                             5, 6 -> puedeAdministrar
                             7 -> usuario != null
                             9 -> puedeComprar
+                            10 -> usuario?.rol == "VENDEDOR"
                             else -> true
                         }
                     }
@@ -462,6 +465,9 @@ class MainActivity : ComponentActivity() {
                                     onVolver = { pestana = 0 },
                                     modifier = Modifier.padding(padding)
                                 )
+
+                                // HU 48 - pedidos recibidos con solo los productos del vendedor.
+                                10 -> PedidosRecibidosScreen(modifier = Modifier.padding(padding))
 
                                 // HU 18 - beneficios Premium
                                 else -> PlanPremiumScreen(
