@@ -13,8 +13,12 @@ data class PedidoResponse(
     val total: BigDecimal?,
     val detalles: List<DetallePedidoResponse>?,
     val calificacion: CalificacionResponse? = null,
-    val resenas: List<ResenaResponse>? = null
+    val resenas: List<ResenaResponse>? = null,
+    val estado: String? = null,
+    val fechaActualizacion: String? = null
 )
+
+data class EstadoPedidoResponse(val idPedido: Long, val estado: String, val fechaActualizacion: String?)
 
 data class CalificacionResponse(val id: Long?, val idPedido: Long?, val valor: Int?, val fecha: String?)
 data class ResenaResponse(val id: Long?, val idPedido: Long?, val destino: String?, val productoId: Long?,

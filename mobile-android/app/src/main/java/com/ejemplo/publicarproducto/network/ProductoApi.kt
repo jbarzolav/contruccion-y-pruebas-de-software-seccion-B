@@ -12,6 +12,7 @@ import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.EstadoPedidoResponse
 import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ResenaRequest
 import com.ejemplo.publicarproducto.model.ResenaResponse
@@ -190,6 +191,10 @@ interface ProductoApi {
     // HU 46 - pedidos propios; el cliente se deriva del Bearer.
     @GET("api/pedidos/me")
     suspend fun listarMisPedidos(): Response<List<PedidoResponse>>
+
+    // HU 47 - Actualiza en pantalla el estado consultado del pedido propio.
+    @GET("api/pedidos/{idPedido}/estado")
+    suspend fun consultarEstadoPedido(@Path("idPedido") idPedido: Long): Response<EstadoPedidoResponse>
 
     // HU 45 - solo actualiza el texto de una reseña propia.
     @PUT("api/resenas/{idResena}")

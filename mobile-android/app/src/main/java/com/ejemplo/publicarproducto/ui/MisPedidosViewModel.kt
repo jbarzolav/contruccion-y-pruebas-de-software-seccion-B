@@ -24,6 +24,8 @@ class MisPedidosViewModel : ViewModel() {
         private set
     var mensaje by mutableStateOf<String?>(null)
         private set
+    var actualizandoEstadoId by mutableStateOf<Long?>(null)
+        private set
 
     fun cargar() {
         cargando = true
@@ -57,6 +59,29 @@ class MisPedidosViewModel : ViewModel() {
                 } else mensaje = mensajeDeError(respuesta)
             } catch (e: Exception) { mensaje = e.message ?: "No se pudo actualizar la reseña." }
             finally { guardando = false }
+        }
+    }
+
+    fun actualizarEstado(idPedido: Long) {
+        if (actualizandoEstadoId != null) return
+        actualizandoEstadoId = idPedido
+        mensaje = null
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.consultarEstadoPedido(idPedido)
+                if (respuesta.isSuccessful && respuesta.body() != null) {
+                    val estado = respuesta.body()!!
+                    pedidos = pedidos.map { pedido ->
+                        if (pedido.idPedido == idPedido) pedido.copy(
+                            estado = estado.estado,
+                            fechaActualizacion = estado.fechaActualizacion
+                        ) else pedido
+                    }
+                    mensaje = "Estado del pedido actualizado."
+                } else mensaje = mensajeDeError(respuesta)
+            } catch (e: Exception) {
+                mensaje = e.message ?: "No se pudo actualizar el estado del pedido."
+            } finally { actualizandoEstadoId = null }
         }
     }
 

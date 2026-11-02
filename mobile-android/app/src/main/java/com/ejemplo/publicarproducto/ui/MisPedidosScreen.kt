@@ -63,8 +63,15 @@ private fun PedidoCard(pedido: com.ejemplo.publicarproducto.model.PedidoResponse
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Pedido #${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)
             Text("Fecha: ${pedido.fecha ?: "-"}")
-            Text("Estado: Registrado")
+            Text("Estado: ${pedido.estado ?: "REGISTRADO"}")
+            Text("Última actualización: ${pedido.fechaActualizacion?.replace('T', ' ') ?: pedido.fecha ?: "-"}")
             Text("Total: S/ ${pedido.total?.setScale(2)?.toPlainString() ?: "0.00"}")
+            TextButton(
+                enabled = viewModel.actualizandoEstadoId == null,
+                onClick = { pedido.idPedido?.let(viewModel::actualizarEstado) }
+            ) {
+                Text(if (viewModel.actualizandoEstadoId == pedido.idPedido) "Actualizando..." else "Actualizar estado")
+            }
             TextButton(onClick = { detalleVisible = !detalleVisible }) { Text(if (detalleVisible) "Ocultar detalle" else "Ver detalle") }
             if (detalleVisible) {
                 pedido.detalles.orEmpty().forEach { Text("${it.nombreProducto.orEmpty()} × ${it.cantidad ?: 0}") }
