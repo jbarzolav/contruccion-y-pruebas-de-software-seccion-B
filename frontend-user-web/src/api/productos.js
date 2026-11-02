@@ -215,6 +215,12 @@ export async function listarPedidos() {
   return data
 }
 
+// HU 47 - Consulta el estado actual y su fecha de actualización.
+export async function consultarEstadoPedido(idPedido) {
+  const { data } = await apiPedidos.get(`/${idPedido}/estado`)
+  return data
+}
+
 // HU 45 - PUT /api/resenas/{idResena}; autor tomado de la sesión.
 export async function editarResena(idResena, texto) {
   const { data } = await apiResenasPropias.put(`/${idResena}`, { texto })
