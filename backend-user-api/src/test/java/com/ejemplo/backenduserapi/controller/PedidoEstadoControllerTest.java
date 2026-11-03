@@ -27,6 +27,7 @@ class PedidoEstadoControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private PedidoService pedidoService;
     @MockitoBean private ExperienciaCompraService experiencia;
+    @MockitoBean private com.ejemplo.backenduserapi.service.EstadoPedidoService estadoPedido;
 
     @Test
     void consultaEstadoDelPedido() throws Exception {

@@ -3,6 +3,7 @@ package com.ejemplo.backenduserapi.service;
 import com.ejemplo.backenduserapi.dto.DetallePedidoResponse;
 import com.ejemplo.backenduserapi.dto.PedidoVendedorResponse;
 import com.ejemplo.backenduserapi.entity.DetallePedido;
+import com.ejemplo.backenduserapi.entity.EstadoPedido;
 import com.ejemplo.backenduserapi.entity.Pedido;
 import com.ejemplo.backenduserapi.entity.Rol;
 import com.ejemplo.backenduserapi.entity.Usuario;
@@ -43,7 +44,8 @@ public class PedidosVendedorService {
         BigDecimal total = productos.stream().map(DetallePedidoResponse::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new PedidoVendedorResponse(pedido.getId(), pedido.getFecha(), pedido.getEstado(),
-                pedido.getFechaActualizacionEstado(), total, productos);
+                pedido.getFechaActualizacionEstado(), total, productos,
+                EstadoPedido.permitidosDesde(pedido.getEstado()));
     }
 
     private DetallePedidoResponse detalleResponse(DetallePedido detalle) {

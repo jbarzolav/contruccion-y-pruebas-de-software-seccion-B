@@ -21,6 +21,9 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
         if (esResumenPublicoCalificaciones(request, ruta)) return true;
         String permiso = null;
         if (ruta.startsWith("/api/usuarios/me/favoritos")) permiso = "COMPRAR";
+        // HU 49 - El vendedor actualiza el estado de los pedidos que incluyen sus productos.
+        else if (ruta.matches("/api/pedidos/[0-9]+/estado") && "PATCH".equals(request.getMethod()))
+            permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/vendedores/")
                 || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/carrito/") || ruta.equals("/api/pedidos")

@@ -34,7 +34,8 @@ class PedidosVendedorControllerTest {
         vendedor.setId(40L);
         when(pedidos.listarPedidos(eq(vendedor))).thenReturn(List.of(
                 new PedidoVendedorResponse(20L, LocalDateTime.of(2026, 11, 2, 10, 0), "REGISTRADO",
-                        LocalDateTime.of(2026, 11, 2, 10, 0), new BigDecimal("75.00"), List.of())));
+                        LocalDateTime.of(2026, 11, 2, 10, 0), new BigDecimal("75.00"), List.of(),
+                        List.of("EN_PROCESO", "CANCELADO"))));
 
         mockMvc.perform(get("/api/vendedores/me/pedidos").requestAttr("usuarioSesion", vendedor))
                 .andExpect(status().isOk())

@@ -7,6 +7,10 @@ import com.ejemplo.backenduserapi.dto.ResenaRequest;
 import com.ejemplo.backenduserapi.dto.PedidoExperienciaResponse;
 import com.ejemplo.backenduserapi.dto.PedidoResponse;
 import com.ejemplo.backenduserapi.dto.EstadoPedidoResponse;
+import com.ejemplo.backenduserapi.dto.EstadoPedidoRequest;
+import com.ejemplo.backenduserapi.dto.PedidoDetalleResponse;
+import com.ejemplo.backenduserapi.dto.PedidoEstadoActualizadoResponse;
+import com.ejemplo.backenduserapi.service.EstadoPedidoService;
 import com.ejemplo.backenduserapi.service.ExperienciaCompraService;
 import com.ejemplo.backenduserapi.service.PedidoService;
 import jakarta.validation.Valid;
@@ -29,10 +33,13 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
     private final ExperienciaCompraService experienciaCompraService;
+    private final EstadoPedidoService estadoPedidoService;
 
-    public PedidoController(PedidoService pedidoService, ExperienciaCompraService experienciaCompraService) {
+    public PedidoController(PedidoService pedidoService, ExperienciaCompraService experienciaCompraService,
+                            EstadoPedidoService estadoPedidoService) {
         this.pedidoService = pedidoService;
         this.experienciaCompraService = experienciaCompraService;
+        this.estadoPedidoService = estadoPedidoService;
     }
 
     @PostMapping
@@ -56,9 +63,27 @@ public class PedidoController {
         return experienciaCompraService.listarPedidos((Usuario) httpRequest.getAttribute("usuarioSesion"));
     }
 
+    /**
+     * HU 50 - Detalle del pedido propio: cabecera + líneas con el precio
+     * registrado en la operación (no se recalcula con el precio de catálogo).
+     */
     @GetMapping("/{idPedido}")
-    public PedidoExperienciaResponse obtenerPedido(@PathVariable Long idPedido, HttpServletRequest httpRequest) {
-        return experienciaCompraService.obtenerPedido(idPedido,
+    public PedidoDetalleResponse obtenerPedido(@PathVariable Long idPedido, HttpServletRequest httpRequest) {
+        return experienciaCompraService.obtenerDetallePedido(idPedido,
+                (Usuario) httpRequest.getAttribute("usuarioSesion"));
+    }
+
+    /**
+     * HU 49 - El vendedor autenticado actualiza el estado del pedido que
+     * incluye sus productos. 200 con el estado vigente y el historial;
+     * 400 si la transición no está permitida; 403 si el pedido es ajeno;
+     * 404 si el pedido no existe.
+     */
+    @PatchMapping("/{idPedido}/estado")
+    public PedidoEstadoActualizadoResponse actualizarEstado(
+            @PathVariable Long idPedido, @RequestBody EstadoPedidoRequest request,
+            HttpServletRequest httpRequest) {
+        return estadoPedidoService.actualizarEstado(idPedido, request,
                 (Usuario) httpRequest.getAttribute("usuarioSesion"));
     }
 
