@@ -82,13 +82,6 @@ public class EstadoPedidoService {
                 destino.getSiguientes(), registros);
     }
 
-    /** Estados que el pedido admite a partir del estado vigente. */
-    @Transactional(readOnly = true)
-    public List<String> estadosPermitidos(Long idPedido, Usuario vendedor) {
-        Pedido pedido = pedidoDelVendedor(idPedido, vendedor);
-        return EstadoPedido.permitidosDesde(pedido.getEstado());
-    }
-
     private Pedido pedidoDelVendedor(Long idPedido, Usuario vendedor) {
         if (idPedido == null || idPedido < 1) {
             throw error(HttpStatus.NOT_FOUND, "Pedido no encontrado.");

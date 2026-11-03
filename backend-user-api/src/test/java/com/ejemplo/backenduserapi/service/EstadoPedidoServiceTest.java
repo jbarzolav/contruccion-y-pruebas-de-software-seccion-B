@@ -50,7 +50,8 @@ class EstadoPedidoServiceTest {
     @BeforeEach
     void preparar() {
         vendedor = usuario(40L, Rol.VENDEDOR);
-        pedido = new Pedido(10L, LocalDateTime.now());
+        // Fecha del pedido en el pasado: la fecha del cambio siempre es posterior.
+        pedido = new Pedido(10L, LocalDateTime.now().minusHours(1));
         pedido.setId(20L);
         pedido.getDetalles().add(new DetallePedido(pedido,
                 new Producto(30L, "Laptop", "Descripción", new BigDecimal("800.00"), 5,
@@ -146,17 +147,6 @@ class EstadoPedidoServiceTest {
         assertEquals(403, excepcion.getEstado().value());
         assertEquals("Solo un vendedor puede actualizar el estado de un pedido.", excepcion.getMessage());
         verify(historial, never()).save(any());
-    }
-
-    @Test
-    void devuelveLosEstadosPermitidosSegunElEstadoActual() {
-        when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
-        lenient().when(historial.findByPedidoIdOrderByFechaCambioDesc(20L)).thenReturn(List.of());
-
-        assertEquals(List.of("EN_PROCESO", "CANCELADO"), servicio.estadosPermitidos(20L, vendedor));
-
-        pedido.setEstado("ENTREGADO");
-        assertEquals(List.of(), servicio.estadosPermitidos(20L, vendedor));
     }
 
     private Usuario usuario(Long id, Rol rol) {
