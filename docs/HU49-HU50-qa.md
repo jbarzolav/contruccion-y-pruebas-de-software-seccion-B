@@ -94,6 +94,36 @@ backend en `localhost:9000` y MariaDB real:
 3. Consola del navegador: sin errores de la aplicación (solo fallan las
    imágenes externas de los productos QA, `https://example.test/...`).
 
+## Validación manual en Android (emulador `emulator-5554`, API `http://10.0.2.2:9000`)
+
+APK `app-debug.apk` instalado y recorrido con `adb`:
+
+1. **Vendedor** (`qa-hu45-seller-…`) → pestaña *Ventas* (Pedidos recibidos):
+   - El pedido #1 mostraba `Estado: EN_PROCESO` (actualizado previamente desde
+     la web) y el botón **Seleccionar estado**.
+   - El desplegable ofreció solo las transiciones válidas: `ENTREGADO` y
+     `CANCELADO`.
+   - Se eligió `ENTREGADO` y se pulsó **Guardar estado**: apareció el aviso
+     *"Pedido #1: estado actualizado a ENTREGADO."*, el estado pasó a
+     `ENTREGADO` y el selector fue sustituido por
+     *"Este pedido ya no admite cambios de estado."* (estado final).
+2. **Cliente** (`qa-hu45-a-…`) → pestaña *Pedidos*:
+   - El pedido #1 aparece con `Estado: ENTREGADO` y la fecha de actualización
+     registrada desde Android.
+   - El botón **Detalle del pedido** abre la pantalla nueva: `Pedido #1`,
+     fecha, estado, última actualización, línea
+     `qa-hu45-hu46-product-… × 2`, `Precio: S/ 125.50`,
+     `Subtotal: S/ 251.00`, `Total: S/ 251.00` y **Volver a mis pedidos**.
+3. Historial en BD tras el recorrido completo (4 filas, todas con
+   `usuario_id = 13`, el vendedor autenticado):
+
+   | id | pedido | anterior → nuevo | fecha |
+   |----|--------|------------------|-------|
+   | 1 | 3 | REGISTRADO → EN_PROCESO | 2026-11-03 17:26:13 |
+   | 2 | 3 | EN_PROCESO → ENTREGADO | 2026-11-03 17:26:13 |
+   | 3 | 1 | REGISTRADO → EN_PROCESO | 2026-11-03 17:34:36 |
+   | 4 | 1 | EN_PROCESO → ENTREGADO | 2026-11-03 18:15:43 |
+
 ## Notas
 
 - La tabla `historial_estados_pedido` se crea automáticamente con
@@ -102,3 +132,6 @@ backend en `localhost:9000` y MariaDB real:
 - El estado previo de los pedidos de QA era `NULL`; el backend lo interpreta
   como `REGISTRADO` (estado inicial) tanto en la API como en el historial.
 - El pedido 3 de QA quedó en `ENTREGADO` como evidencia de la prueba E2E.
+- Los pedidos 1 y 3 de QA quedaron en `ENTREGADO` tras el recorrido web y
+  Android; para repetir la prueba desde `REGISTRADO` basta con reiniciar sus
+  estados en la tabla `pedidos`.
