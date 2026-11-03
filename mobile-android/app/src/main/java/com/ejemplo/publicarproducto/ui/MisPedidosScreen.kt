@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun MisPedidosScreen(
     onVolver: () -> Unit,
+    onVerDetalle: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MisPedidosViewModel = viewModel()
 ) {
@@ -51,13 +52,17 @@ fun MisPedidosScreen(
                 Button(onClick = viewModel::cargar, modifier = Modifier.fillMaxWidth()) { Text("Reintentar") }
             }
             viewModel.pedidos.isEmpty() -> Text("No tienes pedidos registrados.")
-            else -> viewModel.pedidos.forEach { pedido -> PedidoCard(pedido, viewModel) }
+            else -> viewModel.pedidos.forEach { pedido -> PedidoCard(pedido, viewModel, onVerDetalle) }
         }
     }
 }
 
 @Composable
-private fun PedidoCard(pedido: com.ejemplo.publicarproducto.model.PedidoResponse, viewModel: MisPedidosViewModel) {
+private fun PedidoCard(
+    pedido: com.ejemplo.publicarproducto.model.PedidoResponse,
+    viewModel: MisPedidosViewModel,
+    onVerDetalle: (Long) -> Unit
+) {
     var detalleVisible by remember(pedido.idPedido) { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -73,6 +78,8 @@ private fun PedidoCard(pedido: com.ejemplo.publicarproducto.model.PedidoResponse
                 Text(if (viewModel.actualizandoEstadoId == pedido.idPedido) "Actualizando..." else "Actualizar estado")
             }
             TextButton(onClick = { detalleVisible = !detalleVisible }) { Text(if (detalleVisible) "Ocultar detalle" else "Ver detalle") }
+            // HU 50 - Pantalla dedicada con productos, precios, subtotales y total.
+            TextButton(onClick = { pedido.idPedido?.let(onVerDetalle) }) { Text("Detalle del pedido") }
             if (detalleVisible) {
                 pedido.detalles.orEmpty().forEach { Text("${it.nombreProducto.orEmpty()} × ${it.cantidad ?: 0}") }
                 pedido.resenas.orEmpty().forEach { resena -> ResenaEditable(pedido.idPedido ?: return@forEach, resena, viewModel) }

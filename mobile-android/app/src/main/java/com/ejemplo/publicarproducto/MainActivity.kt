@@ -63,6 +63,7 @@ import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.MisPedidosScreen
+import com.ejemplo.publicarproducto.ui.DetallePedidoScreen
 import com.ejemplo.publicarproducto.ui.PedidosRecibidosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
 import com.ejemplo.publicarproducto.ui.PublicarProductoScreen
@@ -293,11 +294,13 @@ class MainActivity : ComponentActivity() {
                     var productoEnEdicionId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 03
                     var publicando by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 01/02
                     var confirmandoCompra by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 15
+                    var pedidoDetalleId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 50
 
                     val enPantallaPrincipal = productoDetalleId == null
                             && productoEnEdicionId == null
                             && !publicando
                             && !confirmandoCompra
+                            && pedidoDetalleId == null
 
                     Scaffold(
                         topBar = {
@@ -405,6 +408,15 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // HU 50 - detalle del pedido propio (productos, precios y total)
+                            pedidoDetalleId != null -> {
+                                DetallePedidoScreen(
+                                    idPedido = pedidoDetalleId!!,
+                                    onVolver = { pedidoDetalleId = null },
+                                    modifier = Modifier.padding(padding)
+                                )
+                            }
+
                             else -> when (pestana) {
                                 8 -> androidx.compose.runtime.key(usuario.id, sesionViewModel.sesion.obtenerToken()) {
                                     com.ejemplo.publicarproducto.ui.ConsultasScreen(
@@ -463,6 +475,7 @@ class MainActivity : ComponentActivity() {
                                 // HU 46 - pedidos propios y detalle con edición de reseñas.
                                 9 -> MisPedidosScreen(
                                     onVolver = { pestana = 0 },
+                                    onVerDetalle = { id -> pedidoDetalleId = id },
                                     modifier = Modifier.padding(padding)
                                 )
 
