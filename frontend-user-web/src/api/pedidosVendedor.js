@@ -6,8 +6,21 @@ const apiPedidosVendedor = configurarSesion(axios.create({
   timeout: 10000,
 }))
 
+// HU 49 - El estado del pedido se actualiza sobre /api/pedidos/{id}/estado.
+const apiPedidos = configurarSesion(axios.create({
+  baseURL: `${API_URL}/api/pedidos`,
+  timeout: 10000,
+}))
+
 // HU 48 - El backend deriva al vendedor de la sesión.
 export async function listarPedidosRecibidos() {
   const { data } = await apiPedidosVendedor.get('')
+  return data
+}
+
+// HU 49 - El vendedor propone el siguiente estado del pedido.
+// El backend valida la transición y devuelve el estado vigente con su historial.
+export async function actualizarEstadoPedido(idPedido, estado) {
+  const { data } = await apiPedidos.patch(`/${idPedido}/estado`, { estado })
   return data
 }
