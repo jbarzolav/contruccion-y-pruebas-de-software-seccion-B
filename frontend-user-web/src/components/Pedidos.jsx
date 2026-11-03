@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { consultarEstadoPedido, listarPedidos } from '../api/productos.js'
 import ExperienciaCompra from './ExperienciaCompra.jsx'
 
@@ -31,6 +32,8 @@ export default function Pedidos() {
       <h3>Pedido #{pedido.idPedido}</h3>
       <p>{pedido.fecha} · Estado: {pedido.estado || 'REGISTRADO'} · Total S/ {Number(pedido.total).toFixed(2)}</p>
       <p>Última actualización: {pedido.fechaActualizacion ? new Date(pedido.fechaActualizacion).toLocaleString('es-PE') : 'Sin información'}</p>
+      {/* HU 50 - Vista con productos, cantidades, precios y total. */}
+      <Link className="btn-secundario" to={`/pedidos/${pedido.idPedido}`}>Ver detalle</Link>
       <button className="btn-secundario" type="button" disabled={actualizandoId !== null}
         onClick={() => actualizarEstado(pedido.idPedido)}>
         {actualizandoId === pedido.idPedido ? 'Actualizando...' : 'Actualizar estado'}

@@ -227,9 +227,14 @@ export async function editarResena(idResena, texto) {
   return data
 }
 
-export async function obtenerPedido(idPedido) {
+// HU 50 - Detalle del pedido propio: cabecera + líneas con el precio registrado.
+export async function obtenerDetallePedido(idPedido) {
   const { data } = await apiPedidos.get(`/${idPedido}`)
   return data
+}
+
+export async function obtenerPedido(idPedido) {
+  return obtenerDetallePedido(idPedido)
 }
 
 export async function calificarPedido(idPedido, valor) {

@@ -98,6 +98,23 @@ button:disabled {
 .formulario-resena blockquote { margin: 0; padding: 12px; background: #f4f6f8; border-left: 4px solid #2563eb; }
 .pedido-historial { margin: 16px 0; }
 
+/* HU 50 - Detalle del pedido: tabla de productos, cantidades y totales. */
+.tabla {
+  width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+}
+.tabla th, .tabla td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e4e7eb;
+  text-align: left;
+}
+.tabla tfoot th {
+  font-weight: 700;
+  border-top: 2px solid #1f2933;
+  border-bottom: none;
+}
+
 .btn-primario {
   background: #2563eb;
   color: #fff;

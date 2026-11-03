@@ -18,6 +18,7 @@ import Favoritos from './components/Favoritos.jsx'
 import Conversaciones from './components/Conversaciones.jsx'
 import Pedidos from './components/Pedidos.jsx'
 import PedidosRecibidos from './components/PedidosRecibidos.jsx'
+import DetallePedido from './components/DetallePedido.jsx'
 import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -332,6 +333,8 @@ export default function App() {
                         <AccesoProtegido permiso="COMPRAR"><Favoritos /></AccesoProtegido>
                     } />
                     <Route path="/pedidos" element={<AccesoProtegido permiso="COMPRAR"><Pedidos /></AccesoProtegido>} />
+                    {/* HU 50 - Detalle del pedido propio con productos y totales. */}
+                    <Route path="/pedidos/:idPedido" element={<AccesoProtegido permiso="COMPRAR"><DetallePedido /></AccesoProtegido>} />
                     <Route path="/pedidos-recibidos" element={<AccesoVendedor><PedidosRecibidos /></AccesoVendedor>} />
                 </Routes>
 
