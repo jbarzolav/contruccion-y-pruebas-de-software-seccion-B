@@ -71,6 +71,29 @@ id 10) y `qa-hu46-b-…` (cliente id 11).
 | `GET` | `/api/pedidos/{idPedido}` | CLIENTE (propietario) | Detalle del pedido con líneas, precios registrados y total |
 | `GET` | `/api/vendedores/me/pedidos` | VENDEDOR | Pedidos recibidos; ahora incluye `estadosPermitidos` |
 
+## Validación manual en la web (`http://localhost:3000`)
+
+Recorrido hecho en Chromium sobre el frontend de desarrollo (Vite) con el
+backend en `localhost:9000` y MariaDB real:
+
+1. **Vendedor** (`qa-hu45-seller-…`) → *Pedidos recibidos*:
+   - Cada pedido muestra su estado actual, total y la lista de estados válidos
+     (`EN_PROCESO`, `CANCELADO`).
+   - Se eligió `EN_PROCESO` en el pedido #1 y se pulsó **Guardar estado**:
+     apareció el aviso *"Pedido #1: estado actualizado a EN_PROCESO."*, el estado
+     pasó a `EN_PROCESO` y "Última actualización" se actualizó.
+   - El selector pasó a ofrecer solo `ENTREGADO` y `CANCELADO` (transiciones
+     válidas desde `EN_PROCESO`).
+2. **Cliente** (`qa-hu45-a-…`) → *Mis compras*:
+   - El pedido #1 aparece con estado `EN_PROCESO`, es decir, el cliente ve el
+     avance informado por el vendedor.
+   - El botón **Ver detalle** abre `/pedidos/1`: cabecera con fecha y estado,
+     tabla `Producto | Cantidad | Precio unitario | Subtotal`
+     (`2 × S/ 125.50 = S/ 251.00`) y total `S/ 251.00`, más el enlace
+     "Volver a mis compras".
+3. Consola del navegador: sin errores de la aplicación (solo fallan las
+   imágenes externas de los productos QA, `https://example.test/...`).
+
 ## Notas
 
 - La tabla `historial_estados_pedido` se crea automáticamente con
