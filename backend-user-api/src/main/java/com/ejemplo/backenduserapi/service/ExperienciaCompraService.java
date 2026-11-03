@@ -4,6 +4,7 @@ import com.ejemplo.backenduserapi.dto.CalificacionRequest;
 import com.ejemplo.backenduserapi.dto.CalificacionResponse;
 import com.ejemplo.backenduserapi.dto.DetallePedidoResponse;
 import com.ejemplo.backenduserapi.dto.EstadoPedidoResponse;
+import com.ejemplo.backenduserapi.dto.PedidoDetalleResponse;
 import com.ejemplo.backenduserapi.dto.PedidoExperienciaResponse;
 import com.ejemplo.backenduserapi.dto.ResenaRequest;
 import com.ejemplo.backenduserapi.dto.ResenaEdicionRequest;
@@ -59,9 +60,23 @@ public class ExperienciaCompraService {
                 .toList();
     }
 
+    /**
+     * HU 50 - Detalle del pedido propio.
+     * Las líneas usan el precioUnitario registrado en la operación y el total
+     * es el valor persistido del pedido: nunca se recalcula con el precio
+     * actual del catálogo.
+     */
     @Transactional(readOnly = true)
-    public PedidoExperienciaResponse obtenerPedido(Long idPedido, Usuario usuario) {
-        return toResponse(pedidoPropio(idPedido, usuario));
+    public PedidoDetalleResponse obtenerDetallePedido(Long idPedido, Usuario usuario) {
+        Pedido pedido = pedidoPropio(idPedido, usuario);
+        List<DetallePedidoResponse> detalles = new ArrayList<>();
+        for (DetallePedido detalle : pedido.getDetalles()) {
+            detalles.add(new DetallePedidoResponse(
+                    detalle.getProducto().getId(), detalle.getProducto().getNombre(),
+                    detalle.getCantidad(), detalle.getPrecioUnitario(), detalle.getSubtotal()));
+        }
+        return new PedidoDetalleResponse(pedido.getId(), pedido.getClienteId(), pedido.getFecha(),
+                pedido.getEstado(), pedido.getFechaActualizacionEstado(), pedido.getTotal(), detalles);
     }
 
     @Transactional(readOnly = true)
