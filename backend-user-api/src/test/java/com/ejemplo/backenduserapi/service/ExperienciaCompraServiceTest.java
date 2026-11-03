@@ -160,6 +160,33 @@ class ExperienciaCompraServiceTest {
         assertThrows(ExperienciaCompraException.class, () -> servicio.consultarEstado(20L, cliente));
     }
 
+    /** HU 50 - El detalle usa el precio registrado en la operación y el total persistido. */
+    @Test
+    void devuelveElDetalleConElPrecioRegistradoYElTotalPersistido() {
+        when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
+        // El catálogo cambió después de la compra: el detalle no debe recalcular.
+        pedido.getDetalles().get(0).getProducto().setPrecio(new BigDecimal("999.00"));
+
+        var detalle = servicio.obtenerDetallePedido(20L, cliente);
+
+        assertEquals(20L, detalle.idPedido());
+        assertEquals(10L, detalle.clienteId());
+        assertEquals("REGISTRADO", detalle.estado());
+        assertEquals(1, detalle.detalles().size());
+        assertEquals(0, new BigDecimal("10.00").compareTo(detalle.detalles().get(0).getPrecioUnitario()));
+        assertEquals(0, new BigDecimal("10.00").compareTo(detalle.detalles().get(0).getSubtotal()));
+        assertEquals(0, pedido.getTotal().compareTo(detalle.total()));
+    }
+
+    /** HU 50 - Un cliente no puede ver el detalle de la compra de otro. */
+    @Test
+    void noPermiteVerElDetalleDeUnPedidoAjeno() {
+        pedido.setClienteId(99L);
+        when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
+
+        assertThrows(ExperienciaCompraException.class, () -> servicio.obtenerDetallePedido(20L, cliente));
+    }
+
     private CalificacionRequest requestCalificacion(int valor) {
         CalificacionRequest request = new CalificacionRequest(); request.setValor(valor); return request;
     }
