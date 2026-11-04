@@ -151,7 +151,25 @@ class PedidoDetalleControllerTest extends SesionControllerTest {
     }
 
     // ---------------------------------------------------------------
-    // 5) El total del detalle es el persistido, no una suma recalculada
+    // 5) Identificador inválido -> 400; identificador inexistente -> 404
+    // ---------------------------------------------------------------
+    @Test
+    void identificadorInvalidoDevuelve400() throws Exception {
+        mockMvc.perform(get("/api/pedidos/{idPedido}", "abc").with(comoCliente(CLIENTE)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void identificadorNoExistenteDevuelve404() throws Exception {
+        mockMvc.perform(get("/api/pedidos/{idPedido}", 0).with(comoCliente(CLIENTE)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.messages[0]").value("Pedido no encontrado."));
+    }
+
+    // ---------------------------------------------------------------
+    // 6) El total del detalle es el persistido, no una suma recalculada
     // ---------------------------------------------------------------
     @Test
     void elTotalDevueltoEsElPersistidoEnElPedido() throws Exception {
