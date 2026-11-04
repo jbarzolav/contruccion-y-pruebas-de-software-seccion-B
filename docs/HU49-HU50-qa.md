@@ -9,18 +9,20 @@
 
 ## Validación automatizada
 
-- `backend-user-api`: **326 tests exitosos, 0 fallos** (`mvn test`).
-  - `EstadoPedidoServiceTest` (8): transición válida con historial, transición no
+- `backend-user-api`: **327 tests exitosos, 0 fallos** (`mvn test`).
+  - `EstadoPedidoServiceTest` (7): transición válida con historial, transición no
     permitida, estado desconocido, estado repetido, vendedor sin productos del
-    pedido, pedido inexistente, cliente sin permiso, estados permitidos.
+    pedido, pedido inexistente, cliente sin permiso.
   - `PedidoEstadoActualizacionControllerTest` (6): 200 con estado/historial, 400
     transición no permitida, 403 vendedor ajeno, 404 pedido inexistente, 401 sin
     sesión, 403 cliente.
-  - `PedidoDetalleControllerTest` (5): detalle exacto con líneas y total
-    persistido, 404 inexistente, 403 compra de otro cliente, 401 sin sesión,
-    total persistido sin recalcular con precios de catálogo.
+  - `PedidoDetalleControllerTest` (7): detalle exacto con líneas y total
+    persistido, identificador inválido (`abc` → 400), identificador no encontrado
+    (`0` → 404), pedido inexistente (404), 403 compra de otro cliente, 401 sin
+    sesión, total persistido sin recalcular con precios de catálogo.
   - `ExperienciaCompraServiceTest`: detalle con precio congelado y total
-    persistido; detalle de pedido ajeno rechazado.
+    persistido (el catálogo cambia a `999.00` y el detalle sigue devolviendo el
+    precio registrado); detalle de pedido ajeno rechazado.
 - `frontend-user-web`: `npm run build` exitoso (125 módulos).
 - `mobile-android`: `assembleDebug` exitoso (Gradle offline).
 
@@ -53,6 +55,28 @@ id 10) y `qa-hu46-b-…` (cliente id 11).
 | `GET /api/pedidos/987654` | 404 "Pedido no encontrado." |
 | `GET /api/pedidos/1` sin Bearer | 401 "Debes iniciar sesión." |
 | `GET /api/pedidos/3/estado` (cliente A) | 200 con `estado: ENTREGADO` → el cliente ve el avance informado por el vendedor |
+
+## Verificación final por criterio (backend + MariaDB, código actual)
+
+Reejecutada tras reiniciar el backend con el código vigente sobre
+`BD_Pulgatec`. Se usó el pedido 2 (`REGISTRADO`) para la transición válida y
+se restauró después (estado `NULL` y su fila de historial eliminadas) para que
+el caso pueda repetirse.
+
+| Criterio | Resultado |
+|----------|-----------|
+| 49.1 web | Selector con `estadosPermitidos` + **Guardar estado** + estado actual + aviso *"Pedido #1: estado actualizado a …"* (recorrido en Chromium) |
+| 49.2 validaciones | `PATCH` `EN_PROCESO → REGISTRADO` → **400** "No se permite pasar de EN_PROCESO a REGISTRADO."; `VOLANDO` → **400**; vendedor sin productos en el pedido → **403** "El pedido no incluye productos de tus publicaciones." |
+| 49.3 backend | `PATCH` `REGISTRADO → EN_PROCESO` → **200** con `fechaActualizacion` y fila en `historial_estados_pedido` (`usuario_id = 13`) |
+| 49.4 API | `PATCH /api/pedidos/{idPedido}/estado` con estados, respuesta, errores y auditoría documentados en `backend-user-api/README.md` |
+| 49.5 Android | Desplegable solo con transiciones válidas, **Guardar estado**, aviso de éxito y "Este pedido ya no admite cambios de estado." (emulador) |
+| 49.6 pruebas | 13 tests de HU49 en verde: transición válida, no permitida, vendedor ajeno, pedido inexistente, sin permisos (401/403) |
+| 50.1 web | `/pedidos/:idPedido` con fecha, estado, productos, cantidades, precio unitario, subtotales, total y "Volver a mis compras" |
+| 50.2 validaciones | `GET` sin token → **401**; de otro cliente → **403**; `abc` → **400**; `0` y `987654` → **404** |
+| 50.3 backend | `GET /api/pedidos/1` → **200** con `2 × 125.50 = 251.00` y total `251.00` persistidos; prueba `devuelveElDetalleConElPrecioRegistradoYElTotalPersistido` cambia el catálogo a `999.00` y el detalle sigue devolviendo el precio registrado |
+| 50.4 API | `GET /api/pedidos/{idPedido}` con campos de cabecera y detalle documentados en `backend-user-api/README.md` |
+| 50.5 Android | Pantalla *Detalle del pedido* con productos, cantidades, precios, subtotales, estado y total (emulador) |
+| 50.6 pruebas | 7 tests de `PedidoDetalleControllerTest` + 2 de `ExperienciaCompraServiceTest` en verde: líneas exactas, total persistido, inexistente, ajeno y sin autenticación |
 
 ## Transiciones de estado definidas
 
@@ -135,3 +159,10 @@ APK `app-debug.apk` instalado y recorrido con `adb`:
 - Los pedidos 1 y 3 de QA quedaron en `ENTREGADO` tras el recorrido web y
   Android; para repetir la prueba desde `REGISTRADO` basta con reiniciar sus
   estados en la tabla `pedidos`.
+- Los campos de respuesta y los errores de `PATCH /api/pedidos/{id}/estado` y
+  `GET /api/pedidos/{id}` están documentados en `backend-user-api/README.md`
+  (sección "API de pedidos — HU49/HU50"); el proyecto no usa OpenAPI/springdoc
+  y no se añadieron dependencias para documentarlo.
+- La verificación final usó el pedido 2 y lo restauró a su estado original
+  (`estado = NULL`, sin filas de historial); los roles de las cuentas QA
+  quedaron como al inicio (clientes 10 y 11 `CLIENTE`, vendedor 13 `VENDEDOR`).
