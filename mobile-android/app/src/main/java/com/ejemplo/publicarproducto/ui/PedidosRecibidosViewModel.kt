@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.EstadoPedidoRequest
 import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
+import com.ejemplo.publicarproducto.model.NotificacionResponse
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -24,6 +25,10 @@ class PedidosRecibidosViewModel : ViewModel() {
         private set
     var guardandoId by mutableStateOf<Long?>(null)
         private set
+    var notificaciones by mutableStateOf<List<NotificacionResponse>>(emptyList())
+        private set
+    var pedidoEnfocadoId by mutableStateOf<Long?>(null)
+        private set
 
     fun cargar() {
         cargando = true
@@ -33,10 +38,24 @@ class PedidosRecibidosViewModel : ViewModel() {
                 val respuesta = UserApiClient.productoApi.listarPedidosRecibidos()
                 if (respuesta.isSuccessful) pedidos = respuesta.body().orEmpty()
                 else error = mensajeDeError(respuesta)
+                cargarNotificaciones()
             } catch (e: Exception) {
                 error = e.message ?: "No se pudieron cargar los pedidos recibidos."
             } finally { cargando = false }
         }
+    }
+
+    fun cargarNotificaciones() {
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.listarNotificaciones()
+                if (respuesta.isSuccessful) notificaciones = respuesta.body().orEmpty()
+            } catch (_: Exception) { }
+        }
+    }
+
+    fun enfocarPedido(idPedido: Long) {
+        pedidoEnfocadoId = idPedido
     }
 
     /** HU 49 - El vendedor propone el siguiente estado; el backend lo valida. */
@@ -58,7 +77,7 @@ class PedidosRecibidosViewModel : ViewModel() {
                             estadosPermitidos = actualizada.estadosPermitidos ?: pedido.estadosPermitidos
                         )
                     }
-                    mensaje = "Pedido #$idPedido: estado actualizado a ${actualizada.estado}."
+                    mensaje = "N.º de compra: $idPedido · Estado actualizado a ${estadoPedidoVisible(actualizada.estado)}."
                 } else error = mensajeDeError(respuesta)
             } catch (e: Exception) {
                 error = e.message ?: "No se pudo actualizar el estado del pedido."

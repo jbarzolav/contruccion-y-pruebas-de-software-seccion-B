@@ -274,13 +274,13 @@ private fun ComprobantePedido(
             )
 
             Text(
-                text = "Tu pedido #${pedido.idPedido ?: "-"} fue registrado correctamente.",
+                text = "Tu compra fue registrada correctamente. N.º de compra: ${pedido.idPedido ?: "-"}.",
                 fontWeight = FontWeight.Bold
             )
 
             pedido.fecha?.let { fecha ->
                 Text(
-                    text = "Fecha: $fecha",
+                    text = "Fecha: ${fechaHoraPedidoVisible(fecha)}",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

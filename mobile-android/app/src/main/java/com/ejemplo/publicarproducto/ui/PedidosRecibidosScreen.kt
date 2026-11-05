@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,9 +40,26 @@ fun PedidosRecibidosScreen(
     modifier: Modifier = Modifier,
     viewModel: PedidosRecibidosViewModel = viewModel()
 ) {
-    LaunchedEffect(Unit) { if (viewModel.pedidos.isEmpty() && !viewModel.cargando) viewModel.cargar() }
+    LaunchedEffect(Unit) {
+        if (viewModel.pedidos.isEmpty() && !viewModel.cargando) viewModel.cargar()
+        while (true) {
+            kotlinx.coroutines.delay(15_000)
+            viewModel.cargarNotificaciones()
+        }
+    }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Pedidos recibidos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        viewModel.notificaciones.filter { it.tipo == "NUEVA_COMPRA" }.forEach { aviso ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(resumenNotificacionVisible(aviso), fontWeight = FontWeight.SemiBold)
+                    Text(fechaHoraPedidoVisible(aviso.fecha))
+                    aviso.idPedido?.let { id ->
+                        TextButton(onClick = { viewModel.enfocarPedido(id) }) { Text("Ver pedido recibido") }
+                    }
+                }
+            }
+        }
         viewModel.mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         when {
             viewModel.cargando -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -50,7 +68,8 @@ fun PedidosRecibidosScreen(
                 Button(onClick = viewModel::cargar, modifier = Modifier.fillMaxWidth()) { Text("Reintentar") }
             }
             viewModel.pedidos.isEmpty() -> Text("Aún no tienes pedidos que incluyan tus productos.")
-            else -> viewModel.pedidos.forEach { pedido -> PedidoRecibidoCard(pedido, viewModel) }
+            else -> viewModel.pedidos.sortedByDescending { it.idPedido == viewModel.pedidoEnfocadoId }
+                .forEach { pedido -> PedidoRecibidoCard(pedido, viewModel) }
         }
     }
 }
@@ -63,10 +82,10 @@ private fun PedidoRecibidoCard(pedido: PedidoVendedorResponse, viewModel: Pedido
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Pedido #${pedido.idPedido}", fontWeight = FontWeight.Bold)
-            Text("Fecha: ${pedido.fecha ?: "-"}")
-            Text("Estado: ${pedido.estado}")
-            Text("Última actualización: ${pedido.fechaActualizacion?.replace('T', ' ') ?: pedido.fecha ?: "-"}")
+            Text("N.º de compra: ${pedido.idPedido}", fontWeight = FontWeight.Bold)
+            Text("Fecha: ${fechaHoraPedidoVisible(pedido.fecha)}")
+            Text("Estado: ${estadoPedidoVisible(pedido.estado)}")
+            Text("Última actualización: ${fechaHoraPedidoVisible(pedido.fechaActualizacion ?: pedido.fecha)}")
             pedido.productos.forEach { producto ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("${producto.nombreProducto.orEmpty()} × ${producto.cantidad ?: 0}")
@@ -81,12 +100,12 @@ private fun PedidoRecibidoCard(pedido: PedidoVendedorResponse, viewModel: Pedido
                         onClick = { menuAbierto = true },
                         enabled = viewModel.guardandoId == null
                     ) {
-                        Text(if (seleccionado.isBlank()) "Seleccionar estado" else seleccionado)
+                        Text(if (seleccionado.isBlank()) "Seleccionar estado" else estadoPedidoVisible(seleccionado))
                     }
                     DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
                         permitidos.forEach { estado ->
                             DropdownMenuItem(
-                                text = { Text(estado) },
+                                text = { Text(estadoPedidoVisible(estado)) },
                                 onClick = {
                                     seleccionado = estado
                                     menuAbierto = false
