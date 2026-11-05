@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.NotificacionResponse
 import com.ejemplo.publicarproducto.model.ResenaEdicionRequest
 import com.ejemplo.publicarproducto.network.UserApiClient
 import com.google.gson.Gson
@@ -26,6 +27,8 @@ class MisPedidosViewModel : ViewModel() {
         private set
     var actualizandoEstadoId by mutableStateOf<Long?>(null)
         private set
+    var notificaciones by mutableStateOf<List<NotificacionResponse>>(emptyList())
+        private set
 
     fun cargar() {
         cargando = true
@@ -35,9 +38,22 @@ class MisPedidosViewModel : ViewModel() {
                 val respuesta = UserApiClient.productoApi.listarMisPedidos()
                 if (respuesta.isSuccessful) pedidos = respuesta.body().orEmpty()
                 else error = mensajeDeError(respuesta)
+                try {
+                    val avisos = UserApiClient.productoApi.listarNotificaciones()
+                    if (avisos.isSuccessful) notificaciones = avisos.body().orEmpty()
+                } catch (_: Exception) { }
             } catch (e: Exception) {
                 error = e.message ?: "No se pudieron cargar tus pedidos."
             } finally { cargando = false }
+        }
+    }
+
+    fun cargarNotificaciones() {
+        viewModelScope.launch {
+            try {
+                val respuesta = UserApiClient.productoApi.listarNotificaciones()
+                if (respuesta.isSuccessful) notificaciones = respuesta.body().orEmpty()
+            } catch (_: Exception) { }
         }
     }
 

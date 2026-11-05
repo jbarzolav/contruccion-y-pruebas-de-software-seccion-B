@@ -16,6 +16,7 @@ import com.ejemplo.publicarproducto.model.EstadoPedidoRequest
 import com.ejemplo.publicarproducto.model.EstadoPedidoResponse
 import com.ejemplo.publicarproducto.model.PedidoDetalleResponse
 import com.ejemplo.publicarproducto.model.PedidoEstadoActualizadoResponse
+import com.ejemplo.publicarproducto.model.NotificacionResponse
 import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
 import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ResenaRequest
@@ -40,6 +41,10 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ProductoApi {
+
+    // HU 51/52 - Avisos propios de cambios de pedido y nuevas compras.
+    @GET("api/notificaciones")
+    suspend fun listarNotificaciones(): Response<List<NotificacionResponse>>
 
     // HU 31 - Favoritos del cliente autenticado.
     @GET("api/usuarios/me/favoritos")

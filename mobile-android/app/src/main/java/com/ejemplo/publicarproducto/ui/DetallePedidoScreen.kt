@@ -55,10 +55,10 @@ fun DetallePedidoScreen(
                 val pedido = viewModel.pedido!!
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Pedido #${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)
-                        Text("Fecha: ${pedido.fecha?.replace('T', ' ') ?: "-"}")
-                        Text("Estado: ${pedido.estado ?: "REGISTRADO"}")
-                        Text("Última actualización: ${pedido.fechaActualizacion?.replace('T', ' ') ?: pedido.fecha ?: "-"}")
+                        Text("N.º de compra: ${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)
+                        Text("Fecha: ${fechaHoraPedidoVisible(pedido.fecha)}")
+                        Text("Estado: ${estadoPedidoVisible(pedido.estado)}")
+                        Text("Última actualización: ${fechaHoraPedidoVisible(pedido.fechaActualizacion ?: pedido.fecha)}")
                         pedido.detalles.orEmpty().forEach { detalle ->
                             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text("${detalle.nombreProducto.orEmpty()} × ${detalle.cantidad ?: 0}", fontWeight = FontWeight.SemiBold)

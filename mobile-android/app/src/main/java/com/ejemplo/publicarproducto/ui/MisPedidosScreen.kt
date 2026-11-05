@@ -38,11 +38,26 @@ fun MisPedidosScreen(
     modifier: Modifier = Modifier,
     viewModel: MisPedidosViewModel = viewModel()
 ) {
-    LaunchedEffect(Unit) { if (viewModel.pedidos.isEmpty() && !viewModel.cargando) viewModel.cargar() }
+    LaunchedEffect(Unit) {
+        if (viewModel.pedidos.isEmpty() && !viewModel.cargando) viewModel.cargar()
+        while (true) {
+            kotlinx.coroutines.delay(15_000)
+            viewModel.cargarNotificaciones()
+        }
+    }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onVolver) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") }
             Text("Mis pedidos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        }
+        viewModel.notificaciones.filter { it.tipo == "CAMBIO_ESTADO_PEDIDO" }.forEach { aviso ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(resumenNotificacionVisible(aviso), fontWeight = FontWeight.SemiBold)
+                    Text(fechaHoraPedidoVisible(aviso.fecha))
+                    aviso.idPedido?.let { id -> TextButton(onClick = { onVerDetalle(id) }) { Text("Ver pedido") } }
+                }
+            }
         }
         viewModel.mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         when {
@@ -66,10 +81,10 @@ private fun PedidoCard(
     var detalleVisible by remember(pedido.idPedido) { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Pedido #${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)
-            Text("Fecha: ${pedido.fecha ?: "-"}")
-            Text("Estado: ${pedido.estado ?: "REGISTRADO"}")
-            Text("Última actualización: ${pedido.fechaActualizacion?.replace('T', ' ') ?: pedido.fecha ?: "-"}")
+            Text("N.º de compra: ${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)
+            Text("Fecha: ${fechaHoraPedidoVisible(pedido.fecha)}")
+            Text("Estado: ${estadoPedidoVisible(pedido.estado)}")
+            Text("Última actualización: ${fechaHoraPedidoVisible(pedido.fechaActualizacion ?: pedido.fecha)}")
             Text("Total: S/ ${pedido.total?.setScale(2)?.toPlainString() ?: "0.00"}")
             TextButton(
                 enabled = viewModel.actualizandoEstadoId == null,
