@@ -79,7 +79,7 @@ export default function ConfirmarCompra({ onCarritoActualizado }) {
             <section className="tarjeta pedido-exito">
                 <h2>✅ Pedido registrado</h2>
                 <p className="pedido-exito-id">
-                    Tu pedido <strong>#{pedido.idPedido}</strong> fue registrado correctamente.
+                    Tu compra fue registrada correctamente. N.º de compra: <strong>{pedido.idPedido}</strong>.
                 </p>
 
                 <ul className="carrito-lista">
