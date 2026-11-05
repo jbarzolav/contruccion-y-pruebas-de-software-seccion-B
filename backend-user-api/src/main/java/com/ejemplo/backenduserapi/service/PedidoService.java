@@ -41,15 +41,18 @@ public class PedidoService {
     private final CarritoRepository carritoRepository;
     private final ItemCarritoRepository itemCarritoRepository;
     private final ProductoRepository productoRepository;
+    private final NotificacionService notificaciones;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoRepository carritoRepository,
                          ItemCarritoRepository itemCarritoRepository,
-                         ProductoRepository productoRepository) {
+                         ProductoRepository productoRepository,
+                         NotificacionService notificaciones) {
         this.pedidoRepository = pedidoRepository;
         this.carritoRepository = carritoRepository;
         this.itemCarritoRepository = itemCarritoRepository;
         this.productoRepository = productoRepository;
+        this.notificaciones = notificaciones;
     }
 
     @Transactional
@@ -97,6 +100,8 @@ public class PedidoService {
 
         pedido.setTotal(total);
         Pedido guardado = pedidoRepository.save(pedido);
+        // HU 52 - La compra confirmada avisa a cada vendedor con productos en el pedido.
+        notificaciones.notificarNuevaCompra(guardado);
 
         // 3) Vaciar el carrito (ítems + carrito) tras el registro.
         itemCarritoRepository.deleteAll(items);

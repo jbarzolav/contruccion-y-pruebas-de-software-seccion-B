@@ -8,6 +8,7 @@ import com.ejemplo.backenduserapi.repository.NotificacionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -31,6 +32,21 @@ public class NotificacionService {
                 "La compra N.º " + pedido.getId() + " cambió a "
                         + estadoVisible(cambio.getEstadoNuevo()) + ".",
                 cambio.getFechaCambio(), pedido.getClienteId(), pedido.getId(), clave));
+    }
+
+    // HU 52 - La compra registrada avisa a cada vendedor participante.
+    @Transactional
+    public void notificarNuevaCompra(com.ejemplo.backenduserapi.entity.Pedido pedido) {
+        pedido.getDetalles().stream()
+                .map(detalle -> detalle.getProducto().getVendedorId())
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .forEach(vendedorId -> {
+                    String clave = "compra:" + pedido.getId() + ":" + vendedorId;
+                    guardarSiNuevo(new Notificacion(NUEVA_COMPRA,
+                            "Nueva compra recibida · N.º de compra: " + pedido.getId() + ".",
+                            pedido.getFecha(), vendedorId, pedido.getId(), clave));
+                });
     }
 
     private String estadoVisible(String estado) {
