@@ -36,10 +36,13 @@ public class EstadoPedidoService {
 
     private final PedidoRepository pedidos;
     private final HistorialEstadoPedidoRepository historial;
+    private final NotificacionService notificaciones;
 
-    public EstadoPedidoService(PedidoRepository pedidos, HistorialEstadoPedidoRepository historial) {
+    public EstadoPedidoService(PedidoRepository pedidos, HistorialEstadoPedidoRepository historial,
+                               NotificacionService notificaciones) {
         this.pedidos = pedidos;
         this.historial = historial;
+        this.notificaciones = notificaciones;
     }
 
     @Transactional
@@ -71,7 +74,10 @@ public class EstadoPedidoService {
         pedido.setFechaActualizacionEstado(ahora);
         pedidos.save(pedido);
 
-        historial.save(new HistorialEstadoPedido(pedido, origen.name(), destino.name(), ahora, vendedor.getId()));
+        HistorialEstadoPedido cambio = historial.save(
+                new HistorialEstadoPedido(pedido, origen.name(), destino.name(), ahora, vendedor.getId()));
+        // HU 51 - Se avisa solo después de guardar una transición permitida.
+        notificaciones.notificarCambioEstado(cambio);
 
         List<HistorialEstadoPedidoResponse> registros = historial
                 .findByPedidoIdOrderByFechaCambioDesc(pedido.getId()).stream()
