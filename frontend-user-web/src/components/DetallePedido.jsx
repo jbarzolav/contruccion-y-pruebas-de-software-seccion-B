@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { obtenerDetallePedido } from '../api/productos.js'
+import { estadoPedidoVisible, fechaHoraPedidoVisible } from '../utils/formatoPedidos.js'
 
 /**
  * HU 50 - Detalle de un pedido propio.
@@ -27,12 +28,12 @@ export default function DetallePedido() {
       <div className="alerta error" role="alert">{error}</div>
       <Link className="btn-secundario" to="/pedidos">Volver a mis compras</Link>
     </> : <>
-      <h2>Detalle del pedido #{pedido.idPedido}</h2>
+      <h2>N.º de compra: {pedido.idPedido}</h2>
       <p>
-        Fecha: {pedido.fecha ? new Date(pedido.fecha).toLocaleString('es-PE') : 'Sin información'} ·
-        Estado: {pedido.estado || 'REGISTRADO'}
+        Fecha: {fechaHoraPedidoVisible(pedido.fecha)} ·
+        Estado: {estadoPedidoVisible(pedido.estado)}
       </p>
-      <p>Última actualización del estado: {pedido.fechaActualizacion ? new Date(pedido.fechaActualizacion).toLocaleString('es-PE') : 'Sin información'}</p>
+      <p>Última actualización del estado: {fechaHoraPedidoVisible(pedido.fechaActualizacion)}</p>
       <table className="tabla">
         <thead>
           <tr>
