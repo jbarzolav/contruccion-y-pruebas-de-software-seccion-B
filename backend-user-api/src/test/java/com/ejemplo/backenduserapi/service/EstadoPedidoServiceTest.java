@@ -42,6 +42,7 @@ class EstadoPedidoServiceTest {
 
     @Mock private PedidoRepository pedidos;
     @Mock private HistorialEstadoPedidoRepository historial;
+    @Mock private NotificacionService notificaciones;
     @InjectMocks private EstadoPedidoService servicio;
 
     private Usuario vendedor;
@@ -62,6 +63,7 @@ class EstadoPedidoServiceTest {
     @Test
     void actualizaEstadoYRegistraElCambioEnElHistorial() {
         when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
+        org.mockito.Mockito.when(historial.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         when(historial.findByPedidoIdOrderByFechaCambioDesc(20L)).thenReturn(List.of());
 
         var respuesta = servicio.actualizarEstado(20L, new EstadoPedidoRequest("EN_PROCESO"), vendedor);
@@ -78,6 +80,7 @@ class EstadoPedidoServiceTest {
         assertEquals("REGISTRADO", captor.getValue().getEstadoAnterior());
         assertEquals("EN_PROCESO", captor.getValue().getEstadoNuevo());
         assertEquals(40L, captor.getValue().getUsuarioId());
+        verify(notificaciones).notificarCambioEstado(captor.getValue());
     }
 
     @Test
@@ -91,6 +94,7 @@ class EstadoPedidoServiceTest {
         assertEquals("No se permite pasar de REGISTRADO a ENTREGADO.", excepcion.getMessage());
         assertEquals("REGISTRADO", pedido.getEstado());
         verify(historial, never()).save(any());
+        verify(notificaciones, never()).notificarCambioEstado(any());
     }
 
     @Test
@@ -102,6 +106,7 @@ class EstadoPedidoServiceTest {
 
         assertEquals(400, excepcion.getEstado().value());
         verify(historial, never()).save(any());
+        verify(notificaciones, never()).notificarCambioEstado(any());
     }
 
     @Test
@@ -113,6 +118,7 @@ class EstadoPedidoServiceTest {
 
         assertEquals(400, excepcion.getEstado().value());
         verify(historial, never()).save(any());
+        verify(notificaciones, never()).notificarCambioEstado(any());
     }
 
     @Test
@@ -126,6 +132,7 @@ class EstadoPedidoServiceTest {
         assertEquals(403, excepcion.getEstado().value());
         assertEquals("El pedido no incluye productos de tus publicaciones.", excepcion.getMessage());
         verify(historial, never()).save(any());
+        verify(notificaciones, never()).notificarCambioEstado(any());
     }
 
     @Test
