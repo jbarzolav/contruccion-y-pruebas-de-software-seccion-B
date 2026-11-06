@@ -29,6 +29,10 @@ internal fun resumenNotificacionVisible(aviso: NotificacionResponse): String {
     if (aviso.tipo == "NUEVA_COMPRA") {
         return "Nueva compra recibida · N.º de compra: $idPedido."
     }
+    // HU 53 - El aviso de mensaje ya llega redactado por el backend.
+    if (aviso.tipo == "NUEVO_MENSAJE") {
+        return aviso.resumen ?: "Nuevo mensaje en una consulta."
+    }
 
     val estado = Regex("cambió a\\s+(.+?)[.]?$", RegexOption.IGNORE_CASE)
         .find(aviso.resumen.orEmpty())?.groupValues?.get(1)?.removeSuffix(".")

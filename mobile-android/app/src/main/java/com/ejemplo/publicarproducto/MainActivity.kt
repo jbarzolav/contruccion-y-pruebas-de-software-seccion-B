@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import com.ejemplo.publicarproducto.ui.BuscarProductosScreen
+import com.ejemplo.publicarproducto.ui.BandejaNotificacionesScreen
 import com.ejemplo.publicarproducto.ui.CarritoScreen
 import com.ejemplo.publicarproducto.ui.ChatbotScreen
 import com.ejemplo.publicarproducto.ui.ConfirmarCompraScreen
@@ -295,6 +296,7 @@ class MainActivity : ComponentActivity() {
                     var publicando by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 01/02
                     var confirmandoCompra by remember(usuario.id, usuario.rol) { mutableStateOf(false) } // HU 15
                     var pedidoDetalleId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 50
+                    var conversacionPendienteId by remember(usuario.id, usuario.rol) { mutableStateOf<Long?>(null) } // HU 53
 
                     val enPantallaPrincipal = productoDetalleId == null
                             && productoEnEdicionId == null
@@ -308,9 +310,17 @@ class MainActivity : ComponentActivity() {
                                 TopAppBar(
                                     actions = {
                                         if (usuario.rol in setOf("CLIENTE", "VENDEDOR")) {
-                                            TextButton(onClick = { pestana = 8; avisoMensaje = null }) {
+                                            TextButton(onClick = {
+                                                conversacionPendienteId = null
+                                                pestana = 8
+                                                avisoMensaje = null
+                                            }) {
                                                 Text(if (avisoMensaje == null) "Consultas" else "Nuevo mensaje · Consultas")
                                             }
+                                        }
+                                        // HU 53/54 - Bandeja unificada de notificaciones.
+                                        TextButton(onClick = { pestana = 11 }) {
+                                            Text("Notificaciones")
                                         }
                                     },
                                     title = {
@@ -420,9 +430,22 @@ class MainActivity : ComponentActivity() {
                             else -> when (pestana) {
                                 8 -> androidx.compose.runtime.key(usuario.id, sesionViewModel.sesion.obtenerToken()) {
                                     com.ejemplo.publicarproducto.ui.ConsultasScreen(
-                                        esVendedor = usuario.rol == "VENDEDOR", modifier = Modifier.padding(padding),
+                                        esVendedor = usuario.rol == "VENDEDOR",
+                                        conversacionInicial = conversacionPendienteId,
+                                        modifier = Modifier.padding(padding),
                                         onVerProducto = { productoDetalleId = it })
                                 }
+
+                                // HU 53/54 - bandeja unificada con filtros y lectura de avisos
+                                11 -> BandejaNotificacionesScreen(
+                                    onVerPedido = { id -> pedidoDetalleId = id },
+                                    onVerVentas = { pestana = 10 },
+                                    onVerConversacion = { id ->
+                                        conversacionPendienteId = id
+                                        pestana = 8
+                                    },
+                                    modifier = Modifier.padding(padding)
+                                )
                                 // HU 06/07/08/09 - Inicio: catálogo con búsqueda y orden
                                 0 -> BuscarProductosScreen(
                                     modifier = Modifier.padding(padding),

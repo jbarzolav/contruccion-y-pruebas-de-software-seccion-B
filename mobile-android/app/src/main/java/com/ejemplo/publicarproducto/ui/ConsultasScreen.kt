@@ -58,11 +58,22 @@ private fun FormularioMensaje(model: ConsultasViewModel, productoId: Long?, conv
 
 @Composable
 fun ConsultasScreen(esVendedor: Boolean, modifier: Modifier = Modifier,
-    onVerProducto: (Long) -> Unit = {}) {
+    onVerProducto: (Long) -> Unit = {}, conversacionInicial: Long? = null) {
     // HU38 - Muestra el último mensaje y carga el historial cronológicamente por páginas.
     val model = consultasModel()
     var seleccion by remember { mutableStateOf<Long?>(null) }
+    // HU 53 - Enlace desde la bandeja: abre la conversación indicada al cargar.
+    var pendienteInicial by remember { mutableStateOf(conversacionInicial) }
     LaunchedEffect(Unit) { model.cargar(true) }
+    LaunchedEffect(model.conversaciones) {
+        val idInicial = pendienteInicial ?: return@LaunchedEffect
+        if (model.conversaciones.any { it.idConversacion == idInicial }) {
+            pendienteInicial = null
+            seleccion = idInicial
+            model.texto = ""
+            model.cargarMensajes(idInicial)
+        }
+    }
     LaunchedEffect(seleccion) {
         while (true) {
             delay(15000)

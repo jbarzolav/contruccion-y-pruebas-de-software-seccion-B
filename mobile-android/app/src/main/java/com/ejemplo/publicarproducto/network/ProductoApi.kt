@@ -12,11 +12,14 @@ import com.ejemplo.publicarproducto.model.ItemCarritoCantidadRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoRequest
 import com.ejemplo.publicarproducto.model.ItemCarritoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.model.BandejaNotificacionesResponse
 import com.ejemplo.publicarproducto.model.EstadoPedidoRequest
 import com.ejemplo.publicarproducto.model.EstadoPedidoResponse
 import com.ejemplo.publicarproducto.model.PedidoDetalleResponse
 import com.ejemplo.publicarproducto.model.PedidoEstadoActualizadoResponse
+import com.ejemplo.publicarproducto.model.NotificacionLeidaResponse
 import com.ejemplo.publicarproducto.model.NotificacionResponse
+import com.ejemplo.publicarproducto.model.NotificacionesLeidasResponse
 import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
 import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ResenaRequest
@@ -45,6 +48,26 @@ interface ProductoApi {
     // HU 51/52 - Avisos propios de cambios de pedido y nuevas compras.
     @GET("api/notificaciones")
     suspend fun listarNotificaciones(): Response<List<NotificacionResponse>>
+
+    // HU 53 - Bandeja unificada con filtros combinables y paginación.
+    @GET("api/notificaciones/bandeja")
+    suspend fun listarBandeja(
+        @Query("tipo") tipo: String? = null,
+        @Query("estado") estado: String? = null,
+        @Query("desde") desde: String? = null,
+        @Query("hasta") hasta: String? = null,
+        @Query("page") page: Int? = null
+    ): Response<BandejaNotificacionesResponse>
+
+    // HU 54 - Lectura individual (idempotente) de una notificación propia.
+    @PATCH("api/notificaciones/{idNotificacion}/leida")
+    suspend fun marcarNotificacionLeida(
+        @Path("idNotificacion") idNotificacion: Long
+    ): Response<NotificacionLeidaResponse>
+
+    // HU 54 - Lectura masiva de todas las pendientes del usuario.
+    @PATCH("api/notificaciones/leidas")
+    suspend fun marcarTodasComoLeidas(): Response<NotificacionesLeidasResponse>
 
     // HU 31 - Favoritos del cliente autenticado.
     @GET("api/usuarios/me/favoritos")
