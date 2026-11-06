@@ -142,6 +142,30 @@ class ExperienciaCompraServiceTest {
     }
 
     @Test
+    void filtraComprasPorEstadoFechaYMontoConLaSesionDelCliente() {
+        when(pedidos.findByClienteIdOrderByFechaDesc(10L)).thenReturn(List.of(pedido));
+        var fecha = pedido.getFecha().toLocalDate();
+
+        var resultado = servicio.filtrarPedidos(cliente, " registrado ", fecha, fecha,
+                new BigDecimal("10.00"), new BigDecimal("10.00"), 0, 10);
+
+        assertEquals(1, resultado.size());
+        assertEquals(20L, resultado.get(0).idPedido());
+        verify(pedidos).findByClienteIdOrderByFechaDesc(10L);
+    }
+
+    @Test
+    void rechazaRangoDeFechasYMontosInvalidosEnHistorial() {
+        var fecha = pedido.getFecha().toLocalDate();
+        assertThrows(ExperienciaCompraException.class,
+                () -> servicio.filtrarPedidos(cliente, null, fecha.plusDays(1), fecha,
+                        null, null, 0, 10));
+        assertThrows(ExperienciaCompraException.class,
+                () -> servicio.filtrarPedidos(cliente, null, null, null,
+                        new BigDecimal("20"), new BigDecimal("10"), 0, 10));
+    }
+
+    @Test
     void consultaEstadoYFechaDelPedidoPropio() {
         when(pedidos.findById(20L)).thenReturn(Optional.of(pedido));
 
