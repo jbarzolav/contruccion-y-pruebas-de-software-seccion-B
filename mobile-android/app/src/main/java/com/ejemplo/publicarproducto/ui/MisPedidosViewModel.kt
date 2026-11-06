@@ -3,18 +3,25 @@ package com.ejemplo.publicarproducto.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ejemplo.publicarproducto.model.ErrorResponse
-import com.ejemplo.publicarproducto.model.PedidoResponse
+import com.ejemplo.publicarproducto.data.Mapeadores
 import com.ejemplo.publicarproducto.model.NotificacionResponse
+import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.ResenaEdicionRequest
-import com.ejemplo.publicarproducto.network.UserApiClient
-import com.google.gson.Gson
+import com.ejemplo.publicarproducto.network.ResultadoApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
-class MisPedidosViewModel : ViewModel() {
+/**
+ * HU 46/50 - Pedidos propios del usuario.
+ *
+ * Mejora técnica Offline First: la lista se observa desde Room, así que se
+ * puede consultar sin conexión y se actualiza sola cuando el backend
+ * sincroniza. Las reseñas siguen requiriendo conexión (el endpoint actual no
+ * admite reintento offline seguro).
+ */
+class MisPedidosViewModel : BaseOfflineViewModel() {
+
     var pedidos by mutableStateOf<List<PedidoResponse>>(emptyList())
         private set
     var cargando by mutableStateOf(false)
@@ -30,33 +37,46 @@ class MisPedidosViewModel : ViewModel() {
     var notificaciones by mutableStateOf<List<NotificacionResponse>>(emptyList())
         private set
 
+    init {
+        // Copia local: la interfaz se actualiza sola con cada cambio de Room.
+        viewModelScope.launch {
+            contenedor.pedidos.observarCompras(usuarioId).collect { pedidos = it }
+        }
+        viewModelScope.launch {
+            contenedor.bd.notificacionDao().observarTodas(usuarioId).collect { avisos ->
+                notificaciones = avisos.map { Mapeadores.aDto(it) }
+            }
+        }
+    }
+
+    /** Descarga los pedidos reales del backend y actualiza la copia local. */
     fun cargar() {
         cargando = true
         error = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.listarMisPedidos()
-                if (respuesta.isSuccessful) pedidos = respuesta.body().orEmpty()
-                else error = mensajeDeError(respuesta)
-                try {
-                    val avisos = UserApiClient.productoApi.listarNotificaciones()
-                    if (avisos.isSuccessful) notificaciones = avisos.body().orEmpty()
-                } catch (_: Exception) { }
+                when (val resultado = contenedor.pedidos.refrescarCompras(usuarioId)) {
+                    is ResultadoApi.Exito -> sinConexion = false
+                    is ResultadoApi.Error -> {
+                        if (resultado.temporal) sinConexion = true else error = resultado.mensaje
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 error = e.message ?: "No se pudieron cargar tus pedidos."
-            } finally { cargando = false }
+            } finally {
+                cargando = false
+            }
         }
     }
 
+    /** Refresca los avisos del usuario desde la copia local (sin red). */
     fun cargarNotificaciones() {
-        viewModelScope.launch {
-            try {
-                val respuesta = UserApiClient.productoApi.listarNotificaciones()
-                if (respuesta.isSuccessful) notificaciones = respuesta.body().orEmpty()
-            } catch (_: Exception) { }
-        }
+        // Los avisos ya se observan desde Room: no hace falta pedir nada.
     }
 
+    /** HU 45 - Edita el texto de una reseña propia (requiere conexión). */
     fun editarResena(idPedido: Long, idResena: Long, texto: String) {
         val normalizado = texto.trim()
         if (guardando || normalizado.isEmpty() || normalizado.length > 1000) return
@@ -64,46 +84,55 @@ class MisPedidosViewModel : ViewModel() {
         mensaje = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.editarResena(idResena, ResenaEdicionRequest(normalizado))
+                val respuesta = com.ejemplo.publicarproducto.network.UserApiClient.productoApi
+                    .editarResena(idResena, ResenaEdicionRequest(normalizado))
                 if (respuesta.isSuccessful && respuesta.body() != null) {
                     val actualizada = respuesta.body()!!
-                    pedidos = pedidos.map { pedido ->
-                        if (pedido.idPedido != idPedido) pedido
-                        else pedido.copy(resenas = pedido.resenas.orEmpty().map { if (it.id == idResena) actualizada else it })
-                    }
+                    contenedor.pedidos.actualizarResenaLocal(usuarioId, idPedido, actualizada)
                     mensaje = "Reseña actualizada correctamente."
-                } else mensaje = mensajeDeError(respuesta)
-            } catch (e: Exception) { mensaje = e.message ?: "No se pudo actualizar la reseña." }
-            finally { guardando = false }
+                } else {
+                    mensaje = mensajeDeError(respuesta)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                mensaje = e.message ?: "No se pudo actualizar la reseña."
+            } finally {
+                guardando = false
+            }
         }
     }
 
+    /** HU 47 - Consulta el estado vigente del pedido propio. */
     fun actualizarEstado(idPedido: Long) {
         if (actualizandoEstadoId != null) return
         actualizandoEstadoId = idPedido
         mensaje = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.consultarEstadoPedido(idPedido)
-                if (respuesta.isSuccessful && respuesta.body() != null) {
-                    val estado = respuesta.body()!!
-                    pedidos = pedidos.map { pedido ->
-                        if (pedido.idPedido == idPedido) pedido.copy(
-                            estado = estado.estado,
-                            fechaActualizacion = estado.fechaActualizacion
-                        ) else pedido
+                when (val resultado = contenedor.pedidos.refrescarEstadoPedido(usuarioId, idPedido)) {
+                    is ResultadoApi.Exito -> mensaje = "Estado del pedido actualizado."
+                    is ResultadoApi.Error -> {
+                        if (resultado.temporal) sinConexion = true
+                        mensaje = resultado.mensaje
                     }
-                    mensaje = "Estado del pedido actualizado."
-                } else mensaje = mensajeDeError(respuesta)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 mensaje = e.message ?: "No se pudo actualizar el estado del pedido."
-            } finally { actualizandoEstadoId = null }
+            } finally {
+                actualizandoEstadoId = null
+            }
         }
     }
 
-    private fun mensajeDeError(respuesta: Response<*>): String = try {
+    private fun mensajeDeError(respuesta: retrofit2.Response<*>): String = try {
         val cuerpo = respuesta.errorBody()?.string()
-        Gson().fromJson(cuerpo, ErrorResponse::class.java)?.messages?.firstOrNull()
+        com.google.gson.Gson().fromJson(cuerpo, com.ejemplo.publicarproducto.model.ErrorResponse::class.java)
+            ?.messages?.firstOrNull()
             ?: "Error ${respuesta.code()} al consultar pedidos."
-    } catch (_: Exception) { "Error ${respuesta.code()} al consultar pedidos." }
+    } catch (_: Exception) {
+        "Error ${respuesta.code()} al consultar pedidos."
+    }
 }

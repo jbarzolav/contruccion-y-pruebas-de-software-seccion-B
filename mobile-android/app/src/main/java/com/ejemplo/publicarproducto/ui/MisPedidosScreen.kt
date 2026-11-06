@@ -50,6 +50,13 @@ fun MisPedidosScreen(
             IconButton(onClick = onVolver) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") }
             Text("Mis pedidos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }
+        // Mejora técnica Offline First: modo sin conexión, pendientes y avisos.
+        IndicadorOffline(
+            sinConexion = viewModel.sinConexion,
+            pendientes = viewModel.pendientesSincronizacion,
+            aviso = viewModel.avisoSincronizacion,
+            rechazo = viewModel.rechazoSincronizacion
+        )
         viewModel.notificaciones.filter { it.tipo == "CAMBIO_ESTADO_PEDIDO" }.forEach { aviso ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

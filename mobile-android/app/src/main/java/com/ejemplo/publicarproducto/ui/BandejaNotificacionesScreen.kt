@@ -109,6 +109,14 @@ fun BandejaNotificacionesScreen(
     ) {
         Text("Notificaciones", style = MaterialTheme.typography.headlineSmall)
 
+        // Mejora técnica Offline First: modo sin conexión, pendientes y avisos.
+        IndicadorOffline(
+            sinConexion = model.sinConexion,
+            pendientes = model.pendientesSincronizacion,
+            aviso = model.aviso ?: model.avisoSincronizacion,
+            rechazo = model.rechazoSincronizacion
+        )
+
         val datos = model.bandeja
         Text(
             if ((datos?.pendientes ?: 0L) > 0L) {

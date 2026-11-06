@@ -49,6 +49,13 @@ fun PedidosRecibidosScreen(
     }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Pedidos recibidos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        // Mejora técnica Offline First: modo sin conexión, pendientes y avisos.
+        IndicadorOffline(
+            sinConexion = viewModel.sinConexion,
+            pendientes = viewModel.pendientesSincronizacion,
+            aviso = viewModel.avisoSincronizacion,
+            rechazo = viewModel.rechazoSincronizacion
+        )
         viewModel.notificaciones.filter { it.tipo == "NUEVA_COMPRA" }.forEach { aviso ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -85,6 +92,15 @@ private fun PedidoRecibidoCard(pedido: PedidoVendedorResponse, viewModel: Pedido
             Text("N.º de compra: ${pedido.idPedido}", fontWeight = FontWeight.Bold)
             Text("Fecha: ${fechaHoraPedidoVisible(pedido.fecha)}")
             Text("Estado: ${estadoPedidoVisible(pedido.estado)}")
+            // Mejora técnica Offline First: el estado propuesto por el usuario
+            // se muestra como pendiente hasta que el servidor lo confirme.
+            viewModel.estadosPendientes[pedido.idPedido]?.let { pendiente ->
+                Text(
+                    "Estado pendiente de sincronizar: ${estadoPedidoVisible(pendiente)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Text("Última actualización: ${fechaHoraPedidoVisible(pedido.fechaActualizacion ?: pedido.fecha)}")
             pedido.productos.forEach { producto ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

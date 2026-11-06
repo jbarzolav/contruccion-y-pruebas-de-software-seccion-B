@@ -43,6 +43,13 @@ fun DetallePedidoScreen(
             IconButton(onClick = onVolver) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") }
             Text("Detalle del pedido", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }
+        // Mejora técnica Offline First: modo sin conexión, pendientes y avisos.
+        IndicadorOffline(
+            sinConexion = viewModel.sinConexion,
+            pendientes = viewModel.pendientesSincronizacion,
+            aviso = viewModel.avisoSincronizacion,
+            rechazo = viewModel.rechazoSincronizacion
+        )
 
         when {
             viewModel.cargando -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))

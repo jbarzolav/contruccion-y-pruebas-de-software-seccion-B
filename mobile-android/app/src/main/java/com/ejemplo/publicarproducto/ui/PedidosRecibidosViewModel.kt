@@ -3,18 +3,28 @@ package com.ejemplo.publicarproducto.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ejemplo.publicarproducto.model.ErrorResponse
-import com.ejemplo.publicarproducto.model.EstadoPedidoRequest
-import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
+import com.ejemplo.publicarproducto.data.Mapeadores
+import com.ejemplo.publicarproducto.local.Ambitos
 import com.ejemplo.publicarproducto.model.NotificacionResponse
-import com.ejemplo.publicarproducto.network.UserApiClient
-import com.google.gson.Gson
+import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
+import com.ejemplo.publicarproducto.network.ResultadoApi
+import com.ejemplo.publicarproducto.sync.ProgramadorSincronizacion
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
-class PedidosRecibidosViewModel : ViewModel() {
+/**
+ * HU 48 - Pedidos recibidos con solo los productos del vendedor.
+ * HU 49 - Cambio de estado del pedido (el backend valida la transición).
+ *
+ * Mejora técnica Offline First: la lista se observa desde la copia local de
+ * Room. El cambio de estado se guarda en el dispositivo y se encola en la
+ * cola persistente: si no hay red se sincroniza al recuperar la conexión y,
+ * si el servidor lo rechaza, se informa del rechazo sin affirmar que la
+ * operación se confirmó.
+ */
+class PedidosRecibidosViewModel : BaseOfflineViewModel() {
+
     var pedidos by mutableStateOf<List<PedidoVendedorResponse>>(emptyList())
         private set
     var cargando by mutableStateOf(false)
@@ -30,35 +40,61 @@ class PedidosRecibidosViewModel : ViewModel() {
     var pedidoEnfocadoId by mutableStateOf<Long?>(null)
         private set
 
+    /** Estado propuesto por el usuario que el servidor todavía no validó. */
+    var estadosPendientes by mutableStateOf<Map<Long, String>>(emptyMap())
+        private set
+
+    init {
+        viewModelScope.launch {
+            contenedor.pedidos.observarVentas(usuarioId).collect { ventas ->
+                pedidos = ventas.pedidos
+                estadosPendientes = ventas.estadosPendientes
+            }
+        }
+        viewModelScope.launch {
+            contenedor.bd.notificacionDao().observarTodas(usuarioId).collect { avisos ->
+                notificaciones = avisos.map { Mapeadores.aDto(it) }
+            }
+        }
+    }
+
+    /** Descarga los pedidos recibidos reales del backend y actualiza Room. */
     fun cargar() {
         cargando = true
         error = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.listarPedidosRecibidos()
-                if (respuesta.isSuccessful) pedidos = respuesta.body().orEmpty()
-                else error = mensajeDeError(respuesta)
-                cargarNotificaciones()
+                when (val resultado = contenedor.pedidos.refrescarVentas(usuarioId)) {
+                    is ResultadoApi.Exito -> sinConexion = false
+                    is ResultadoApi.Error -> {
+                        if (resultado.temporal) sinConexion = true else error = resultado.mensaje
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 error = e.message ?: "No se pudieron cargar los pedidos recibidos."
-            } finally { cargando = false }
+            } finally {
+                cargando = false
+            }
         }
     }
 
+    /** Los avisos ya se observan desde la copia local de Room. */
     fun cargarNotificaciones() {
-        viewModelScope.launch {
-            try {
-                val respuesta = UserApiClient.productoApi.listarNotificaciones()
-                if (respuesta.isSuccessful) notificaciones = respuesta.body().orEmpty()
-            } catch (_: Exception) { }
-        }
+        // Sin llamada de red: la información local ya está actualizada.
     }
 
     fun enfocarPedido(idPedido: Long) {
         pedidoEnfocadoId = idPedido
     }
 
-    /** HU 49 - El vendedor propone el siguiente estado; el backend lo valida. */
+    /**
+     * HU 49 - El vendedor propone el siguiente estado; el backend lo valida.
+     *
+     * La propuesta se guarda en el dispositivo y se encola. Hasta que el
+     * servidor la confirme, la interfaz solo indica que está pendiente.
+     */
     fun actualizarEstado(idPedido: Long, estado: String) {
         if (guardandoId != null || estado.isBlank()) return
         guardandoId = idPedido
@@ -66,28 +102,28 @@ class PedidosRecibidosViewModel : ViewModel() {
         mensaje = null
         viewModelScope.launch {
             try {
-                val respuesta = UserApiClient.productoApi.actualizarEstadoPedido(idPedido, EstadoPedidoRequest(estado))
-                if (respuesta.isSuccessful && respuesta.body() != null) {
-                    val actualizada = respuesta.body()!!
-                    pedidos = pedidos.map { pedido ->
-                        if (pedido.idPedido != idPedido) pedido
-                        else pedido.copy(
-                            estado = actualizada.estado ?: pedido.estado,
-                            fechaActualizacion = actualizada.fechaActualizacion ?: pedido.fechaActualizacion,
-                            estadosPermitidos = actualizada.estadosPermitidos ?: pedido.estadosPermitidos
-                        )
-                    }
-                    mensaje = "N.º de compra: $idPedido · Estado actualizado a ${estadoPedidoVisible(actualizada.estado)}."
-                } else error = mensajeDeError(respuesta)
+                contenedor.pedidos.registrarEstadoPendienteLocal(
+                    usuarioId = usuarioId,
+                    idPedido = idPedido,
+                    ambito = Ambitos.VENTAS,
+                    estado = estado
+                )
+                contenedor.pedidos.encolarEstadoPedido(
+                    usuarioId = usuarioId,
+                    idPedido = idPedido,
+                    ambito = Ambitos.VENTAS,
+                    estado = estado
+                )
+                ProgramadorSincronizacion.programar(contenedor.contexto, usuarioId)
+                mensaje = "N.º de compra: $idPedido · Estado $estado guardado en el dispositivo. " +
+                    "Pendiente de sincronizar con el servidor."
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 error = e.message ?: "No se pudo actualizar el estado del pedido."
-            } finally { guardandoId = null }
+            } finally {
+                guardandoId = null
+            }
         }
     }
-
-    private fun mensajeDeError(respuesta: Response<*>): String = try {
-        val cuerpo = respuesta.errorBody()?.string()
-        Gson().fromJson(cuerpo, ErrorResponse::class.java)?.messages?.firstOrNull()
-            ?: "Error ${respuesta.code()} al consultar pedidos recibidos."
-    } catch (_: Exception) { "Error ${respuesta.code()} al consultar pedidos recibidos." }
 }

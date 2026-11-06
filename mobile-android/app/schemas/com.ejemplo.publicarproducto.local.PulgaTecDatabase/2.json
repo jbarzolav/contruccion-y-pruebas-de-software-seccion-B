@@ -1,0 +1,664 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "4184356b17cabde509c7609e5e3873bd",
+    "entities": [
+      {
+        "tableName": "notificaciones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `idNotificacion` INTEGER NOT NULL, `tipo` TEXT, `resumen` TEXT, `fecha` TEXT, `estado` TEXT, `idPedido` INTEGER, `enlace` TEXT, `idConversacion` INTEGER, `fechaLectura` TEXT, `fechaSincronizacion` INTEGER NOT NULL, `pendienteLecturaLocal` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`usuarioId`, `idNotificacion`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idNotificacion",
+            "columnName": "idNotificacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "resumen",
+            "columnName": "resumen",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fecha",
+            "columnName": "fecha",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "idPedido",
+            "columnName": "idPedido",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "enlace",
+            "columnName": "enlace",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "idConversacion",
+            "columnName": "idConversacion",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "fechaLectura",
+            "columnName": "fechaLectura",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaSincronizacion",
+            "columnName": "fechaSincronizacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pendienteLecturaLocal",
+            "columnName": "pendienteLecturaLocal",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "idNotificacion"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_notificaciones_usuarioId_estado",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "estado"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notificaciones_usuarioId_estado` ON `${TABLE_NAME}` (`usuarioId`, `estado`)"
+          },
+          {
+            "name": "index_notificaciones_usuarioId_tipo",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "tipo"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notificaciones_usuarioId_tipo` ON `${TABLE_NAME}` (`usuarioId`, `tipo`)"
+          }
+        ]
+      },
+      {
+        "tableName": "bandeja_notificaciones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `claveFiltro` TEXT NOT NULL, `pagina` INTEGER NOT NULL, `tamano` INTEGER NOT NULL, `totalElementos` INTEGER NOT NULL, `totalPaginas` INTEGER NOT NULL, `tieneSiguiente` INTEGER NOT NULL, `pendientes` INTEGER NOT NULL, `fechaSincronizacion` INTEGER NOT NULL, PRIMARY KEY(`usuarioId`, `claveFiltro`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "claveFiltro",
+            "columnName": "claveFiltro",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pagina",
+            "columnName": "pagina",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tamano",
+            "columnName": "tamano",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalElementos",
+            "columnName": "totalElementos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalPaginas",
+            "columnName": "totalPaginas",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tieneSiguiente",
+            "columnName": "tieneSiguiente",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pendientes",
+            "columnName": "pendientes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaSincronizacion",
+            "columnName": "fechaSincronizacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "claveFiltro"
+          ]
+        }
+      },
+      {
+        "tableName": "pedidos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `idPedido` INTEGER NOT NULL, `ambito` TEXT NOT NULL, `clienteId` INTEGER, `fecha` TEXT, `total` TEXT, `estado` TEXT, `fechaActualizacion` TEXT, `estadosPermitidos` TEXT, `estadoPendienteLocal` TEXT, `fechaSincronizacion` INTEGER NOT NULL, PRIMARY KEY(`usuarioId`, `idPedido`, `ambito`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idPedido",
+            "columnName": "idPedido",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ambito",
+            "columnName": "ambito",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clienteId",
+            "columnName": "clienteId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "fecha",
+            "columnName": "fecha",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "total",
+            "columnName": "total",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaActualizacion",
+            "columnName": "fechaActualizacion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estadosPermitidos",
+            "columnName": "estadosPermitidos",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estadoPendienteLocal",
+            "columnName": "estadoPendienteLocal",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaSincronizacion",
+            "columnName": "fechaSincronizacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "idPedido",
+            "ambito"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedidos_usuarioId_ambito",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "ambito"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedidos_usuarioId_ambito` ON `${TABLE_NAME}` (`usuarioId`, `ambito`)"
+          }
+        ]
+      },
+      {
+        "tableName": "detalles_pedido",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `idPedido` INTEGER NOT NULL, `ambito` TEXT NOT NULL, `idProducto` INTEGER NOT NULL, `nombreProducto` TEXT, `cantidad` INTEGER, `precioUnitario` TEXT, `subtotal` TEXT, `fechaSincronizacion` INTEGER NOT NULL, PRIMARY KEY(`usuarioId`, `idPedido`, `ambito`, `idProducto`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idPedido",
+            "columnName": "idPedido",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ambito",
+            "columnName": "ambito",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idProducto",
+            "columnName": "idProducto",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombreProducto",
+            "columnName": "nombreProducto",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cantidad",
+            "columnName": "cantidad",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "precioUnitario",
+            "columnName": "precioUnitario",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "subtotal",
+            "columnName": "subtotal",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaSincronizacion",
+            "columnName": "fechaSincronizacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "idPedido",
+            "ambito",
+            "idProducto"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_detalles_pedido_usuarioId_idPedido",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "idPedido"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_detalles_pedido_usuarioId_idPedido` ON `${TABLE_NAME}` (`usuarioId`, `idPedido`)"
+          },
+          {
+            "name": "index_detalles_pedido_usuarioId_idProducto",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "idProducto"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_detalles_pedido_usuarioId_idProducto` ON `${TABLE_NAME}` (`usuarioId`, `idProducto`)"
+          }
+        ]
+      },
+      {
+        "tableName": "productos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `idProducto` INTEGER NOT NULL, `nombre` TEXT, `precio` TEXT, `fechaSincronizacion` INTEGER NOT NULL, PRIMARY KEY(`usuarioId`, `idProducto`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idProducto",
+            "columnName": "idProducto",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "precio",
+            "columnName": "precio",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaSincronizacion",
+            "columnName": "fechaSincronizacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "idProducto"
+          ]
+        }
+      },
+      {
+        "tableName": "pedido_resenas",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `idResena` INTEGER NOT NULL, `idPedido` INTEGER NOT NULL, `destino` TEXT, `productoId` INTEGER, `vendedorId` INTEGER, `texto` TEXT, `fecha` TEXT, `fechaModificacion` TEXT, PRIMARY KEY(`usuarioId`, `idResena`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idResena",
+            "columnName": "idResena",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idPedido",
+            "columnName": "idPedido",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destino",
+            "columnName": "destino",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "productoId",
+            "columnName": "productoId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "vendedorId",
+            "columnName": "vendedorId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "texto",
+            "columnName": "texto",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fecha",
+            "columnName": "fecha",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaModificacion",
+            "columnName": "fechaModificacion",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "idResena"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedido_resenas_usuarioId_idPedido",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "idPedido"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_resenas_usuarioId_idPedido` ON `${TABLE_NAME}` (`usuarioId`, `idPedido`)"
+          }
+        ]
+      },
+      {
+        "tableName": "pedido_calificaciones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `id` INTEGER NOT NULL, `idPedido` INTEGER NOT NULL, `valor` INTEGER, `fecha` TEXT, PRIMARY KEY(`usuarioId`, `id`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idPedido",
+            "columnName": "idPedido",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "valor",
+            "columnName": "valor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "fecha",
+            "columnName": "fecha",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pedido_calificaciones_usuarioId_idPedido",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "idPedido"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pedido_calificaciones_usuarioId_idPedido` ON `${TABLE_NAME}` (`usuarioId`, `idPedido`)"
+          }
+        ]
+      },
+      {
+        "tableName": "operaciones_pendientes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `usuarioId` INTEGER NOT NULL, `tipoOperacion` TEXT NOT NULL, `recursoId` TEXT NOT NULL, `payload` TEXT, `claveUnica` TEXT NOT NULL, `fechaCreacion` INTEGER NOT NULL, `fechaUltimoIntento` INTEGER, `estado` TEXT NOT NULL, `intentos` INTEGER NOT NULL, `ultimoMensajeError` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipoOperacion",
+            "columnName": "tipoOperacion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recursoId",
+            "columnName": "recursoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "claveUnica",
+            "columnName": "claveUnica",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaCreacion",
+            "columnName": "fechaCreacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaUltimoIntento",
+            "columnName": "fechaUltimoIntento",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intentos",
+            "columnName": "intentos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ultimoMensajeError",
+            "columnName": "ultimoMensajeError",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_operaciones_pendientes_usuarioId",
+            "unique": false,
+            "columnNames": [
+              "usuarioId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_operaciones_pendientes_usuarioId` ON `${TABLE_NAME}` (`usuarioId`)"
+          },
+          {
+            "name": "index_operaciones_pendientes_usuarioId_claveUnica",
+            "unique": false,
+            "columnNames": [
+              "usuarioId",
+              "claveUnica"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_operaciones_pendientes_usuarioId_claveUnica` ON `${TABLE_NAME}` (`usuarioId`, `claveUnica`)"
+          },
+          {
+            "name": "index_operaciones_pendientes_estado",
+            "unique": false,
+            "columnNames": [
+              "estado"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_operaciones_pendientes_estado` ON `${TABLE_NAME}` (`estado`)"
+          }
+        ]
+      },
+      {
+        "tableName": "metadatos_sincronizacion",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`usuarioId` INTEGER NOT NULL, `recurso` TEXT NOT NULL, `fechaUltimaSincronizacion` INTEGER, `estado` TEXT, `mensaje` TEXT, PRIMARY KEY(`usuarioId`, `recurso`))",
+        "fields": [
+          {
+            "fieldPath": "usuarioId",
+            "columnName": "usuarioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurso",
+            "columnName": "recurso",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaUltimaSincronizacion",
+            "columnName": "fechaUltimaSincronizacion",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mensaje",
+            "columnName": "mensaje",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "usuarioId",
+            "recurso"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4184356b17cabde509c7609e5e3873bd')"
+    ]
+  }
+}
