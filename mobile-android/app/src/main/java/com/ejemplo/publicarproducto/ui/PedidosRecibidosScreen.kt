@@ -16,6 +16,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,6 +41,15 @@ fun PedidosRecibidosScreen(
     modifier: Modifier = Modifier,
     viewModel: PedidosRecibidosViewModel = viewModel()
 ) {
+    var estado by remember { mutableStateOf("") }
+    var desde by remember { mutableStateOf("") }
+    var hasta by remember { mutableStateOf("") }
+    var productoId by remember { mutableStateOf("") }
+    var estadoAplicado by remember { mutableStateOf("") }
+    var desdeAplicado by remember { mutableStateOf("") }
+    var hastaAplicado by remember { mutableStateOf("") }
+    var productoIdAplicado by remember { mutableStateOf("") }
+    var errorFiltro by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         if (viewModel.pedidos.isEmpty() && !viewModel.cargando) viewModel.cargar()
         while (true) {
@@ -67,6 +77,44 @@ fun PedidosRecibidosScreen(
                 }
             }
         }
+        SelectorFiltro("Estado: todos", estado, listOf(
+            "" to "Todos", "REGISTRADO" to "Registrado", "EN_PROCESO" to "En proceso",
+            "ENTREGADO" to "Entregado", "CANCELADO" to "Cancelado"
+        )) { estado = it }
+        OutlinedTextField(desde, { desde = it.take(10) }, label = { Text("Desde (AAAA-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(hasta, { hasta = it.take(10) }, label = { Text("Hasta (AAAA-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+        val opcionesProducto = viewModel.pedidos.flatMap { it.productos }
+            .distinctBy { it.idProducto }
+            .mapNotNull { producto -> producto.idProducto?.let { it.toString() to producto.nombreProducto.orEmpty() } }
+        SelectorFiltro("Producto: todos", productoId, listOf("" to "Todos") + opcionesProducto) { productoId = it }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                errorFiltro = when {
+                    !fechaFiltroValida(desde) || !fechaFiltroValida(hasta) -> "Usa fechas reales con formato AAAA-MM-DD."
+                    desde.isNotBlank() && hasta.isNotBlank() && desde > hasta -> "La fecha inicial no puede superar la fecha final."
+                    else -> null
+                }
+                if (errorFiltro == null) {
+                    estadoAplicado = estado
+                    desdeAplicado = desde
+                    hastaAplicado = hasta
+                    productoIdAplicado = productoId
+                }
+            }) { Text("Filtrar") }
+            TextButton(onClick = {
+                estado = ""; desde = ""; hasta = ""; productoId = ""
+                estadoAplicado = ""; desdeAplicado = ""; hastaAplicado = ""; productoIdAplicado = ""
+                errorFiltro = null
+            }) { Text("Limpiar") }
+        }
+        errorFiltro?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        val pedidosFiltrados = viewModel.pedidos.filter { pedido ->
+            val fecha = pedido.fecha?.take(10)
+            (estadoAplicado.isBlank() || pedido.estado.equals(estadoAplicado, ignoreCase = true)) &&
+                (desdeAplicado.isBlank() || (fecha != null && fecha >= desdeAplicado)) &&
+                (hastaAplicado.isBlank() || (fecha != null && fecha <= hastaAplicado)) &&
+                (productoIdAplicado.isBlank() || pedido.productos.any { it.idProducto?.toString() == productoIdAplicado })
+        }
         viewModel.mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         when {
             viewModel.cargando -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -75,7 +123,8 @@ fun PedidosRecibidosScreen(
                 Button(onClick = viewModel::cargar, modifier = Modifier.fillMaxWidth()) { Text("Reintentar") }
             }
             viewModel.pedidos.isEmpty() -> Text("Aún no tienes pedidos que incluyan tus productos.")
-            else -> viewModel.pedidos.sortedByDescending { it.idPedido == viewModel.pedidoEnfocadoId }
+            pedidosFiltrados.isEmpty() -> Text("No hay pedidos que coincidan con los filtros.")
+            else -> pedidosFiltrados.sortedByDescending { it.idPedido == viewModel.pedidoEnfocadoId }
                 .forEach { pedido -> PedidoRecibidoCard(pedido, viewModel) }
         }
     }
