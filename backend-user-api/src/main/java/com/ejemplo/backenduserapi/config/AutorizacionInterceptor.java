@@ -30,7 +30,7 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
                 || ruta.startsWith("/api/pedidos/") || ruta.startsWith("/api/resenas/")) permiso = "COMPRAR";
         if (permiso == null && !ruta.equals("/api/auth/me") && !ruta.equals("/api/usuarios/me")
                 && !ruta.equals("/api/usuarios/me/foto") && !ruta.equals("/api/conversaciones")
-                && !ruta.startsWith("/api/conversaciones/") && !ruta.equals("/api/notificaciones")) return true;
+                && !ruta.startsWith("/api/conversaciones/") && !ruta.startsWith("/api/notificaciones")) return true;
         Usuario usuario = autorizacion.autenticar(request.getHeader("Authorization"));
         if (permiso != null) autorizacion.exigirPermiso(usuario, permiso);
         request.setAttribute("usuarioSesion", usuario);
