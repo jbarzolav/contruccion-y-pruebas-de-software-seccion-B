@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,6 +60,22 @@ public class ExperienciaCompraService {
         return pedidoRepository.findByClienteIdOrderByFechaDesc(usuario.getId()).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /** HU 55 - Filtra únicamente las compras del cliente autenticado. */
+    @Transactional(readOnly = true)
+    public List<PedidoExperienciaResponse> filtrarPedidos(Usuario usuario, String estado, LocalDate desde,
+                                                          LocalDate hasta, BigDecimal montoMin,
+                                                          BigDecimal montoMax, Integer pagina, Integer tamano) {
+        String estadoFiltro = FiltroPedidos.estado(estado);
+        FiltroPedidos.validar(desde, hasta, montoMin, montoMax, pagina, tamano);
+        List<PedidoExperienciaResponse> filtrados = listarPedidos(usuario).stream()
+                .filter(p -> estadoFiltro == null || estadoFiltro.equals(p.estado()))
+                .filter(p -> desde == null && hasta == null || FiltroPedidos.fechaEnRango(p.fecha(), desde, hasta))
+                .filter(p -> montoMin == null || p.total().compareTo(montoMin) >= 0)
+                .filter(p -> montoMax == null || p.total().compareTo(montoMax) <= 0)
+                .toList();
+        return FiltroPedidos.pagina(filtrados, pagina, tamano);
     }
 
     /**

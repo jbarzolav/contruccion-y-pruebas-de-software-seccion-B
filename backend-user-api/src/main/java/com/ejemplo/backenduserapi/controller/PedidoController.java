@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 
 /**
  * HU 15 - "Confirmar mi compra".
@@ -59,8 +61,22 @@ public class PedidoController {
 
     /** HU 46 - Lista explícita de pedidos propios; la identidad sale del Bearer. */
     @GetMapping("/me")
-    public List<PedidoExperienciaResponse> listarMisPedidos(HttpServletRequest httpRequest) {
-        return experienciaCompraService.listarPedidos((Usuario) httpRequest.getAttribute("usuarioSesion"));
+    public List<PedidoExperienciaResponse> listarMisPedidos(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta,
+            @RequestParam(required = false) BigDecimal montoMin,
+            @RequestParam(required = false) BigDecimal montoMax,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            HttpServletRequest httpRequest) {
+        Usuario usuario = (Usuario) httpRequest.getAttribute("usuarioSesion");
+        if (estado == null && desde == null && hasta == null && montoMin == null && montoMax == null
+                && page == null && size == null) {
+            return experienciaCompraService.listarPedidos(usuario);
+        }
+        return experienciaCompraService.filtrarPedidos(usuario,
+                estado, desde, hasta, montoMin, montoMax, page == null ? 0 : page, size == null ? 100 : size);
     }
 
     /**
