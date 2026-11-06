@@ -13,16 +13,47 @@ export default function PedidosRecibidos() {
   const [seleccion, setSeleccion] = useState({})
   const [guardandoId, setGuardandoId] = useState(null)
   const [notificaciones, setNotificaciones] = useState([])
+  const [criterios, setCriterios] = useState({ estado: '', desde: '', hasta: '', productoId: '' })
+  const [aplicados, setAplicados] = useState({})
+  const [pagina, setPagina] = useState(0)
 
   useEffect(() => {
-    listarPedidosRecibidos()
+    setCargando(true)
+    setError('')
+    listarPedidosRecibidos({ ...aplicados, page: pagina, size: 100 })
       .then(setPedidos)
       .catch((e) => setError(e?.response?.data?.messages?.[0] || 'No se pudieron cargar los pedidos recibidos.'))
       .finally(() => setCargando(false))
+  }, [aplicados, pagina])
+
+  useEffect(() => {
     listarNotificaciones().then(setNotificaciones).catch(() => {})
     const intervalo = window.setInterval(() => listarNotificaciones().then(setNotificaciones).catch(() => {}), 15000)
     return () => window.clearInterval(intervalo)
   }, [])
+
+  function aplicarFiltros(evento) {
+    evento.preventDefault()
+    if (criterios.desde && criterios.hasta && criterios.desde > criterios.hasta) {
+      setError('La fecha inicial no puede ser posterior a la fecha final.')
+      return
+    }
+    setError('')
+    setAplicados(criterios)
+    setPagina(0)
+  }
+
+  function limpiarFiltros() {
+    const vacios = { estado: '', desde: '', hasta: '', productoId: '' }
+    setCriterios(vacios)
+    setAplicados({})
+    setPagina(0)
+    setError('')
+  }
+
+  const productos = [...new Map(pedidos.flatMap((pedido) => pedido.productos || [])
+    .filter((producto) => producto.idProducto != null)
+    .map((producto) => [producto.idProducto, producto])).values()]
 
   /** HU 49.1 - Guarda el estado elegido y confirma el resultado. */
   async function guardarEstado(pedido) {
@@ -54,9 +85,28 @@ export default function PedidosRecibidos() {
   return <section className="tarjeta pedidos-recibidos">
     <h2>Pedidos recibidos</h2>
     <AvisosNuevaCompra notificaciones={notificaciones} />
+    <form className="filtros-pedidos" onSubmit={aplicarFiltros}>
+      <label className="campo">Estado
+        <select value={criterios.estado} onChange={(e) => setCriterios({ ...criterios, estado: e.target.value })}>
+          <option value="">Todos</option><option value="REGISTRADO">Registrado</option>
+          <option value="EN_PROCESO">En proceso</option><option value="ENTREGADO">Entregado</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </label>
+      <label className="campo">Desde<input type="date" value={criterios.desde} onChange={(e) => setCriterios({ ...criterios, desde: e.target.value })} /></label>
+      <label className="campo">Hasta<input type="date" value={criterios.hasta} onChange={(e) => setCriterios({ ...criterios, hasta: e.target.value })} /></label>
+      <label className="campo">Producto
+        <select value={criterios.productoId} onChange={(e) => setCriterios({ ...criterios, productoId: e.target.value })}>
+          <option value="">Todos</option>
+          {productos.map((producto) => <option value={producto.idProducto} key={producto.idProducto}>{producto.nombreProducto}</option>)}
+        </select>
+      </label>
+      <button className="btn-primario" type="submit">Aplicar filtros</button>
+      <button className="btn-secundario" type="button" onClick={limpiarFiltros}>Limpiar</button>
+    </form>
     {error && <div className="alerta error" role="alert">{error}</div>}
     {mensaje && <div className="alerta" role="status">{mensaje}</div>}
-    {!error && pedidos.length === 0 && <p>Aún no tienes pedidos que incluyan tus productos.</p>}
+    {!error && pedidos.length === 0 && <p>{Object.values(aplicados).some(Boolean) ? 'No hay pedidos que coincidan con los filtros.' : 'Aún no tienes pedidos que incluyan tus productos.'}</p>}
     {!error && pedidos.map((pedido) => {
       const permitidos = pedido.estadosPermitidos || []
       const elegido = seleccion[pedido.idPedido] || ''
@@ -89,5 +139,10 @@ export default function PedidosRecibidos() {
         </> : <p>Este pedido ya no admite cambios de estado.</p>}
       </article>
     })}
+    {!error && (pagina > 0 || pedidos.length === 100) && <div className="paginacion-pedidos">
+      <button className="btn-secundario" type="button" disabled={pagina === 0 || cargando} onClick={() => setPagina((actual) => actual - 1)}>Anterior</button>
+      <span>Página {pagina + 1}</span>
+      <button className="btn-secundario" type="button" disabled={pedidos.length < 100 || cargando} onClick={() => setPagina((actual) => actual + 1)}>Siguiente</button>
+    </div>}
   </section>
 }

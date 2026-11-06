@@ -13,8 +13,10 @@ const apiPedidos = configurarSesion(axios.create({
 }))
 
 // HU 48 - El backend deriva al vendedor de la sesión.
-export async function listarPedidosRecibidos() {
-  const { data } = await apiPedidosVendedor.get('')
+export async function listarPedidosRecibidos(filtros = {}) {
+  const params = Object.fromEntries(Object.entries({ page: 0, size: 100, ...filtros })
+    .filter(([, valor]) => valor !== '' && valor !== null && valor !== undefined))
+  const { data } = await apiPedidosVendedor.get('', { params })
   return data
 }
 
