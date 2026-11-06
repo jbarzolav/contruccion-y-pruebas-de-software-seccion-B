@@ -4523,3 +4523,24 @@ body {
   color: #76531c;
   font-size: 0.9rem;
 }
+.filtros-pedidos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: end;
+  gap: 12px;
+  margin: 16px 0 22px;
+  padding: 16px;
+  border: 1px solid #dedbd5;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.filtros-pedidos .campo { margin: 0; }
+.filtros-pedidos button { min-height: 44px; }
+.paginacion-pedidos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 18px 0;
+}

@@ -210,8 +210,10 @@ export async function confirmarCompra() {
 }
 
 // HU 41/42 - historial y experiencia de compras; identidad desde la sesión.
-export async function listarPedidos() {
-  const { data } = await apiPedidos.get('/me')
+export async function listarPedidos(filtros = {}) {
+  const params = Object.fromEntries(Object.entries({ page: 0, size: 100, ...filtros })
+    .filter(([, valor]) => valor !== '' && valor !== null && valor !== undefined))
+  const { data } = await apiPedidos.get('/me', { params })
   return data
 }
 
