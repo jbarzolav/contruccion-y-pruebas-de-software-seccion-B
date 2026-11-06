@@ -71,3 +71,50 @@ Respuesta `200`:
 Las líneas y el total se leen de la operación registrada; no se recalculan con el precio actual del catálogo.
 
 Errores: `400` identificador con formato inválido; `401` sin sesión; `403` el pedido pertenece a otro cliente; `404` el pedido no existe.
+
+## API de notificaciones — HU53 (bandeja) y HU54 (lectura)
+
+Los errores usan el formato `{ "status": <http>, "error": <etiqueta>, "messages": [<detalle>] }`. Los tres endpoints exigen sesión Bearer. Además, `POST /api/conversaciones` y `POST /api/conversaciones/{id}/mensajes` generan un aviso `NUEVO_MENSAJE` para el participante que no escribió el mensaje (una sola vez por mensaje, mediante la clave `mensaje:{id}`).
+
+### GET `/api/notificaciones/bandeja` — HU53
+
+Parámetros de consulta, todos opcionales y combinables:
+
+| Parámetro | Valores admitidos | Defecto |
+|-----------|-------------------|---------|
+| `tipo` | `CAMBIO_ESTADO_PEDIDO`, `NUEVA_COMPRA`, `NUEVO_MENSAJE` | los tres tipos |
+| `estado` | `PENDIENTE`, `LEIDA` | ambos estados |
+| `desde` / `hasta` | `AAAA-MM-DD` (día completo) o `AAAA-MM-DDTHH:MM` | sin rango |
+| `page` | entero ≥ 0 | `0` |
+| `size` | entero 1–50 | `20` |
+
+La consulta pagina con orden estable `fecha DESC, id DESC` y solo devuelve avisos del usuario autenticado. `pendientes` es el total de avisos sin leer del usuario en **toda** su bandeja, sin aplicar los filtros de la consulta.
+
+Respuesta `200`:
+
+| Campo | Descripción |
+|-------|-------------|
+| `notificaciones[]` | `idNotificacion`, `tipo`, `resumen`, `fecha`, `estado`, `idPedido`, `enlace`, `idConversacion`, `fechaLectura` |
+| `pagina` / `tamano` | Página devuelta y tamaño de página solicitado |
+| `totalElementos` / `totalPaginas` / `tieneSiguiente` | Totales de la consulta filtrada |
+| `pendientes` | Total global de avisos pendientes del usuario |
+
+`enlace` apunta a `/pedidos/{id}` en `CAMBIO_ESTADO_PEDIDO`, a `/pedidos-recibidos#pedido-{id}` en `NUEVA_COMPRA` y a `/consultas?c={idConversacion}` en `NUEVO_MENSAJE` (en Android se usa `idPedido`/`idConversacion` para navegar).
+
+Errores: `400` tipo o estado desconocidos, página/tamaño fuera de rango, fecha mal formada o rango `desde` posterior a `hasta`; `401` sin sesión.
+
+### PATCH `/api/notificaciones/{idNotificacion}/leida` — HU54
+
+Marca una notificación propia como leída. Es idempotente: una notificación ya leída conserva su primera `fechaLectura`.
+
+Respuesta `200`: `idNotificacion`, `estado` (`LEIDA`), `fechaLectura`, `pendientes` (recalculado).
+
+Errores: `400` identificador inválido (no numérico, `0` o negativo); `401` sin sesión; `403` la notificación pertenece a otro usuario; `404` no existe.
+
+### PATCH `/api/notificaciones/leidas` — HU54
+
+Marca todas las notificaciones pendientes del usuario autenticado en una sola sentencia `UPDATE` dentro de la transacción: o se aplican todas o ninguna. No toca las avisos de otros usuarios.
+
+Respuesta `200`: `marcadas` (avisos actualizados en esta operación; `0` si ya no había pendientes), `pendientes` (quedan `0`).
+
+Errores: `401` sin sesión.

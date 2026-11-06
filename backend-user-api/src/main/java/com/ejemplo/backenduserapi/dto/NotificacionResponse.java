@@ -2,6 +2,12 @@ package com.ejemplo.backenduserapi.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * HU53 - Notificación de la bandeja unificada.
+ *
+ * Los campos `idPedido` y `idConversacion` identifican el destino del enlace según
+ * el tipo; `fechaLectura` queda nulo mientras la notificación sigue pendiente.
+ */
 public record NotificacionResponse(
         Long idNotificacion,
         String tipo,
@@ -9,5 +15,7 @@ public record NotificacionResponse(
         LocalDateTime fecha,
         String estado,
         Long idPedido,
-        String enlace
+        String enlace,
+        Long idConversacion,
+        LocalDateTime fechaLectura
 ) { }

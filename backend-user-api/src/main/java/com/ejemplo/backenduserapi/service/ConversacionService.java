@@ -22,16 +22,18 @@ public class ConversacionService {
     private final MensajeRepository mensajes;
     private final ProductoRepository productos;
     private final UsuarioRepository usuarios;
+    private final NotificacionService notificaciones;
     private final int longitudMaxima;
 
     public ConversacionService(ConversacionRepository conversaciones, MensajeRepository mensajes,
-            ProductoRepository productos, UsuarioRepository usuarios,
+            ProductoRepository productos, UsuarioRepository usuarios, NotificacionService notificaciones,
             @Value("${app.conversaciones.longitud-maxima:2000}") int longitudMaxima) {
         if (longitudMaxima < 1 || longitudMaxima > 10000) throw new IllegalArgumentException("Longitud máxima: 1 a 10000.");
         this.conversaciones = conversaciones;
         this.mensajes = mensajes;
         this.productos = productos;
         this.usuarios = usuarios;
+        this.notificaciones = notificaciones;
         this.longitudMaxima = longitudMaxima;
     }
     public int getLongitudMaxima() { return longitudMaxima; }
@@ -50,7 +52,8 @@ public class ConversacionService {
         Conversacion conversacion = conversaciones.findByProducto_IdAndCliente_IdAndVendedor_Id(
                 productoId, cliente.getId(), vendedor.getId())
                 .orElseGet(() -> conversaciones.save(new Conversacion(producto, cliente, vendedor)));
-        mensajes.save(new Mensaje(conversacion, cliente, contenido));
+        // HU 53 - El vendedor recibe un aviso cuando el cliente escribe.
+        notificaciones.notificarMensaje(mensajes.save(new Mensaje(conversacion, cliente, contenido)));
         return respuesta(conversacion);
     }
 
@@ -59,7 +62,10 @@ public class ConversacionService {
         Conversacion conversacion = buscar(id);
         if (!conversacion.getVendedor().getId().equals(vendedor.getId()))
             throw error(HttpStatus.FORBIDDEN, "No participas como vendedor en esta conversación.");
-        return MensajeResponse.desde(mensajes.save(new Mensaje(conversacion, vendedor, validarMensaje(texto))));
+        // HU 53 - El cliente recibe un aviso cuando el vendedor responde.
+        Mensaje mensaje = mensajes.save(new Mensaje(conversacion, vendedor, validarMensaje(texto)));
+        notificaciones.notificarMensaje(mensaje);
+        return MensajeResponse.desde(mensaje);
     }
 
     @Transactional(readOnly = true)
