@@ -19,6 +19,7 @@ import Conversaciones from './components/Conversaciones.jsx'
 import Pedidos from './components/Pedidos.jsx'
 import PedidosRecibidos from './components/PedidosRecibidos.jsx'
 import DetallePedido from './components/DetallePedido.jsx'
+import BandejaNotificaciones from './components/BandejaNotificaciones.jsx'
 import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -230,6 +231,7 @@ export default function App() {
                         {!sesion && <NavLink to="/login">Iniciar sesión</NavLink>}
                         {sesion && <NavLink to="/perfil">Mi perfil</NavLink>}
                         {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <NavLink to="/consultas">Consultas</NavLink>}
+                        {sesion && <NavLink to="/notificaciones">Notificaciones</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/pedidos">Mis compras</NavLink>}
                         {sesion?.rol === 'VENDEDOR' && <NavLink to="/pedidos-recibidos">Pedidos recibidos</NavLink>}
@@ -272,6 +274,8 @@ export default function App() {
                 </div>}
                 <Routes>
                     <Route path="/consultas" element={<AccesoAutenticado><Conversaciones key={sesion?.token} /></AccesoAutenticado>} />
+                    {/* HU 53/HU 54 - Bandeja unificada con filtros y lectura de avisos. */}
+                    <Route path="/notificaciones" element={<AccesoAutenticado><BandejaNotificaciones key={sesion?.token} /></AccesoAutenticado>} />
                     {/* Inicio: catálogo con búsqueda (HU 06) y orden (HU 09)
                         + insignias Destacado/Agotado (HU 07/HU 19) */}
                     <Route

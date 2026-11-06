@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { listarConversaciones, listarMensajesConversacion, responderConsulta } from '../api/conversaciones.js'
 import { urlImagen } from '../api/productos.js'
 import { useSesion } from '../api/sesion.js'
@@ -8,6 +8,9 @@ import FormularioConsulta from './FormularioConsulta.jsx'
 /** HU38 - Lista conversaciones propias y permite consultar el historial paginado. */
 export default function Conversaciones() {
     const sesion = useSesion()
+    const ubicacion = useLocation()
+    // HU 53 - Enlace ?c= desde la bandeja: abre la conversación indicada.
+    const conversacionInicial = new URLSearchParams(ubicacion.search).get('c')
     const [lista, setLista] = useState([])
     const [seleccion, setSeleccion] = useState(null)
     const [mensajes, setMensajes] = useState([])
@@ -23,7 +26,16 @@ export default function Conversaciones() {
         let vigente = true
         setCargando(true)
         setError('')
-        listarConversaciones().then(data => { if (vigente) setLista(data) })
+        listarConversaciones().then(data => {
+            if (!vigente) return
+            setLista(data)
+            // HU 53 - Selección aditiva: solo si aún no hay conversación abierta.
+            const idInicial = Number(conversacionInicial)
+            if (Number.isInteger(idInicial) && idInicial > 0 && !seleccion &&
+                data.some(c => c.idConversacion === idInicial)) {
+                setSeleccion(idInicial)
+            }
+        })
             .catch(err => { if (vigente) setError(err?.response?.data?.messages?.[0] || 'No se pudieron cargar las consultas.') })
             .finally(() => { if (vigente) setCargando(false) })
         return () => { vigente = false }

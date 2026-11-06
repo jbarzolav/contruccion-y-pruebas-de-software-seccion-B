@@ -23,6 +23,8 @@ export function fechaHoraPedidoVisible(valor, alternativa = 'Sin información') 
 export function resumenNotificacionVisible(aviso) {
   const idPedido = aviso.idPedido ?? ''
   if (aviso.tipo === 'NUEVA_COMPRA') return `Nueva compra recibida · N.º de compra: ${idPedido}.`
+  // HU 53 - El aviso de mensaje ya llega redactado por el backend.
+  if (aviso.tipo === 'NUEVO_MENSAJE') return aviso.resumen || 'Nuevo mensaje en una consulta.'
 
   const estado = String(aviso.resumen || '').match(/cambió a\s+(.+?)[.]?$/i)?.[1]
   return estado
