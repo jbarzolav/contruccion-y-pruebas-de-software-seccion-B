@@ -21,7 +21,8 @@ class ConversacionServiceTest {
     MensajeRepository mensajes = mock(MensajeRepository.class);
     ProductoRepository productos = mock(ProductoRepository.class);
     UsuarioRepository usuarios = mock(UsuarioRepository.class);
-    ConversacionService servicio = new ConversacionService(conversaciones, mensajes, productos, usuarios, 20);
+    NotificacionService notificaciones = mock(NotificacionService.class);
+    ConversacionService servicio = new ConversacionService(conversaciones, mensajes, productos, usuarios, notificaciones, 20);
     Usuario cliente = usuario(1L, Rol.CLIENTE), vendedor = usuario(2L, Rol.VENDEDOR);
     Producto producto = new Producto();
     Conversacion conversacion;

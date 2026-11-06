@@ -4,6 +4,7 @@ import com.ejemplo.backenduserapi.client.GeminiClient;
 import com.ejemplo.backenduserapi.repository.CarritoRepository;
 import com.ejemplo.backenduserapi.repository.DetallePedidoRepository;
 import com.ejemplo.backenduserapi.repository.ItemCarritoRepository;
+import com.ejemplo.backenduserapi.repository.NotificacionRepository;
 import com.ejemplo.backenduserapi.repository.PedidoRepository;
 import com.ejemplo.backenduserapi.repository.ProductoRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,6 +68,9 @@ class FlujoIntegralPulgaTecTest extends SesionControllerTest {
     @Autowired
     private DetallePedidoRepository detallePedidoRepository;
 
+    @Autowired
+    private NotificacionRepository notificacionRepository;
+
     /** HU 23 - Cliente autenticado distinto del vendedor del recorrido. */
     private static final long CLIENTE = 2L;
 
@@ -96,6 +100,9 @@ class FlujoIntegralPulgaTecTest extends SesionControllerTest {
         carritoRepository.deleteAll();
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
+        // HU 53 - El pedido genera un aviso NUEVA_COMPRA en la BD compartida:
+        // se limpia aquí para no afectar el conteo de NotificacionControllerTest.
+        notificacionRepository.deleteAll();
     }
 
     @Test
