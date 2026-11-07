@@ -33,6 +33,11 @@ internal fun resumenNotificacionVisible(aviso: NotificacionResponse): String {
     if (aviso.tipo == "NUEVO_MENSAJE") {
         return aviso.resumen ?: "Nuevo mensaje en una consulta."
     }
+    // HU 58 - El aviso de stock bajo identifica la publicación del vendedor.
+    if (aviso.tipo == "STOCK_BAJO") {
+        return aviso.resumen
+            ?: "Stock bajo en la publicación N.º ${aviso.productoId ?: "-"}."
+    }
 
     val estado = Regex("cambió a\\s+(.+?)[.]?$", RegexOption.IGNORE_CASE)
         .find(aviso.resumen.orEmpty())?.groupValues?.get(1)?.removeSuffix(".")

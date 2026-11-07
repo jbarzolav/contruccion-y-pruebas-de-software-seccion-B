@@ -6,14 +6,18 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ejemplo.publicarproducto.data.ColaOperacionesRepositorio
 import com.ejemplo.publicarproducto.data.ContenedorDatos
+import com.ejemplo.publicarproducto.data.MetricasRepositorio
 import com.ejemplo.publicarproducto.data.MonitorConectividad
 import com.ejemplo.publicarproducto.data.NotificacionesRepositorio
 import com.ejemplo.publicarproducto.data.PedidosRepositorio
 import com.ejemplo.publicarproducto.data.ProveedorDatos
+import com.ejemplo.publicarproducto.data.UmbralStockRepositorio
 import com.ejemplo.publicarproducto.local.Ambitos
 import com.ejemplo.publicarproducto.local.EntidadMetadatoSincronizacion
+import com.ejemplo.publicarproducto.local.EntidadMetricasVentas
 import com.ejemplo.publicarproducto.local.EntidadNotificacion
 import com.ejemplo.publicarproducto.local.EntidadPedido
+import com.ejemplo.publicarproducto.local.EntidadUmbralStock
 import com.ejemplo.publicarproducto.local.EstadosOperacion
 import com.ejemplo.publicarproducto.local.PulgaTecDatabase
 import com.ejemplo.publicarproducto.local.RecursosSincronizacion
@@ -74,12 +78,18 @@ class CierreSesionDatosLocalesTest {
     private fun contenedor(): ContenedorDatos {
         val notificaciones = NotificacionesRepositorio(bd, servidor.api, cola)
         val pedidos = PedidosRepositorio(bd, servidor.api, cola)
+        // HU 57/HU 58 - El panel de métricas y los umbrales de stock también
+        // son información local del usuario.
+        val metricas = MetricasRepositorio(bd, servidor.api)
+        val umbrales = UmbralStockRepositorio(bd, servidor.api, cola, notificaciones)
         return ContenedorDatos(
             contexto = contexto,
             bd = bd,
             cola = cola,
             notificaciones = notificaciones,
             pedidos = pedidos,
+            metricas = metricas,
+            umbrales = umbrales,
             metadatos = bd.metadatoSincronizacionDao(),
             conectividad = MonitorConectividad(contexto),
             sesion = sesion,
@@ -90,7 +100,8 @@ class CierreSesionDatosLocalesTest {
                 notificaciones = notificaciones,
                 pedidos = pedidos,
                 metadatos = bd.metadatoSincronizacionDao(),
-                sesion = sesion
+                sesion = sesion,
+                umbrales = umbrales
             )
         )
     }
@@ -147,6 +158,31 @@ class CierreSesionDatosLocalesTest {
                 mensaje = "Sincronizado"
             )
         )
+        // HU 57 - El último panel de métricas de ventas del usuario.
+        bd.metricasDao().guardar(
+            EntidadMetricasVentas(
+                usuarioId = id,
+                clavePeriodo = "2024-05-01|2024-05-31|true",
+                payload = """{"cantidadPedidos":3}""",
+                fechaSincronizacion = 1L
+            )
+        )
+        // HU 58 - Los umbrales de stock del usuario.
+        bd.umbralStockDao().guardarUno(
+            EntidadUmbralStock(
+                usuarioId = id,
+                idProducto = 7L,
+                nombre = "Café molido",
+                imagenUrl = null,
+                stock = 4,
+                umbral = 5,
+                stockBajo = true,
+                alertaNotificada = false,
+                fechaActualizacion = null,
+                umbralPendienteLocal = null,
+                fechaSincronizacion = 1L
+            )
+        )
     }
 
     @Test
@@ -157,6 +193,9 @@ class CierreSesionDatosLocalesTest {
         assertNull(bd.pedidoDao().buscarPedido(otroUsuarioId, 55L, Ambitos.COMPRAS))
         assertTrue(cola.observarPendientes(otroUsuarioId).first().isEmpty())
         assertNull(bd.metadatoSincronizacionDao().buscar(otroUsuarioId, RecursosSincronizacion.OPERACIONES))
+        // HU 57/HU 58 - Tampoco las copias locales de métricas ni umbrales.
+        assertNull(bd.metricasDao().buscar(otroUsuarioId))
+        assertNull(bd.umbralStockDao().buscar(otroUsuarioId, 7L))
     }
 
     @Test
@@ -183,6 +222,16 @@ class CierreSesionDatosLocalesTest {
         assertNull(
             "Los metadatos no deben quedar en el dispositivo",
             bd.metadatoSincronizacionDao().buscar(usuarioId, RecursosSincronizacion.OPERACIONES)
+        )
+        // HU 57 - El panel de métricas es información del usuario: se borra.
+        assertNull(
+            "Las metricas no deben quedar en el dispositivo",
+            bd.metricasDao().buscar(usuarioId)
+        )
+        // HU 58 - Los umbrales de stock son información del usuario: se borran.
+        assertNull(
+            "Los umbrales no deben quedar en el dispositivo",
+            bd.umbralStockDao().buscar(usuarioId, 7L)
         )
         // La sesion queda invalidada.
         assertTrue(!sesion.haySesion())

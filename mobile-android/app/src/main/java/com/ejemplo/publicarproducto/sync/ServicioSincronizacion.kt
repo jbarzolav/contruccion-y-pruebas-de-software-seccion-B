@@ -58,7 +58,9 @@ class ServicioSincronizacion(
     private val notificaciones: NotificacionesRepositorio,
     private val pedidos: PedidosRepositorio,
     private val metadatos: MetadatoSincronizacionDao,
-    private val sesion: SessionManager
+    private val sesion: SessionManager,
+    /** HU 58 - Umbrales de stock: se sincronizan con la cola existente. */
+    private val umbrales: com.ejemplo.publicarproducto.data.UmbralStockRepositorio? = null
 ) {
 
     /** Número máximo de vueltas del sincronizador en una misma ejecución. */
@@ -90,6 +92,9 @@ class ServicioSincronizacion(
                         sincronizarLecturaMasiva(usuarioId, operacion)
                     TiposOperacion.ACTUALIZAR_ESTADO_PEDIDO ->
                         sincronizarEstadoPedido(usuarioId, operacion)
+                    // HU 58 - Umbral de stock (PUT idempotente: reintentar es seguro).
+                    TiposOperacion.ACTUALIZAR_UMBRAL_STOCK ->
+                        sincronizarUmbralStock(usuarioId, operacion)
                     else -> ResultadoOperacion.Rechazada(
                         "Tipo de operación desconocido: ${operacion.tipoOperacion}."
                     )
@@ -318,6 +323,60 @@ class ServicioSincronizacion(
     private fun yaAplicado(mensaje: String, estadoDestino: String): Boolean =
         mensaje.contains("ya se encuentra en estado", ignoreCase = true) &&
             mensaje.contains(estadoDestino, ignoreCase = true)
+
+    /**
+     * HU 58 - Guarda el umbral de stock de una publicación.
+     *
+     * El endpoint es un PUT idempotente: repetir el mismo valor no cambia
+     * nada, así que un reintento tras un error temporal siempre es seguro y
+     * no puede duplicar avisos.
+     */
+    private suspend fun sincronizarUmbralStock(
+        usuarioId: Long,
+        operacion: EntidadOperacionPendiente
+    ): ResultadoOperacion {
+        val idProducto = operacion.recursoId.toLongOrNull()
+            ?: return ResultadoOperacion.Rechazada("Identificador de publicación inválido.")
+        val payload = cola.leerPayload(operacion)
+        val umbral = payload["umbral"]?.toIntOrNull()
+            ?: return ResultadoOperacion.Rechazada("La operación no indica el umbral de destino.")
+
+        return when (
+            val resultado = ejecutarPeticion {
+                api.guardarUmbralStock(idProducto, com.ejemplo.publicarproducto.model.UmbralStockRequest(umbral))
+            }
+        ) {
+            is ResultadoApi.Exito -> {
+                umbrales?.aplicarUmbralServidor(usuarioId = usuarioId, cuerpo = resultado.valor)
+                cola.confirmar(operacion.id)
+                ResultadoOperacion.Confirmada
+            }
+            is ResultadoApi.Error -> when {
+                resultado.sesionExpirada -> {
+                    cola.requerirSesion(operacion.id, resultado.mensaje)
+                    ResultadoOperacion.SesionExpirada(resultado.mensaje)
+                }
+                resultado.temporal -> {
+                    if (operacion.intentos + 1 >= MAX_INTENTOS_OPERACION) {
+                        cola.rechazar(
+                            operacion.id,
+                            "Se agotaron los reintentos: ${resultado.mensaje}"
+                        )
+                        umbrales?.limpiarUmbralPendiente(usuarioId, idProducto)
+                        ResultadoOperacion.Rechazada(resultado.mensaje)
+                    } else {
+                        cola.registrarIntento(operacion.id, resultado.mensaje)
+                        ResultadoOperacion.Temporal(resultado.mensaje)
+                    }
+                }
+                else -> {
+                    cola.rechazar(operacion.id, resultado.mensaje)
+                    umbrales?.limpiarUmbralPendiente(usuarioId, idProducto)
+                    ResultadoOperacion.Rechazada(resultado.mensaje)
+                }
+            }
+        }
+    }
 
     /** Guarda el resultado de la sincronización para poder informarlo en la UI. */
     private suspend fun registrar(usuarioId: Long, estado: String, mensaje: String) {

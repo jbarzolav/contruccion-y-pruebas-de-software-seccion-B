@@ -79,6 +79,28 @@ interface NotificacionDao {
     @Query("SELECT * FROM notificaciones WHERE usuarioId = :usuarioId AND idNotificacion = :idNotificacion")
     suspend fun buscar(usuarioId: Long, idNotificacion: Long): EntidadNotificacion?
 
+    /**
+     * HU 58 - Avisos de stock bajo del usuario. Se leen de la MISMA tabla de
+     * notificaciones: no existe una bandeja paralela para el stock.
+     */
+    @Query(
+        """
+        SELECT * FROM notificaciones
+        WHERE usuarioId = :usuarioId AND tipo = 'STOCK_BAJO'
+        ORDER BY fecha DESC, idNotificacion DESC
+        """
+    )
+    fun observarStockBajo(usuarioId: Long): Flow<List<EntidadNotificacion>>
+
+    @Query(
+        """
+        SELECT * FROM notificaciones
+        WHERE usuarioId = :usuarioId AND tipo = 'STOCK_BAJO'
+        ORDER BY fecha DESC, idNotificacion DESC
+        """
+    )
+    suspend fun listarStockBajo(usuarioId: Long): List<EntidadNotificacion>
+
     @Upsert
     suspend fun guardarTodas(notificaciones: List<EntidadNotificacion>)
 
@@ -458,7 +480,6 @@ interface OperacionPendienteDao {
 /** Información de sincronización (fecha, resultado y mensaje) por recurso. */
 @Dao
 interface MetadatoSincronizacionDao {
-
     @Query("SELECT * FROM metadatos_sincronizacion WHERE usuarioId = :usuarioId AND recurso = :recurso")
     fun observar(usuarioId: Long, recurso: String): Flow<EntidadMetadatoSincronizacion?>
 
@@ -469,5 +490,73 @@ interface MetadatoSincronizacionDao {
     suspend fun guardar(metadato: EntidadMetadatoSincronizacion)
 
     @Query("DELETE FROM metadatos_sincronizacion WHERE usuarioId = :usuarioId")
+    suspend fun borrarUsuario(usuarioId: Long)
+}
+
+/**
+ * HU 57 - Último resultado válido del panel de métricas.
+ *
+ * Solo se conserva un resultado por usuario: la tabla se sobrescribe con
+ * cada respuesta válida del backend.
+ */
+@Dao
+interface MetricasDao {
+
+    @Query("SELECT * FROM metricas_ventas WHERE usuarioId = :usuarioId")
+    fun observar(usuarioId: Long): Flow<EntidadMetricasVentas?>
+
+    @Query("SELECT * FROM metricas_ventas WHERE usuarioId = :usuarioId")
+    suspend fun buscar(usuarioId: Long): EntidadMetricasVentas?
+
+    @Upsert
+    suspend fun guardar(metricas: EntidadMetricasVentas)
+
+    @Query("DELETE FROM metricas_ventas WHERE usuarioId = :usuarioId")
+    suspend fun borrarUsuario(usuarioId: Long)
+}
+
+/** HU 58 - Umbrales de stock del vendedor (panel de publicaciones). */
+@Dao
+interface UmbralStockDao {
+
+    @Query("SELECT * FROM umbrales_stock WHERE usuarioId = :usuarioId ORDER BY nombre ASC")
+    fun observar(usuarioId: Long): Flow<List<EntidadUmbralStock>>
+
+    @Query("SELECT * FROM umbrales_stock WHERE usuarioId = :usuarioId ORDER BY nombre ASC")
+    suspend fun listar(usuarioId: Long): List<EntidadUmbralStock>
+
+    @Query("SELECT * FROM umbrales_stock WHERE usuarioId = :usuarioId AND idProducto = :idProducto")
+    suspend fun buscar(usuarioId: Long, idProducto: Long): EntidadUmbralStock?
+
+    @Upsert
+    suspend fun guardar(umbrales: List<EntidadUmbralStock>)
+
+    @Upsert
+    suspend fun guardarUno(umbral: EntidadUmbralStock)
+
+    /**
+     * Umbral propuesto en el dispositivo que el servidor todavía no confirmó.
+     * NO pisa el umbral oficial: el backend siempre tiene prioridad.
+     */
+    @Query(
+        """
+        UPDATE umbrales_stock
+        SET umbralPendienteLocal = :umbral
+        WHERE usuarioId = :usuarioId AND idProducto = :idProducto
+        """
+    )
+    suspend fun marcarUmbralPendienteLocal(usuarioId: Long, idProducto: Long, umbral: Int)
+
+    /** El servidor confirmó el umbral: se descarta la propuesta local. */
+    @Query(
+        """
+        UPDATE umbrales_stock
+        SET umbralPendienteLocal = NULL
+        WHERE usuarioId = :usuarioId AND idProducto = :idProducto
+        """
+    )
+    suspend fun limpiarUmbralPendienteLocal(usuarioId: Long, idProducto: Long)
+
+    @Query("DELETE FROM umbrales_stock WHERE usuarioId = :usuarioId")
     suspend fun borrarUsuario(usuarioId: Long)
 }

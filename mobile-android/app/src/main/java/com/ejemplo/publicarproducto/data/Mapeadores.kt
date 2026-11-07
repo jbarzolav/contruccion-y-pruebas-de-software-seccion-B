@@ -45,6 +45,8 @@ object Mapeadores {
         idConversacion = dto.idConversacion,
         fechaLectura = if (pendienteLecturaLocal) Fechas.ahora() else Fechas.normalizar(dto.fechaLectura),
         fechaSincronizacion = ahora,
+        // HU 58 - La publicación se conserva solo en los avisos de stock bajo.
+        productoId = dto.productoId,
         pendienteLecturaLocal = pendienteLecturaLocal
     )
 
@@ -57,7 +59,8 @@ object Mapeadores {
         idPedido = entidad.idPedido,
         enlace = entidad.enlace,
         idConversacion = entidad.idConversacion,
-        fechaLectura = entidad.fechaLectura
+        fechaLectura = entidad.fechaLectura,
+        productoId = entidad.productoId
     )
 
     /** Metadatos de la página local de la bandeja. */

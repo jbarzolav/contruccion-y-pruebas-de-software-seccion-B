@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.NotificationImportant
+import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Person
@@ -64,6 +66,8 @@ import com.ejemplo.publicarproducto.ui.RecuperacionScreen
 import com.ejemplo.publicarproducto.ui.RegistroScreen
 import com.ejemplo.publicarproducto.ui.MisProductosScreen
 import com.ejemplo.publicarproducto.ui.MisPedidosScreen
+import com.ejemplo.publicarproducto.ui.MetricasVentasScreen
+import com.ejemplo.publicarproducto.ui.UmbralesStockScreen
 import com.ejemplo.publicarproducto.ui.DetallePedidoScreen
 import com.ejemplo.publicarproducto.ui.PedidosRecibidosScreen
 import com.ejemplo.publicarproducto.ui.PlanPremiumScreen
@@ -87,7 +91,11 @@ private val PESTANAS = listOf(
     Pestana(6, "Auditoría", Icons.Default.History),
     Pestana(7, "Mi perfil", Icons.Default.Person),
     Pestana(9, "Pedidos", Icons.Default.History),
-    Pestana(10, "Ventas", Icons.Default.History)
+    Pestana(10, "Ventas", Icons.Default.History),
+    // HU 57 - métricas de ventas del vendedor.
+    Pestana(12, "Métricas", Icons.Default.QueryStats),
+    // HU 58 - umbrales de stock del vendedor.
+    Pestana(13, "Umbrales", Icons.Default.NotificationImportant)
 )
 
 /**
@@ -151,6 +159,7 @@ class MainActivity : ComponentActivity() {
                             7 -> usuario != null
                             9 -> puedeComprar
                             10 -> usuario?.rol == "VENDEDOR"
+                            12, 13 -> usuario?.rol == "VENDEDOR"
                             else -> true
                         }
                     }
@@ -444,6 +453,10 @@ class MainActivity : ComponentActivity() {
                                         conversacionPendienteId = id
                                         pestana = 8
                                     },
+                                    // HU 58 - El aviso de stock bajo abre la publicación.
+                                    onVerPublicacion = { id ->
+                                        productoDetalleId = id
+                                    },
                                     modifier = Modifier.padding(padding)
                                 )
                                 // HU 06/07/08/09 - Inicio: catálogo con búsqueda y orden
@@ -504,6 +517,16 @@ class MainActivity : ComponentActivity() {
 
                                 // HU 48 - pedidos recibidos con solo los productos del vendedor.
                                 10 -> PedidosRecibidosScreen(modifier = Modifier.padding(padding))
+
+                                // HU 57 - métricas de ventas del vendedor.
+                                12 -> MetricasVentasScreen(modifier = Modifier.padding(padding))
+
+                                // HU 58 - umbrales de stock y avisos de stock bajo.
+                                13 -> UmbralesStockScreen(
+                                    modifier = Modifier.padding(padding),
+                                    onEditarPublicacion = { id -> productoEnEdicionId = id },
+                                    onVerPublicacion = { id -> productoDetalleId = id }
+                                )
 
                                 // HU 18 - beneficios Premium
                                 else -> PlanPremiumScreen(

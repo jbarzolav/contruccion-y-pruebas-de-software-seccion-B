@@ -49,6 +49,18 @@ class ServidorDePruebas {
     /** Ruta de la última petición recibida. */
     fun ultimaRuta(): String = servidor.takeRequest().path.orEmpty()
 
+    /**
+     * Rutas de TODAS las peticiones recibidas, en orden de llegada.
+     * No bloquea: solo consume las peticiones que ya se han recibido.
+     */
+    fun rutasRecibidas(): List<String> {
+        val rutas = mutableListOf<String>()
+        while (servidor.requestCount > rutas.size) {
+            rutas.add(servidor.takeRequest().path.orEmpty())
+        }
+        return rutas
+    }
+
     /** Número de peticiones recibidas. */
     fun peticionesRecibidas(): Int = servidor.requestCount
 

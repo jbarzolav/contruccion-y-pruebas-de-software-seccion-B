@@ -11,5 +11,7 @@ data class NotificacionResponse(
     // HU 53 - Destino del aviso según el tipo; nulo en los avisos de pedido.
     val idConversacion: Long? = null,
     // HU 54 - Fecha en que se marcó como leída; nulo mientras sigue pendiente.
-    val fechaLectura: String? = null
+    val fechaLectura: String? = null,
+    // HU 58 - Publicación del aviso de stock bajo; nulo en los demás avisos.
+    val productoId: Long? = null
 )

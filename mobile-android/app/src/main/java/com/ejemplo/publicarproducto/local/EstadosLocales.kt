@@ -17,6 +17,13 @@ object TiposOperacion {
 
     /** Actualizar el estado de un pedido (HU 49). */
     const val ACTUALIZAR_ESTADO_PEDIDO = "ACTUALIZAR_ESTADO_PEDIDO"
+
+    /**
+     * HU 58 - Guardar el umbral de stock de una publicación.
+     * El PUT es idempotente: repetirlo no cambia nada, así que se puede
+     * encolar y reintentar sin riesgo de efectos duplicados.
+     */
+    const val ACTUALIZAR_UMBRAL_STOCK = "ACTUALIZAR_UMBRAL_STOCK"
 }
 
 /** Estados de una operación de la cola. */
@@ -57,6 +64,8 @@ object RecursosSincronizacion {
     const val BANDEJA = "BANDEJA"
     const val PEDIDOS = "PEDIDOS"
     const val OPERACIONES = "OPERACIONES"
+    /** HU 58 - Umbrales de stock del vendedor. */
+    const val UMBRALES = "UMBRALES"
 }
 
 /** Clave reservada de la fila de metadatos con el contador global de pendientes. */

@@ -51,6 +51,8 @@ data class EntidadNotificacion(
     val idConversacion: Long?,
     val fechaLectura: String?,
     val fechaSincronizacion: Long,
+    // HU 58 - Publicación del aviso de stock bajo; nulo en los demás avisos.
+    val productoId: Long? = null,
     @ColumnInfo(defaultValue = "0")
     val pendienteLecturaLocal: Boolean = false
 )
@@ -229,4 +231,53 @@ data class EntidadMetadatoSincronizacion(
     val fechaUltimaSincronizacion: Long?,
     val estado: String?,
     val mensaje: String?
+)
+
+/**
+ * HU 57 - Último resultado válido del panel de métricas de ventas.
+ *
+ * Solo se guarda UN resultado por usuario (clave primaria `usuarioId`): la
+ * copia local no es un histórico, es el último panel válido recibido del
+ * backend. El backend siempre tiene prioridad: cada refresco sobrescribe
+ * esta fila con la respuesta real del servidor.
+ *
+ * `clavePeriodo` identifica el periodo al que pertenece el resultado
+ * guardado (`desde|hasta|comparar`) para poder informar sin conexión de qué
+ * periodo son los datos que se están mostrando.
+ */
+@Entity(
+    tableName = "metricas_ventas",
+    primaryKeys = ["usuarioId"]
+)
+data class EntidadMetricasVentas(
+    val usuarioId: Long,
+    val clavePeriodo: String,
+    val payload: String,
+    val fechaSincronizacion: Long
+)
+
+/**
+ * HU 58 - Umbral de stock configurado por el vendedor para su publicación.
+ *
+ * `umbral` es el valor confirmado por el servidor. `umbralPendienteLocal` es
+ * el valor que el usuario guardó en el dispositivo y que el servidor todavía
+ * no confirmó (cambio offline): mientras siga informado, la interfaz dice
+ * "pendiente de sincronizar" y nunca afirma que el servidor ya lo aplicó.
+ */
+@Entity(
+    tableName = "umbrales_stock",
+    primaryKeys = ["usuarioId", "idProducto"]
+)
+data class EntidadUmbralStock(
+    val usuarioId: Long,
+    val idProducto: Long,
+    val nombre: String?,
+    val imagenUrl: String?,
+    val stock: Int?,
+    val umbral: Int?,
+    val stockBajo: Boolean,
+    val alertaNotificada: Boolean,
+    val fechaActualizacion: String?,
+    val umbralPendienteLocal: Int?,
+    val fechaSincronizacion: Long
 )

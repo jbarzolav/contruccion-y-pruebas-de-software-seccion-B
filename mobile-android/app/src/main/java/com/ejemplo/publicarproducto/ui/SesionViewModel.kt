@@ -79,8 +79,9 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
 
     /**
      * Política segura al cerrar sesión: se borra toda la información local
-     * del usuario (notificaciones, pedidos, cola de pendientes y metadatos)
-     * para que nadie más pueda verla en el dispositivo.
+     * del usuario (notificaciones, pedidos, métricas, umbrales de stock,
+     * cola de pendientes y metadatos) para que nadie más pueda verla en el
+     * dispositivo.
      */
     private suspend fun limpiarDatosLocales(usuarioId: Long) {
         if (usuarioId <= 0L) return
@@ -89,6 +90,10 @@ class SesionViewModel(application: Application) : AndroidViewModel(application) 
             val contenedor = ProveedorDatos.actual
             contenedor.notificaciones.borrarUsuario(usuarioId)
             contenedor.pedidos.borrarUsuario(usuarioId)
+            // HU 57 - El panel de métricas es información del usuario.
+            contenedor.metricas.borrarUsuario(usuarioId)
+            // HU 58 - Los umbrales de stock son información del usuario.
+            contenedor.umbrales.borrarUsuario(usuarioId)
             contenedor.cola.borrarUsuario(usuarioId)
             contenedor.metadatos.borrarUsuario(usuarioId)
         } catch (e: CancellationException) { throw e }

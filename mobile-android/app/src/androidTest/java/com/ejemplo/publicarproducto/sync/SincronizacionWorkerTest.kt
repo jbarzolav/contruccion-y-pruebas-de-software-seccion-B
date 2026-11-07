@@ -10,10 +10,12 @@ import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.ejemplo.publicarproducto.data.ColaOperacionesRepositorio
 import com.ejemplo.publicarproducto.data.ContenedorDatos
+import com.ejemplo.publicarproducto.data.MetricasRepositorio
 import com.ejemplo.publicarproducto.data.MonitorConectividad
 import com.ejemplo.publicarproducto.data.NotificacionesRepositorio
 import com.ejemplo.publicarproducto.data.PedidosRepositorio
 import com.ejemplo.publicarproducto.data.ProveedorDatos
+import com.ejemplo.publicarproducto.data.UmbralStockRepositorio
 import com.ejemplo.publicarproducto.local.EstadosOperacion
 import com.ejemplo.publicarproducto.local.PulgaTecDatabase
 import com.ejemplo.publicarproducto.local.TiposOperacion
@@ -76,12 +78,18 @@ class SincronizacionWorkerTest {
     private fun contenedor(): ContenedorDatos {
         val notificaciones = NotificacionesRepositorio(bd, servidor.api, cola)
         val pedidos = PedidosRepositorio(bd, servidor.api, cola)
+        // HU 57/HU 58 - El panel de métricas y los umbrales de stock se
+        // sincronizan con la misma cola persistente.
+        val metricas = MetricasRepositorio(bd, servidor.api)
+        val umbrales = UmbralStockRepositorio(bd, servidor.api, cola, notificaciones)
         return ContenedorDatos(
             contexto = contexto,
             bd = bd,
             cola = cola,
             notificaciones = notificaciones,
             pedidos = pedidos,
+            metricas = metricas,
+            umbrales = umbrales,
             metadatos = bd.metadatoSincronizacionDao(),
             conectividad = MonitorConectividad(contexto),
             sesion = sesion,
@@ -92,7 +100,8 @@ class SincronizacionWorkerTest {
                 notificaciones = notificaciones,
                 pedidos = pedidos,
                 metadatos = bd.metadatoSincronizacionDao(),
-                sesion = sesion
+                sesion = sesion,
+                umbrales = umbrales
             )
         )
     }

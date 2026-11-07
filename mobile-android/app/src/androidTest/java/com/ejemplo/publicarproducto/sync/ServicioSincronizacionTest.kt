@@ -6,8 +6,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ejemplo.publicarproducto.data.ColaOperacionesRepositorio
 import com.ejemplo.publicarproducto.data.NotificacionesRepositorio
 import com.ejemplo.publicarproducto.data.PedidosRepositorio
+import com.ejemplo.publicarproducto.data.UmbralStockRepositorio
 import com.ejemplo.publicarproducto.local.Ambitos
 import com.ejemplo.publicarproducto.local.EntidadPedido
+import com.ejemplo.publicarproducto.local.EntidadUmbralStock
 import com.ejemplo.publicarproducto.local.EstadosOperacion
 import com.ejemplo.publicarproducto.local.EstadosSincronizacion
 import com.ejemplo.publicarproducto.local.MAX_INTENTOS_OPERACION
@@ -59,6 +61,8 @@ class ServicioSincronizacionTest {
         cola = ColaOperacionesRepositorio(bd.operacionPendienteDao())
         val notificaciones = NotificacionesRepositorio(bd, servidor.api, cola)
         val pedidos = PedidosRepositorio(bd, servidor.api, cola)
+        // HU 58 - Los umbrales de stock se sincronizan con la MISMA cola.
+        val umbrales = UmbralStockRepositorio(bd, servidor.api, cola, notificaciones)
         servicio = ServicioSincronizacion(
             bd = bd,
             api = servidor.api,
@@ -66,7 +70,8 @@ class ServicioSincronizacionTest {
             notificaciones = notificaciones,
             pedidos = pedidos,
             metadatos = bd.metadatoSincronizacionDao(),
-            sesion = sesion
+            sesion = sesion,
+            umbrales = umbrales
         )
     }
 
@@ -369,5 +374,137 @@ class ServicioSincronizacionTest {
         val pedido = bd.pedidoDao().buscarPedido(usuarioId, 55L, Ambitos.VENTAS)
         assertEquals(null, pedido!!.estadoPendienteLocal)
         assertEquals("REGISTRADO", pedido.estado)
+    }
+
+    // ------------------------------------------------------------------
+    // HU 58 - Umbral de stock (misma cola persistente existente).
+    // ------------------------------------------------------------------
+
+    /** Publicación propia con un umbral propuesto en el dispositivo. */
+    private suspend fun guardarPublicacionConUmbralPendiente() {
+        bd.umbralStockDao().guardarUno(
+            EntidadUmbralStock(
+                usuarioId = usuarioId,
+                idProducto = 7L,
+                nombre = "Café molido",
+                imagenUrl = null,
+                stock = 8,
+                umbral = 5,
+                stockBajo = false,
+                alertaNotificada = false,
+                fechaActualizacion = null,
+                umbralPendienteLocal = 2,
+                fechaSincronizacion = 1L
+            )
+        )
+    }
+
+    /** Encola el cambio de umbral como en la interfaz (HU 58). */
+    private suspend fun encolaUmbral(umbral: Int = 2) = cola.encolar(
+        usuarioId = usuarioId,
+        tipoOperacion = TiposOperacion.ACTUALIZAR_UMBRAL_STOCK,
+        recursoId = "7",
+        payload = mapOf("umbral" to umbral.toString()),
+        claveUnica = "umbral:7:$umbral"
+    )
+
+    /** Respuesta del backend al guardar el umbral. */
+    private fun jsonUmbralConfirmado(umbral: Int = 2, stock: Int = 8) = """
+        {
+          "idProducto": 7,
+          "nombre": "Café molido",
+          "imagenUrl": null,
+          "stock": $stock,
+          "umbral": $umbral,
+          "stockBajo": false,
+          "alertaNotificada": false,
+          "fechaActualizacion": "2024-05-02T08:00:00"
+        }
+    """.trimIndent()
+
+    @Test
+    fun elUmbralDeStockConfirmadoSeReflejaEnRoom() = runTest {
+        guardarPublicacionConUmbralPendiente()
+        encolaUmbral()
+
+        servidor.responder(200, jsonUmbralConfirmado())
+        servidor.responder(200, jsonBandeja())
+        servidor.responder(200, "[]")
+        servidor.responder(200, "[]")
+
+        val resultado = servicio.sincronizar(usuarioId)
+        assertTrue(resultado is ResultadoSincronizacion.Exito)
+
+        // El umbral oficial del servidor se aplica y el pendiente se descarta.
+        val registro = bd.umbralStockDao().buscar(usuarioId, 7L)
+        assertNotNull(registro)
+        assertEquals(2, registro!!.umbral)
+        assertEquals(8, registro.stock)
+        assertEquals(null, registro.umbralPendienteLocal)
+
+        val operacion = bd.operacionPendienteDao().observarTodas(usuarioId).first().single()
+        assertEquals(EstadosOperacion.CONFIRMADA, operacion.estado)
+        assertTrue(cola.observarPendientes(usuarioId).first().isEmpty())
+    }
+
+    @Test
+    fun unErrorTemporalDejaElUmbralPendienteEnElDispositivo() = runTest {
+        guardarPublicacionConUmbralPendiente()
+        encolaUmbral()
+
+        servidor.responderError(503, "El servicio no está disponible.")
+
+        val resultado = servicio.sincronizar(usuarioId)
+        assertTrue(resultado is ResultadoSincronizacion.Reintentar)
+
+        // La operación sigue esperando confirmación del servidor.
+        val operacion = bd.operacionPendienteDao().observarTodas(usuarioId).first().single()
+        assertEquals(EstadosOperacion.PENDIENTE, operacion.estado)
+        assertEquals(1, operacion.intentos)
+        assertEquals(1, cola.observarPendientes(usuarioId).first().size)
+
+        // La interfaz sigue informado de "pendiente de sincronizar".
+        val registro = bd.umbralStockDao().buscar(usuarioId, 7L)
+        assertEquals(2, registro!!.umbralPendienteLocal)
+    }
+
+    @Test
+    fun unUmbralRechazadoPorElServidorSeDescarta() = runTest {
+        guardarPublicacionConUmbralPendiente()
+        encolaUmbral()
+
+        servidor.responderError(403, "La publicación pertenece a otro vendedor.")
+        servidor.responder(200, jsonBandeja())
+        servidor.responder(200, "[]")
+        servidor.responder(200, "[]")
+
+        val resultado = servicio.sincronizar(usuarioId)
+        assertTrue(resultado is ResultadoSincronizacion.Exito)
+
+        val operacion = bd.operacionPendienteDao().observarTodas(usuarioId).first().single()
+        assertEquals(EstadosOperacion.RECHAZADA, operacion.estado)
+        assertTrue(operacion.ultimoMensajeError!!.contains("otro vendedor"))
+        assertTrue(cola.observarPendientes(usuarioId).first().isEmpty())
+
+        // El servidor no aceptó el valor: se descarta la propuesta local y
+        // sigue vigente el umbral oficial.
+        val registro = bd.umbralStockDao().buscar(usuarioId, 7L)
+        assertEquals(null, registro!!.umbralPendienteLocal)
+        assertEquals(5, registro.umbral)
+    }
+
+    @Test
+    fun elCambioDeUmbralUsaLaMismaColaYNoSeDuplica() = runTest {
+        guardarPublicacionConUmbralPendiente()
+
+        val primera = encolaUmbral()
+        val segunda = encolaUmbral()
+
+        assertEquals(primera.id, segunda.id)
+        assertEquals(1, cola.observarPendientes(usuarioId).first().size)
+        assertEquals(
+            TiposOperacion.ACTUALIZAR_UMBRAL_STOCK,
+            cola.observarPendientes(usuarioId).first().single().tipoOperacion
+        )
     }
 }

@@ -29,6 +29,10 @@ import com.ejemplo.publicarproducto.model.PlanPremiumResponse
 import com.ejemplo.publicarproducto.model.ProductoRequest
 import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.model.ResenaProductoPublicaResponse
+import com.ejemplo.publicarproducto.model.MetricasVentasResponse
+import com.ejemplo.publicarproducto.model.AvisoStockBajoResponse
+import com.ejemplo.publicarproducto.model.UmbralStockRequest
+import com.ejemplo.publicarproducto.model.UmbralStockResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -266,5 +270,42 @@ interface ProductoApi {
     // HU 18 - GET /api/planes/premium
     @GET("api/planes/premium")
     suspend fun consultarPlanPremium(): Response<PlanPremiumResponse>
+
+    // ------------------------------------------------------------------
+    // HU 57 - Métricas de ventas del vendedor.
+    // El backend deriva al vendedor de la sesión: no se envía su identidad.
+    // ------------------------------------------------------------------
+
+    @GET("api/vendedores/me/metricas/ventas")
+    suspend fun obtenerMetricasVentas(
+        @Query("desde") desde: String? = null,
+        @Query("hasta") hasta: String? = null,
+        @Query("compararPeriodoAnterior") compararPeriodoAnterior: Boolean? = null
+    ): Response<MetricasVentasResponse>
+
+    // ------------------------------------------------------------------
+    // HU 58 - Umbrales de stock y avisos de stock bajo del vendedor.
+    // ------------------------------------------------------------------
+
+    /** Panel: publicaciones propias con su umbral y estado de stock. */
+    @GET("api/vendedores/me/umbrales-stock")
+    suspend fun listarUmbralesStock(): Response<List<UmbralStockResponse>>
+
+    /** Avisos de stock bajo (se alimentan de la bandeja de notificaciones). */
+    @GET("api/vendedores/me/avisos-stock-bajo")
+    suspend fun listarAvisosStockBajo(): Response<List<AvisoStockBajoResponse>>
+
+    /** Umbral vigente de una publicación propia (null si no hay). */
+    @GET("api/productos/{idProducto}/umbral-stock")
+    suspend fun obtenerUmbralStock(
+        @Path("idProducto") idProducto: Long
+    ): Response<UmbralStockResponse>
+
+    /** Crea o actualiza el umbral de una publicación propia (idempotente). */
+    @PUT("api/productos/{idProducto}/umbral-stock")
+    suspend fun guardarUmbralStock(
+        @Path("idProducto") idProducto: Long,
+        @Body request: UmbralStockRequest
+    ): Response<UmbralStockResponse>
 
 }

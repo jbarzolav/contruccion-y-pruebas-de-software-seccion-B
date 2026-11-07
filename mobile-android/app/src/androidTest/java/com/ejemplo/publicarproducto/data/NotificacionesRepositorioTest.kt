@@ -75,6 +75,32 @@ class NotificacionesRepositorioTest {
         }
     """.trimIndent()
 
+    /** HU 58 - Aviso de stock bajo dentro de la bandeja unificada. */
+    private fun jsonBandejaStockBajo() = """
+        {
+          "notificaciones": [
+            {
+              "idNotificacion": 30,
+              "tipo": "STOCK_BAJO",
+              "resumen": "Stock bajo en «Café molido»: quedan 4 unidades y el umbral configurado es 5.",
+              "fecha": "2024-05-01T10:15:30",
+              "estado": "PENDIENTE",
+              "idPedido": null,
+              "enlace": "/mis-publicaciones#producto-7",
+              "idConversacion": null,
+              "fechaLectura": null,
+              "productoId": 7
+            }
+          ],
+          "pagina": 0,
+          "tamano": 20,
+          "totalElementos": 1,
+          "totalPaginas": 1,
+          "tieneSiguiente": false,
+          "pendientes": 1
+        }
+    """.trimIndent()
+
     @Test
     fun refrescarGuardaLaRespuestaRealDelServidorEnRoom() = runTest {
         servidor.responder(200, jsonBandeja())
@@ -181,5 +207,44 @@ class NotificacionesRepositorioTest {
         assertEquals(1, cola.observarPendientes(1L).first().size)
         assertEquals(1, cola.observarPendientes(2L).first().size)
         assertNull(bd.operacionPendienteDao().buscarActivaPorClave(2L, "notificacion:10"))
+    }
+
+    /**
+     * HU 58 - El aviso de stock bajo conserva la publicación a la que apunta
+     * al mapear la bandeja: sin `productoId` la interfaz no podría abrir la
+     * publicación affected.
+     */
+    @Test
+    fun elAvisoDeStockBajoConservaLaPublicacionAlMapearLaBandeja() = runTest {
+        servidor.responder(200, jsonBandejaStockBajo())
+
+        val resultado = repositorio.refrescar(usuarioId, "STOCK_BAJO", null, null, null, 0)
+        assertTrue(resultado is ResultadoApi.Exito)
+
+        val aviso = bd.notificacionDao().buscar(usuarioId, 30L)
+        assertNotNull(aviso)
+        assertEquals("STOCK_BAJO", aviso!!.tipo)
+        assertEquals(7L, aviso.productoId)
+        assertEquals("/mis-publicaciones#producto-7", aviso.enlace)
+
+        // El DTO que ve la interfaz también conserva la publicación.
+        val bandeja = repositorio.observarBandeja(usuarioId, "STOCK_BAJO", null, null, null, 0).first()
+        assertEquals(1, bandeja.notificaciones.size)
+        assertEquals(7L, bandeja.notificaciones.first().productoId)
+    }
+
+    /**
+     * HU 58 - Los avisos que no son de stock bajo dejan la publicación vacía:
+     * el campo es aditivo y no altera los contratos existentes.
+     */
+    @Test
+    fun losAvisosExistentesNoDeclaranPublicacion() = runTest {
+        servidor.responder(200, jsonBandeja())
+
+        repositorio.refrescar(usuarioId, null, null, null, null, 0)
+
+        val aviso = bd.notificacionDao().buscar(usuarioId, 10L)
+        assertNotNull(aviso)
+        assertNull(aviso!!.productoId)
     }
 }

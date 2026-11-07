@@ -21,6 +21,8 @@ class ContenedorDatos(
     val cola: ColaOperacionesRepositorio,
     val notificaciones: NotificacionesRepositorio,
     val pedidos: PedidosRepositorio,
+    val metricas: MetricasRepositorio,
+    val umbrales: UmbralStockRepositorio,
     val metadatos: MetadatoSincronizacionDao,
     val conectividad: MonitorConectividad,
     val sesion: SessionManager,
@@ -70,12 +72,16 @@ object ProveedorDatos {
         val cola = ColaOperacionesRepositorio(bd.operacionPendienteDao())
         val notificaciones = NotificacionesRepositorio(bd, api, cola)
         val pedidos = PedidosRepositorio(bd, api, cola)
+        val metricas = MetricasRepositorio(bd, api)
+        val umbrales = UmbralStockRepositorio(bd, api, cola, notificaciones)
         return ContenedorDatos(
             contexto = app,
             bd = bd,
             cola = cola,
             notificaciones = notificaciones,
             pedidos = pedidos,
+            metricas = metricas,
+            umbrales = umbrales,
             metadatos = bd.metadatoSincronizacionDao(),
             conectividad = MonitorConectividad(app),
             sesion = sesion,
@@ -85,6 +91,7 @@ object ProveedorDatos {
                 cola = cola,
                 notificaciones = notificaciones,
                 pedidos = pedidos,
+                umbrales = umbrales,
                 metadatos = bd.metadatoSincronizacionDao(),
                 sesion = sesion
             )

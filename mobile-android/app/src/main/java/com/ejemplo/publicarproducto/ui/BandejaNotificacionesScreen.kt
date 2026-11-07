@@ -47,7 +47,9 @@ private val TIPOS = listOf(
     null to "Todos",
     "NUEVO_MENSAJE" to "Mensajes",
     "CAMBIO_ESTADO_PEDIDO" to "Cambios de estado",
-    "NUEVA_COMPRA" to "Nuevas compras"
+    "NUEVA_COMPRA" to "Nuevas compras",
+    // HU 58 - Avisos de stock bajo de las publicaciones del vendedor.
+    "STOCK_BAJO" to "Stock bajo"
 )
 
 private val ESTADOS = listOf(
@@ -98,6 +100,7 @@ fun BandejaNotificacionesScreen(
     onVerPedido: (Long) -> Unit,
     onVerVentas: () -> Unit,
     onVerConversacion: (Long) -> Unit,
+    onVerPublicacion: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val model = bandejaModel()
@@ -156,6 +159,8 @@ fun BandejaNotificacionesScreen(
                     when (aviso.tipo) {
                         "NUEVO_MENSAJE" -> aviso.idConversacion?.let(onVerConversacion)
                         "NUEVA_COMPRA" -> onVerVentas()
+                        // HU 58 - El aviso de stock bajo lleva a la publicación.
+                        "STOCK_BAJO" -> aviso.productoId?.let(onVerPublicacion)
                         else -> aviso.idPedido?.let(onVerPedido)
                     }
                 }

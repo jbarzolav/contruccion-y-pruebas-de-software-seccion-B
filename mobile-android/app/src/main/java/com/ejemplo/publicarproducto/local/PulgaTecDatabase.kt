@@ -22,7 +22,9 @@ import androidx.room.RoomDatabase
         EntidadResena::class,
         EntidadCalificacion::class,
         EntidadOperacionPendiente::class,
-        EntidadMetadatoSincronizacion::class
+        EntidadMetadatoSincronizacion::class,
+        EntidadMetricasVentas::class,
+        EntidadUmbralStock::class
     ],
     version = MigracionesRoom.VERSION_ACTUAL,
     exportSchema = true
@@ -35,6 +37,8 @@ abstract class PulgaTecDatabase : RoomDatabase() {
     abstract fun productoDao(): ProductoDao
     abstract fun operacionPendienteDao(): OperacionPendienteDao
     abstract fun metadatoSincronizacionDao(): MetadatoSincronizacionDao
+    abstract fun metricasDao(): MetricasDao
+    abstract fun umbralStockDao(): UmbralStockDao
 
     companion object {
         const val NOMBRE = "pulgatec_local.db"
