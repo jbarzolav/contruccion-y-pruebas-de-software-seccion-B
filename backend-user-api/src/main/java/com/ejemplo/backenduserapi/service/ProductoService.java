@@ -42,6 +42,9 @@ public class ProductoService {
     /** HU 19 - Consulta del beneficio Premium del vendedor. */
     private final PlanPremiumService planPremiumService;
 
+    /** HU 58 - Avisos de stock bajo: se disparan desde la edicion manual. */
+    private final AlertaStockService alertas;
+
     /**
      * Carpeta donde se guardan las imágenes reales.
      * Por defecto usa una carpeta temporal del sistema.
@@ -50,9 +53,11 @@ public class ProductoService {
 
     public ProductoService(ProductoRepository productoRepository,
                            PlanPremiumService planPremiumService,
+                           AlertaStockService alertas,
                            @Value("${app.upload.dir:${java.io.tmpdir}/producto-imagenes}") Path carpetaImagenes) {
         this.productoRepository = productoRepository;
         this.planPremiumService = planPremiumService;
+        this.alertas = alertas;
         this.carpetaImagenes = carpetaImagenes;
     }
 
@@ -155,17 +160,25 @@ public class ProductoService {
     @Transactional
     public Producto actualizar(Long idProducto, ProductoRequest request, Long vendedorId) {
 
-        Producto producto = obtenerProductoDelVendedor(idProducto, vendedorId);
+        // HU 58 - La edición del stock se serializa con el resto de operaciones
+        // que lo modifican (ventas) para que el cruce del umbral se detecte una
+        // sola vez y sin avisos duplicados.
+        Producto producto = obtenerProductoDelVendedorParaActualizar(idProducto, vendedorId);
+        int stockAnterior = (producto.getStock() == null) ? 0 : producto.getStock();
+        int stockNuevo = (request.getStock() == null) ? stockAnterior : request.getStock();
 
         // Campos editables (no se toca id, imagenUrl ni vendedorId)
         producto.setNombre(request.getNombre());
         producto.setDescripcion(request.getDescripcion());
         producto.setPrecio(request.getPrecio());
-        producto.setStock(request.getStock());
+        producto.setStock(stockNuevo);
         producto.setCategoria(request.getCategoria());
         producto.setEstado(request.getEstado());
 
-        return productoRepository.save(producto);
+        Producto guardado = productoRepository.save(producto);
+        // HU 58 - Punto unico de deteccion del cruce del umbral.
+        alertas.registrarCambioStock(guardado, stockAnterior, stockNuevo);
+        return guardado;
     }
 
     // ------------------------------------------------------------------
@@ -360,6 +373,23 @@ public class ProductoService {
     private Producto obtenerProductoDelVendedor(Long idProducto, Long vendedorId) {
 
         Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new ProductoNoEncontradoException(
+                        "Producto no encontrado con id " + idProducto));
+
+        if (producto.getVendedorId() == null || !producto.getVendedorId().equals(vendedorId)) {
+            throw new PropietarioInvalidoException("El producto no pertenece al vendedor");
+        }
+
+        return producto;
+    }
+
+    /**
+     * HU 58 - Igual que {@link #obtenerProductoDelVendedor(Long, Long)} pero con
+     * bloqueo de escritura y refresco de caché sobre la publicación.
+     */
+    private Producto obtenerProductoDelVendedorParaActualizar(Long idProducto, Long vendedorId) {
+
+        Producto producto = productoRepository.buscarParaActualizar(idProducto)
                 .orElseThrow(() -> new ProductoNoEncontradoException(
                         "Producto no encontrado con id " + idProducto));
 

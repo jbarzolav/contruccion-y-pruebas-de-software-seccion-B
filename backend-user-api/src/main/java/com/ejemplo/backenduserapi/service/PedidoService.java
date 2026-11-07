@@ -42,17 +42,21 @@ public class PedidoService {
     private final ItemCarritoRepository itemCarritoRepository;
     private final ProductoRepository productoRepository;
     private final NotificacionService notificaciones;
+    /** HU 58 - Avisos de stock bajo: se disparan desde la venta. */
+    private final AlertaStockService alertas;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoRepository carritoRepository,
                          ItemCarritoRepository itemCarritoRepository,
                          ProductoRepository productoRepository,
-                         NotificacionService notificaciones) {
+                         NotificacionService notificaciones,
+                         AlertaStockService alertas) {
         this.pedidoRepository = pedidoRepository;
         this.carritoRepository = carritoRepository;
         this.itemCarritoRepository = itemCarritoRepository;
         this.productoRepository = productoRepository;
         this.notificaciones = notificaciones;
+        this.alertas = alertas;
     }
 
     @Transactional
@@ -86,10 +90,23 @@ public class PedidoService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (ItemCarrito item : items) {
-            Producto producto = item.getProducto();
+            // HU 58 - La lectura del stock se hace con bloqueo de escritura y
+            // refrescando la caché: dos ventas simultáneas no pueden descontar
+            // sobre una copia obsoleta ni duplicar el aviso de stock bajo.
+            Producto producto = productoConStockBloqueado(item.getProducto());
+            if (item.getCantidad() > producto.getStock()) {
+                throw new StockInsuficienteException(
+                        "Stock insuficiente para \"" + producto.getNombre()
+                                + "\": se solicitan " + item.getCantidad()
+                                + " y hay " + producto.getStock() + " disponibles");
+            }
+            int stockAnterior = producto.getStock();
+            int stockNuevo = stockAnterior - item.getCantidad();
 
-            producto.setStock(producto.getStock() - item.getCantidad());
+            producto.setStock(stockNuevo);
             productoRepository.save(producto);
+            // HU 58 - Punto unico de deteccion del cruce del umbral.
+            alertas.registrarCambioStock(producto, stockAnterior, stockNuevo);
 
             DetallePedido detalle = new DetallePedido(
                     pedido, producto, item.getCantidad(), item.getPrecioUnitario());
@@ -115,6 +132,18 @@ public class PedidoService {
             throw new PedidoInvalidoException("El clienteId debe ser mayor a 0");
         }
         return (clienteId == null) ? CLIENTE_DEFECTO : clienteId;
+    }
+
+    /**
+     * HU 58 - Devuelve la publicación con el stock vigente en base de datos.
+     * Si la búsqueda bloqueada no devuelve nada (por ejemplo en una prueba con
+     * dobles) se conserva la instancia ya cargada del carrito.
+     */
+    private Producto productoConStockBloqueado(Producto producto) {
+        if (producto == null || producto.getId() == null) {
+            return producto;
+        }
+        return productoRepository.buscarParaActualizar(producto.getId()).orElse(producto);
     }
 
     private PedidoResponse toResponse(Pedido pedido) {

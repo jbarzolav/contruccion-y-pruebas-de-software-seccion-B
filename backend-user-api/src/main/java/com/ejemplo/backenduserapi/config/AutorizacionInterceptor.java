@@ -24,6 +24,10 @@ public class AutorizacionInterceptor implements HandlerInterceptor {
         // HU 49 - El vendedor actualiza el estado de los pedidos que incluyen sus productos.
         else if (ruta.matches("/api/pedidos/[0-9]+/estado") && "PATCH".equals(request.getMethod()))
             permiso = "GESTIONAR_PRODUCTOS";
+        // HU 58 - El umbral de stock es del vendedor dueno de la publicacion
+        // (tanto la consulta como la actualizacion exigen rol de vendedor).
+        else if (ruta.matches("/api/productos/[0-9]+/umbral-stock"))
+            permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/vendedores/")
                 || (ruta.startsWith("/api/productos") && !"GET".equals(request.getMethod()))) permiso = "GESTIONAR_PRODUCTOS";
         else if (ruta.startsWith("/api/carrito/") || ruta.equals("/api/pedidos")

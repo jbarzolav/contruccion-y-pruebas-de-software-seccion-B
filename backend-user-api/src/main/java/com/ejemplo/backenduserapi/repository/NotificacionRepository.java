@@ -13,6 +13,7 @@ import java.util.List;
 
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
     List<Notificacion> findByDestinatarioIdOrderByFechaDesc(Long destinatarioId);
+    List<Notificacion> findByDestinatarioIdAndTipoOrderByFechaDesc(Long destinatarioId, String tipo);
     boolean existsByClaveEvento(String claveEvento);
 
     /**

@@ -42,6 +42,10 @@ public class Notificacion {
     @Column
     private Long conversacionId;
 
+    /** HU58 - Identifica la publicación del aviso de stock bajo. */
+    @Column
+    private Long productoId;
+
     /** HU54 - Momento de la lectura; permanece nulo mientras el aviso sigue pendiente. */
     @Column
     private LocalDateTime fechaLectura;
@@ -60,6 +64,12 @@ public class Notificacion {
     /** Aviso ligado a una compra o a una conversación (HU53). */
     public Notificacion(String tipo, String resumen, LocalDateTime fecha, Long destinatarioId,
                         Long pedidoId, Long conversacionId, String claveEvento) {
+        this(tipo, resumen, fecha, destinatarioId, pedidoId, conversacionId, null, claveEvento);
+    }
+
+    /** HU58 - Aviso ligado a una publicación (stock bajo). */
+    public Notificacion(String tipo, String resumen, LocalDateTime fecha, Long destinatarioId,
+                        Long pedidoId, Long conversacionId, Long productoId, String claveEvento) {
         this.tipo = tipo;
         this.resumen = resumen;
         this.fecha = fecha;
@@ -67,6 +77,7 @@ public class Notificacion {
         this.destinatarioId = destinatarioId;
         this.pedidoId = pedidoId;
         this.conversacionId = conversacionId;
+        this.productoId = productoId;
         this.claveEvento = claveEvento;
     }
 
@@ -91,6 +102,7 @@ public class Notificacion {
     public Long getDestinatarioId() { return destinatarioId; }
     public Long getPedidoId() { return pedidoId; }
     public Long getConversacionId() { return conversacionId; }
+    public Long getProductoId() { return productoId; }
     public LocalDateTime getFechaLectura() { return fechaLectura; }
     public String getClaveEvento() { return claveEvento; }
 }

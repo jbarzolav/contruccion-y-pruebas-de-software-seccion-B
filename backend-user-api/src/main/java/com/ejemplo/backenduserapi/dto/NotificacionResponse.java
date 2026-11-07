@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
  * HU53 - Notificación de la bandeja unificada.
  *
  * Los campos `idPedido` y `idConversacion` identifican el destino del enlace según
- * el tipo; `fechaLectura` queda nulo mientras la notificación sigue pendiente.
+ * el tipo; `productoId` identifica la publicación en los avisos de stock bajo
+ * (HU58); `fechaLectura` queda nulo mientras la notificación sigue pendiente.
  */
 public record NotificacionResponse(
         Long idNotificacion,
@@ -17,5 +18,6 @@ public record NotificacionResponse(
         Long idPedido,
         String enlace,
         Long idConversacion,
-        LocalDateTime fechaLectura
+        LocalDateTime fechaLectura,
+        Long productoId
 ) { }

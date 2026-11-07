@@ -31,6 +31,8 @@ public class NotificacionService {
     public static final String NUEVA_COMPRA = "NUEVA_COMPRA";
     /** HU 53 - Aviso generado por un mensaje nuevo en una conversación. */
     public static final String NUEVO_MENSAJE = "NUEVO_MENSAJE";
+    /** HU 58 - Aviso generado al cruzar el umbral de stock de una publicación. */
+    public static final String STOCK_BAJO = "STOCK_BAJO";
 
     public static final String PENDIENTE = "PENDIENTE";
     public static final String LEIDA = "LEIDA";
@@ -39,7 +41,7 @@ public class NotificacionService {
     public static final int TAMANO_MAXIMO = 50;
 
     private static final List<String> TIPOS_CONOCIDOS =
-            List.of(CAMBIO_ESTADO_PEDIDO, NUEVA_COMPRA, NUEVO_MENSAJE);
+            List.of(CAMBIO_ESTADO_PEDIDO, NUEVA_COMPRA, NUEVO_MENSAJE, STOCK_BAJO);
     private static final List<String> ESTADOS_CONOCIDOS = List.of(PENDIENTE, LEIDA);
 
     private final NotificacionRepository notificaciones;
@@ -91,6 +93,37 @@ public class NotificacionService {
         guardarSiNuevo(new Notificacion(NUEVO_MENSAJE, resumen,
                 LocalDateTime.ofInstant(mensaje.getFecha(), ZoneId.systemDefault()),
                 destinatarioId, null, conversacion.getId(), "mensaje:" + mensaje.getId()));
+    }
+
+    /**
+     * HU 58 - Aviso de stock bajo. La clave por producto y numero de aviso
+     * evita duplicados: dos actualizaciones del mismo cruce no crean dos
+     * avisos, y una reposicion followed de un nuevo cruce si lo crea.
+     */
+    @Transactional
+    public void notificarStockBajo(com.ejemplo.backenduserapi.entity.Producto producto,
+                                   int stockActual, int umbral, int numeroAlerta) {
+        String clave = "stock:" + producto.getId() + ":" + numeroAlerta;
+        guardarSiNuevo(new Notificacion(STOCK_BAJO,
+                "Stock bajo en \"" + producto.getNombre() + "\": quedan " + stockActual
+                        + " unidades y el umbral configurado es " + umbral + ".",
+                LocalDateTime.now(), producto.getVendedorId(), null, null,
+                producto.getId(), clave));
+    }
+
+    /**
+     * HU 58 - Avisos de un tipo concreto del usuario autenticado.
+     * Se apoya en el sistema de notificaciones existente: no hay una bandeja
+     * paralela para el stock.
+     */
+    @Transactional(readOnly = true)
+    public List<NotificacionResponse> listarPorTipo(Usuario usuario, String tipo) {
+        if (usuario == null) throw error(HttpStatus.UNAUTHORIZED, "Sesión requerida.");
+        if (tipo == null || !TIPOS_CONOCIDOS.contains(tipo)) {
+            throw error(HttpStatus.BAD_REQUEST, "Tipo de notificación inválido.");
+        }
+        return notificaciones.findByDestinatarioIdAndTipoOrderByFechaDesc(usuario.getId(), tipo)
+                .stream().map(this::respuesta).toList();
     }
 
     /**
@@ -206,17 +239,18 @@ public class NotificacionService {
         }
     }
 
-    /** Enlace directo al pedido o a la conversación según el tipo de aviso (HU 53). */
+    /** Enlace directo al pedido, a la conversación o a la publicación según el tipo de aviso. */
     private NotificacionResponse respuesta(Notificacion notificacion) {
         String enlace = switch (notificacion.getTipo()) {
             case NUEVO_MENSAJE -> "/consultas?c=" + notificacion.getConversacionId();
             case CAMBIO_ESTADO_PEDIDO -> "/pedidos/" + notificacion.getPedidoId();
+            case STOCK_BAJO -> "/mis-publicaciones#producto-" + notificacion.getProductoId();
             default -> "/pedidos-recibidos#pedido-" + notificacion.getPedidoId();
         };
         return new NotificacionResponse(notificacion.getId(), notificacion.getTipo(),
                 notificacion.getResumen(), notificacion.getFecha(), notificacion.getEstado(),
                 notificacion.getPedidoId(), enlace, notificacion.getConversacionId(),
-                notificacion.getFechaLectura());
+                notificacion.getFechaLectura(), notificacion.getProductoId());
     }
 
     private AutorizacionException error(HttpStatus estado, String mensaje) {
