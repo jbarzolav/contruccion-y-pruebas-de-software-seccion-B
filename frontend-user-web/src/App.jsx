@@ -20,6 +20,8 @@ import Pedidos from './components/Pedidos.jsx'
 import PedidosRecibidos from './components/PedidosRecibidos.jsx'
 import DetallePedido from './components/DetallePedido.jsx'
 import BandejaNotificaciones from './components/BandejaNotificaciones.jsx'
+import MetricasVentas from './components/MetricasVentas.jsx'
+import UmbralesStock from './components/UmbralesStock.jsx'
 import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
@@ -235,6 +237,10 @@ export default function App() {
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/pedidos">Mis compras</NavLink>}
                         {sesion?.rol === 'VENDEDOR' && <NavLink to="/pedidos-recibidos">Pedidos recibidos</NavLink>}
+                        {/* HU 57 - Panel de métricas de ventas del vendedor. */}
+                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/metricas-ventas">Métricas</NavLink>}
+                        {/* HU 58 - Umbrales de stock y avisos de stock bajo. */}
+                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/umbrales-stock">Umbrales de stock</NavLink>}
                         {sesion && <span className="app-usuario-nombre">{sesion.nombre || 'Mi cuenta'}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
@@ -340,6 +346,13 @@ export default function App() {
                     {/* HU 50 - Detalle del pedido propio con productos y totales. */}
                     <Route path="/pedidos/:idPedido" element={<AccesoProtegido permiso="COMPRAR"><DetallePedido /></AccesoProtegido>} />
                     <Route path="/pedidos-recibidos" element={<AccesoVendedor><PedidosRecibidos /></AccesoVendedor>} />
+
+                    {/* HU 57 - Métricas de ventas del vendedor (ingresos, pedidos,
+                        promedio, productos más vendidos y comparación de periodos). */}
+                    <Route path="/metricas-ventas" element={<AccesoVendedor><MetricasVentas /></AccesoVendedor>} />
+
+                    {/* HU 58 - Umbrales de stock y avisos de stock bajo del vendedor. */}
+                    <Route path="/umbrales-stock" element={<AccesoVendedor><UmbralesStock onEditar={abrirEdicion} /></AccesoVendedor>} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}

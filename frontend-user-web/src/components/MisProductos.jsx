@@ -58,7 +58,8 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
             )}
 
             {!cargando && !error && productos.map((producto) => (
-                <article className="producto-item" key={producto.id}>
+                /* HU 58 - ancla usada por el aviso de stock bajo: /mis-publicaciones#producto-{id} */
+                <article className="producto-item" id={`producto-${producto.id}`} key={producto.id}>
                     {/* HU 08 - toda la tarjeta abre el detalle (HU 07) */}
                     <Link
                         to={`/producto/${producto.id}`}

@@ -4544,3 +4544,155 @@ body {
   gap: 14px;
   margin: 18px 0;
 }
+
+/* ================================================================
+   HU 57 - Panel de métricas de ventas del vendedor
+   ================================================================ */
+.metricas-filtros {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.metricas-comparar {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.metricas-comparar input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.metricas-periodo {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.metricas-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 18px 0 26px;
+}
+
+.metrica {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.metrica h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.metrica-valor {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.metrica-valor-anterior {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.metrica-tendencia {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.metrica-tendencia.aumento { color: var(--color-success); }
+.metrica-tendencia.disminucion { color: var(--color-danger); }
+.metrica-tendencia.neutra { color: var(--color-text-secondary); }
+
+.metricas-productos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.metricas-productos li {
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 0;
+  font-size: 0.92rem;
+}
+
+.metricas-productos li:last-child { border-bottom: none; }
+
+/* ================================================================
+   HU 58 - Umbrales de stock y avisos de stock bajo
+   ================================================================ */
+.umbrales-explicacion {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  max-width: 70ch;
+}
+
+.umbrales-lista {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 26px;
+}
+
+.umbral-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.umbral-item-info h4 {
+  margin: 0 0 6px;
+}
+
+.umbral-item-info p {
+  margin: 4px 0;
+}
+
+.umbral-item-edicion {
+  min-width: 240px;
+  flex: 1;
+}
+
+.umbral-item-edicion .campo { margin-bottom: 8px; }
+.umbral-item-edicion input { width: 100%; max-width: 180px; }
+
+.badge-stock-bajo {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.badge-avisado {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.umbrales-avisos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.umbrales-avisos li {
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 0;
+  font-size: 0.92rem;
+}
+
+.umbrales-avisos li:last-child { border-bottom: none; }
+

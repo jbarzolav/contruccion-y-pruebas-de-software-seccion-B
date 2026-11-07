@@ -9,6 +9,8 @@ const OPCIONES_TIPO = [
   { valor: 'NUEVO_MENSAJE', etiqueta: 'Mensajes' },
   { valor: 'CAMBIO_ESTADO_PEDIDO', etiqueta: 'Cambios de estado' },
   { valor: 'NUEVA_COMPRA', etiqueta: 'Nuevas compras' },
+  // HU 58 - Avisos de stock bajo de las publicaciones del vendedor.
+  { valor: 'STOCK_BAJO', etiqueta: 'Stock bajo' },
 ]
 
 const OPCIONES_ESTADO = [

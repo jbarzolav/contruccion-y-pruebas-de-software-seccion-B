@@ -25,6 +25,11 @@ export function resumenNotificacionVisible(aviso) {
   if (aviso.tipo === 'NUEVA_COMPRA') return `Nueva compra recibida · N.º de compra: ${idPedido}.`
   // HU 53 - El aviso de mensaje ya llega redactado por el backend.
   if (aviso.tipo === 'NUEVO_MENSAJE') return aviso.resumen || 'Nuevo mensaje en una consulta.'
+  // HU 58 - El aviso de stock bajo identifica la publicación del vendedor.
+  if (aviso.tipo === 'STOCK_BAJO') {
+    return aviso.resumen
+      || `Stock bajo en la publicación N.º ${aviso.productoId ?? ''}.`
+  }
 
   const estado = String(aviso.resumen || '').match(/cambió a\s+(.+?)[.]?$/i)?.[1]
   return estado
