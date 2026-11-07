@@ -87,9 +87,11 @@ class NotificacionBandejaServiceTest {
 
         servicio.bandeja(usuario, "", " ", null, null, 0, 20);
 
+        // HU 58 - la bandeja incluye tambien el tipo STOCK_BAJO.
         verify(repositorio).buscar(eq(10L),
                 eq(List.of(NotificacionService.CAMBIO_ESTADO_PEDIDO,
-                        NotificacionService.NUEVA_COMPRA, NotificacionService.NUEVO_MENSAJE)),
+                        NotificacionService.NUEVA_COMPRA, NotificacionService.NUEVO_MENSAJE,
+                        NotificacionService.STOCK_BAJO)),
                 eq(List.of(NotificacionService.PENDIENTE, NotificacionService.LEIDA)),
                 isNull(), isNull(), any(Pageable.class));
     }

@@ -31,6 +31,8 @@ class PedidoNotificacionServiceTest {
     @Mock private ItemCarritoRepository items;
     @Mock private ProductoRepository productos;
     @Mock private NotificacionService notificaciones;
+    /** HU 58 - Avisos de stock bajo: la venta invoca la deteccion del cruce. */
+    @Mock private AlertaStockService alertas;
     @InjectMocks private PedidoService servicio;
 
     @Test
@@ -66,5 +68,26 @@ class PedidoNotificacionServiceTest {
                 () -> servicio.confirmarCompra(10L));
 
         verify(notificaciones, never()).notificarNuevaCompra(any());
+    }
+
+    /**
+     * HU 58 - La venta es uno de los dos puntos que reducen stock: el cruce
+     * del umbral se delega en el servicio de alertas con el stock anterior y
+     * el stock nuevo.
+     */
+    @Test
+    void delegaEnAlertasElCruceDelUmbralCuandoLaVentaReduceElStock() {
+        Carrito carrito = new Carrito(10L);
+        carrito.setId(5L);
+        Producto producto = new Producto(1L, "Celular", "Descripción", new BigDecimal("100.00"),
+                5, "Tecnología", "DISPONIBLE", null, 30L);
+        ItemCarrito item = new ItemCarrito(carrito, producto, 2, new BigDecimal("100.00"));
+        when(carritos.findByClienteId(10L)).thenReturn(Optional.of(carrito));
+        when(items.findByCarritoId(5L)).thenReturn(List.of(item));
+        when(pedidos.save(any(Pedido.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        servicio.confirmarCompra(10L);
+
+        verify(alertas).registrarCambioStock(producto, 5, 3);
     }
 }
