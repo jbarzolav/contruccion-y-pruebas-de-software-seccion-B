@@ -16,7 +16,45 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        // AUD-33 - URL base del backend (Spring) y del backend de administración
+        // (Django). Se pueden sobreescribir por variante de compilación sin
+        // tocar el código fuente. Los valores son los de siempre.
+        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:9000/\"")
+        buildConfigField("String", "ADMIN_BASE_URL", "\"http://10.0.2.2:8001/\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ---------------------------------------------------------------
+        // Grupo C - Pruebas de integración contra el BACKEND REAL.
+        //
+        // No hay ninguna credencial escrita en el código: la URL y la
+        // cuenta de pruebas llegan por variables de entorno y se pasan al
+        // runner de instrumentación. Si no se configuran, esas pruebas
+        // quedan OMITIDAS (no fallan) y el resto de la suite no cambia.
+        //
+        //   $env:PULGATEC_URL_REAL      = "http://10.0.2.2:9000/"
+        //   $env:PULGATEC_CORREO_REAL   = "<cuenta de pruebas>"
+        //   $env:PULGATEC_PASSWORD_REAL = "<contraseña de pruebas>"
+        //   .\gradlew.bat integracionRealDebugAndroidTest -PpermiteEscrituraReal=true
+        // ---------------------------------------------------------------
+        testInstrumentationRunnerArguments["urlBaseReal"] =
+            (project.findProperty("urlBaseReal") as String?) ?: System.getenv("PULGATEC_URL_REAL") ?: ""
+        testInstrumentationRunnerArguments["correoReal"] = System.getenv("PULGATEC_CORREO_REAL") ?: ""
+        testInstrumentationRunnerArguments["passwordReal"] = System.getenv("PULGATEC_PASSWORD_REAL") ?: ""
+        // Cuenta con rol VENDEDOR: es la que puede publicar productos.
+        testInstrumentationRunnerArguments["correoVendedorReal"] =
+            (project.findProperty("correoVendedorReal") as String?)
+                ?: System.getenv("PULGATEC_CORREO_VENDEDOR_REAL") ?: ""
+        testInstrumentationRunnerArguments["passwordVendedorReal"] =
+            (project.findProperty("passwordVendedorReal") as String?)
+                ?: System.getenv("PULGATEC_PASSWORD_VENDEDOR_REAL") ?: ""
+        testInstrumentationRunnerArguments["permiteEscrituraReal"] =
+            (project.findProperty("permiteEscrituraReal") as String?) ?: "false"
+        testInstrumentationRunnerArguments["permitirHostRemoto"] =
+            (project.findProperty("permitirHostRemoto") as String?) ?: "false"
+        // Identificadores de datos existentes que necesitan algunas pruebas.
+        listOf("idProductoReal", "idVendedorReal", "idPedidoReal").forEach { clave ->
+            testInstrumentationRunnerArguments[clave] = (project.findProperty(clave) as String?) ?: ""
+        }
     }
 
     buildTypes {
@@ -40,6 +78,9 @@ android {
 
     buildFeatures {
         compose = true
+        // AUD-33 - en AGP 8+ BuildConfig no se genera por defecto; es necesario
+        // para leer BASE_URL y ADMIN_BASE_URL desde el código Kotlin.
+        buildConfig = true
     }
 
     sourceSets {
@@ -66,6 +107,9 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    // R1 - `LifecycleStartEffect`: liga el sondeo de HU39 al ciclo de vida
+    // STARTED para que no haya peticiones HTTP en segundo plano.
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
@@ -89,6 +133,11 @@ dependencies {
 
     // Pruebas
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    // Servidor HTTP de pruebas en la JVM: permite verificar los repositorios
+    // de productos y favoritos (rutas, query, cuerpo y multipart) sin
+    // emulador. Misma versión de OkHttp (4.12.0) que usa la aplicación.
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test:runner:1.7.0")
@@ -106,3 +155,20 @@ dependencies {
     // comprobando que la informacion del usuario NO se borra al actualizarse.
     androidTestImplementation("androidx.room:room-testing:2.8.4")
 }
+
+/**
+ * Grupo C - Pruebas de integración contra el backend REAL.
+ *
+ * Ejecuta la suite instrumentada en el dispositivo. Las pruebas del paquete
+ * `com.ejemplo.publicarproducto.integracion` solo se ejecutan si se
+ * configuraron `PULGATEC_URL_REAL`, `PULGATEC_CORREO_REAL` y
+ * `PULGATEC_PASSWORD_REAL` (ver `defaultConfig`); si no, quedan omitidas con
+ * un mensaje que explica cómo habilitarlas. Las que escriben datos exigen
+ * además `-PpermiteEscrituraReal=true`.
+ */
+tasks.register("integracionRealDebugAndroidTest") {
+    group = "verification"
+    description = "Ejecuta la suite instrumentada, incluidas las pruebas de integración real (Grupo C)."
+    dependsOn("connectedDebugAndroidTest")
+}
+

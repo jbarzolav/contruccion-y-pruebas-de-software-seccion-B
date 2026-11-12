@@ -1,0 +1,289 @@
+package com.ejemplo.publicarproducto.viewmodel
+
+import com.ejemplo.publicarproducto.view.*
+import com.ejemplo.publicarproducto.viewmodel.*
+
+import android.app.Application
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ejemplo.publicarproducto.model.repository.AdminRepositorio
+import com.ejemplo.publicarproducto.model.repository.ColaOperacionesRepositorio
+import com.ejemplo.publicarproducto.model.di.ContenedorDatos
+import com.ejemplo.publicarproducto.model.repository.MetricasRepositorio
+import com.ejemplo.publicarproducto.model.sync.MonitorConectividad
+import com.ejemplo.publicarproducto.model.repository.NotificacionesRepositorio
+import com.ejemplo.publicarproducto.model.repository.PedidosRepositorio
+import com.ejemplo.publicarproducto.model.di.ProveedorDatos
+import com.ejemplo.publicarproducto.model.repository.UmbralStockRepositorio
+import com.ejemplo.publicarproducto.model.local.Ambitos
+import com.ejemplo.publicarproducto.model.local.EntidadMetadatoSincronizacion
+import com.ejemplo.publicarproducto.model.local.EntidadMetricasVentas
+import com.ejemplo.publicarproducto.model.local.EntidadNotificacion
+import com.ejemplo.publicarproducto.model.local.EntidadPedido
+import com.ejemplo.publicarproducto.model.local.EntidadUmbralStock
+import com.ejemplo.publicarproducto.model.local.EstadosOperacion
+import com.ejemplo.publicarproducto.model.local.PulgaTecDatabase
+import com.ejemplo.publicarproducto.model.local.RecursosSincronizacion
+import com.ejemplo.publicarproducto.model.local.TiposOperacion
+import com.ejemplo.publicarproducto.model.session.SessionManager
+import com.ejemplo.publicarproducto.model.sync.ServicioSincronizacion
+import com.ejemplo.publicarproducto.testing.ServidorDePruebas
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import androidx.lifecycle.ViewModel
+import com.ejemplo.publicarproducto.testing.cancelarAlcance
+
+/**
+ * Mejora técnica Offline First - aislamiento por usuario y cierre de sesión.
+ *
+ * Verifica que la información local de un usuario no sea visible para otro y
+ * que al cerrar sesión se borre del dispositivo toda la información local
+ * (notificaciones, pedidos, cola de pendientes y metadatos) para que no
+ * pueda verla nadie más.
+ */
+@RunWith(AndroidJUnit4::class)
+class CierreSesionDatosLocalesTest {
+
+    private lateinit var contexto: Context
+    private lateinit var aplicacion: Application
+    private lateinit var bd: PulgaTecDatabase
+    private lateinit var sesion: SessionManager
+    private lateinit var cola: ColaOperacionesRepositorio
+    private lateinit var servidor: ServidorDePruebas
+
+    private val usuarioId = 880001L
+    private val otroUsuarioId = 880002L
+
+    /**
+     * ViewModels creados por la prueba.
+     *
+     * Sus colectores de Room viven en `viewModelScope`: hay que cancelar ese
+     * alcance ANTES de cerrar la base (lección D-3), o Room consultaría una
+     * base ya cerrada y el proceso de pruebas se caería.
+     */
+    private val viewModels = mutableListOf<ViewModel>()
+
+    /** Crea un ViewModel registrado para cancelar su alcance al terminar. */
+    private fun <T : ViewModel> registrar(model: T): T {
+        viewModels += model
+        return model
+    }
+
+    @Before
+    fun setUp() {
+        aplicacion = ApplicationProvider.getApplicationContext()
+        contexto = aplicacion
+        bd = PulgaTecDatabase.crearEnMemoria(contexto)
+        servidor = ServidorDePruebas()
+        sesion = SessionManager(contexto)
+        cola = ColaOperacionesRepositorio(bd.operacionPendienteDao())
+    }
+
+    @After
+    fun tearDown() {
+        // Primero se detienen los colectores de Room y después se cierra la
+        // base: al revés, Room consultaría una base ya cerrada.
+        viewModels.forEach { it.cancelarAlcance() }
+        viewModels.clear()
+
+        sesion.invalidarSesion()
+        ProveedorDatos.fijar(null)
+
+        bd.close()
+        servidor.cerrar()
+    }
+
+    private fun contenedor(): ContenedorDatos {
+        val notificaciones = NotificacionesRepositorio(bd, servidor.api, cola)
+        val pedidos = PedidosRepositorio(bd, servidor.api, cola)
+        // HU 57/HU 58 - El panel de métricas y los umbrales de stock también
+        // son información local del usuario.
+        val metricas = MetricasRepositorio(bd, servidor.api)
+        val umbrales = UmbralStockRepositorio(bd, servidor.api, cola, notificaciones)
+        return ContenedorDatos(
+            contexto = contexto,
+            bd = bd,
+            cola = cola,
+            notificaciones = notificaciones,
+            pedidos = pedidos,
+            metricas = metricas,
+            umbrales = umbrales,
+            metadatos = bd.metadatoSincronizacionDao(),
+            conectividad = MonitorConectividad(contexto),
+            sesion = sesion,
+            sincronizacion = ServicioSincronizacion(
+                bd = bd,
+                api = servidor.api,
+                cola = cola,
+                notificaciones = notificaciones,
+                pedidos = pedidos,
+                metadatos = bd.metadatoSincronizacionDao(),
+                sesion = sesion,
+                umbrales = umbrales
+            ),
+            // HU 23/HU 24 - sin esta inyección el contenedor usaría el
+            // cliente real de Django (10.0.2.2:8001).
+            admin = AdminRepositorio(servidor.adminApi)
+        )
+    }
+
+    private suspend fun guardaDatosDelUsuario(id: Long) {
+        bd.notificacionDao().guardarTodas(
+            listOf(
+                EntidadNotificacion(
+                    usuarioId = id,
+                    idNotificacion = 10L,
+                    tipo = "NUEVO_MENSAJE",
+                    resumen = "Aviso de $id",
+                    fecha = "2024-05-01T10:15:30.000000000",
+                    estado = "PENDIENTE",
+                    idPedido = null,
+                    enlace = "/consultas?c=1",
+                    idConversacion = 7,
+                    fechaLectura = null,
+                    fechaSincronizacion = 1L,
+                    pendienteLecturaLocal = false
+                )
+            )
+        )
+        bd.pedidoDao().guardarPedidos(
+            listOf(
+                EntidadPedido(
+                    usuarioId = id,
+                    idPedido = 55L,
+                    ambito = Ambitos.COMPRAS,
+                    clienteId = id,
+                    fecha = "2024-05-01T10:15:30.000000000",
+                    total = "120.00",
+                    estado = "REGISTRADO",
+                    fechaActualizacion = null,
+                    estadosPermitidos = null,
+                    estadoPendienteLocal = null,
+                    fechaSincronizacion = 1L
+                )
+            )
+        )
+        cola.encolar(
+            usuarioId = id,
+            tipoOperacion = TiposOperacion.MARCAR_NOTIFICACION_LEIDA,
+            recursoId = "10",
+            payload = null,
+            claveUnica = "notificacion:10"
+        )
+        bd.metadatoSincronizacionDao().guardar(
+            EntidadMetadatoSincronizacion(
+                usuarioId = id,
+                recurso = RecursosSincronizacion.OPERACIONES,
+                fechaUltimaSincronizacion = 1L,
+                estado = "SINCRONIZADO",
+                mensaje = "Sincronizado"
+            )
+        )
+        // HU 57 - El último panel de métricas de ventas del usuario.
+        bd.metricasDao().guardar(
+            EntidadMetricasVentas(
+                usuarioId = id,
+                clavePeriodo = "2024-05-01|2024-05-31|true",
+                payload = """{"cantidadPedidos":3}""",
+                fechaSincronizacion = 1L
+            )
+        )
+        // HU 58 - Los umbrales de stock del usuario.
+        bd.umbralStockDao().guardarUno(
+            EntidadUmbralStock(
+                usuarioId = id,
+                idProducto = 7L,
+                nombre = "Café molido",
+                imagenUrl = null,
+                stock = 4,
+                umbral = 5,
+                stockBajo = true,
+                alertaNotificada = false,
+                fechaActualizacion = null,
+                umbralPendienteLocal = null,
+                fechaSincronizacion = 1L
+            )
+        )
+    }
+
+    @Test
+    fun losDatosDeUnUsuarioNoSonVisiblesPorOtro() = runTest {
+        guardaDatosDelUsuario(usuarioId)
+
+        assertNull(bd.notificacionDao().buscar(otroUsuarioId, 10L))
+        assertNull(bd.pedidoDao().buscarPedido(otroUsuarioId, 55L, Ambitos.COMPRAS))
+        assertTrue(cola.observarPendientes(otroUsuarioId).first().isEmpty())
+        assertNull(bd.metadatoSincronizacionDao().buscar(otroUsuarioId, RecursosSincronizacion.OPERACIONES))
+        // HU 57/HU 58 - Tampoco las copias locales de métricas ni umbrales.
+        assertNull(bd.metricasDao().buscar(otroUsuarioId))
+        assertNull(bd.umbralStockDao().buscar(otroUsuarioId, 7L))
+    }
+
+    @Test
+    fun alCerrarSesionSeBorraTodaLaInformacionLocalDelUsuario() = runTest {
+        sesion.guardarSesion(token = "token-prueba", id = usuarioId, correo = "prueba@pulgatec.pe")
+        guardaDatosDelUsuario(usuarioId)
+        ProveedorDatos.fijar(contenedor())
+
+        val model = registrar(SesionViewModel(aplicacion))
+        model.volverAlLogin()
+
+        // La limpieza se ejecuta en el ambito de la vista: se espera a que termine.
+        val limite = System.currentTimeMillis() + 15_000L
+        while (System.currentTimeMillis() < limite) {
+            if (bd.notificacionDao().buscar(usuarioId, 10L) == null &&
+                cola.observarPendientes(usuarioId).first().isEmpty()
+            ) break
+            delay(50)
+        }
+
+        assertNull("El aviso no debe quedar en el dispositivo", bd.notificacionDao().buscar(usuarioId, 10L))
+        assertNull("El pedido no debe quedar en el dispositivo", bd.pedidoDao().buscarPedido(usuarioId, 55L, Ambitos.COMPRAS))
+        assertTrue("La cola no debe quedar en el dispositivo", cola.observarPendientes(usuarioId).first().isEmpty())
+        assertNull(
+            "Los metadatos no deben quedar en el dispositivo",
+            bd.metadatoSincronizacionDao().buscar(usuarioId, RecursosSincronizacion.OPERACIONES)
+        )
+        // HU 57 - El panel de métricas es información del usuario: se borra.
+        assertNull(
+            "Las metricas no deben quedar en el dispositivo",
+            bd.metricasDao().buscar(usuarioId)
+        )
+        // HU 58 - Los umbrales de stock son información del usuario: se borran.
+        assertNull(
+            "Los umbrales no deben quedar en el dispositivo",
+            bd.umbralStockDao().buscar(usuarioId, 7L)
+        )
+        // La sesion queda invalidada.
+        assertTrue(!sesion.haySesion())
+    }
+
+    @Test
+    fun elHistorialDeOperacionesConservaLoConfirmado() = runTest {
+        cola.encolar(
+            usuarioId = usuarioId,
+            tipoOperacion = TiposOperacion.MARCAR_NOTIFICACION_LEIDA,
+            recursoId = "10",
+            payload = null,
+            claveUnica = "notificacion:10"
+        )
+        val pendiente = cola.observarPendientes(usuarioId).first().single()
+        cola.confirmar(pendiente.id, "Confirmada por el servidor.")
+
+        val historial = cola.observarTodas(usuarioId).first()
+        assertEquals(1, historial.size)
+        assertEquals(EstadosOperacion.CONFIRMADA, historial.single().estado)
+        assertEquals("Confirmada por el servidor.", historial.single().ultimoMensajeError)
+        // Una operacion confirmada ya no espera confirmacion del servidor.
+        assertTrue(cola.observarPendientes(usuarioId).first().isEmpty())
+    }
+}
