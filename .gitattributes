@@ -1,0 +1,51 @@
+# Normalización de finales de línea (R13).
+#
+# Git guarda LF en el repositorio y convierte a CRLF en el directorio de
+# trabajo cuando `core.autocrlf=true` (valor habitual en Windows). Fijar
+# `text=auto` aquí hace que ESA normalización no dependa de la configuración
+# local de cada equipo: el índice siempre contiene LF y el diff deja de
+# depender del equipo desde el que se hizo el cambio.
+#
+# No se fija `eol=` a propósito: forzar LF (o CRLF) en el directorio de
+# trabajo reescribiría los ~293 archivos que hoy tienen CRLF y generaría un
+# diff masivo, sin aportar nada al comportamiento de la aplicación.
+#
+# Reglas aplicadas:
+# - `*.kt`, `*.kts`, `*.java`, `*.xml`, `*.json`, `*.md`, `*.txt`, `*.yml`,
+#   `*.yaml`, `*.gradle` y `*.properties` son texto: se normalizan a LF en el
+#   índice.
+# - `*.png`, `*.jpg`, `*.jpeg`, `*.gif`, `*.webp`, `*.ico`, `*.jar`, `*.aar`,
+#   `*.apk`, `*.keystore`, `*.jks` y `*.pdf` son binarios: nunca se tocan.
+# - Los schemas exportados de Room (`app/schemas/**.json`) se normalizan
+#   también, pero NO se modifican: su contenido estructural es intocable.
+* text=auto
+
+*.kt text
+*.kts text
+*.java text
+*.xml text
+*.json text
+*.md text
+*.txt text
+*.yml text
+*.yaml text
+*.gradle text
+*.properties text
+*.sql text
+*.css text
+*.js text
+*.jsx text
+*.html text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.jar binary
+*.aar binary
+*.apk binary
+*.keystore binary
+*.jks binary
+*.pdf binary
