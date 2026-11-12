@@ -13,5 +13,9 @@ public interface TokenRecuperacionRepository extends JpaRepository<TokenRecupera
     @Query("select t from TokenRecuperacion t where t.token = :token")
     Optional<TokenRecuperacion> buscarParaConsumir(@Param("token") String token);
 
+    // Consulta de solo lectura para validar el código sin consumirlo.
+    @Query("select t from TokenRecuperacion t where t.token = :token")
+    Optional<TokenRecuperacion> buscarPorToken(@Param("token") String token);
+
     void deleteByUsuarioId(Long usuarioId);
 }

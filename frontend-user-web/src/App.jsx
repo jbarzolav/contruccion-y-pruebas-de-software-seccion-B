@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, Link, NavLink, Route, Routes } from 'react-router-dom'
+import { HashRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Inicio from './components/Inicio.jsx'
 import PublicarProducto from './components/PublicarProducto.jsx'
 import EditarProducto from './components/EditarProducto.jsx'
@@ -48,6 +48,37 @@ function AccesoVendedor({ children }) {
     if (!sesion) return <section className="tarjeta"><p>Debes iniciar sesión para continuar.</p><Link to="/login">Iniciar sesión</Link></section>
     if (sesion.rol !== 'VENDEDOR') return <section className="tarjeta"><p>Esta sección es solo para vendedores.</p><Link to="/">Volver al inicio</Link></section>
     return children
+}
+
+/**
+ * Los avisos apuntan a un ancla dentro de la pantalla (por ejemplo
+ * /pedidos-recibidos#pedido-12). El router cambia la URL, pero por sí solo no
+ * desplaza la vista: este componente lleva la pantalla hasta el elemento
+ * indicado y lo resalta para que quede claro a dónde se fue.
+ */
+function DesplazarAlAncla() {
+    const location = useLocation()
+    useEffect(() => {
+        const ancla = location.hash ? decodeURIComponent(location.hash.slice(1)) : ''
+        if (!ancla) return undefined
+        let pendientes = 0
+        let temporizador = null
+        function buscar() {
+            const destino = document.getElementById(ancla)
+            if (destino) {
+                destino.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                destino.classList.add('ancla-destacada')
+                window.setTimeout(() => destino.classList.remove('ancla-destacada'), 2600)
+                return
+            }
+            // El destino puede pintarse después de cargar los datos: se reintenta.
+            pendientes += 1
+            if (pendientes < 15) temporizador = window.setTimeout(buscar, 120)
+        }
+        buscar()
+        return () => { if (temporizador) window.clearTimeout(temporizador) }
+    }, [location.pathname, location.hash, location.key])
+    return null
 }
 
 /**
@@ -221,6 +252,7 @@ export default function App() {
 
     return (
         <HashRouter>
+            <DesplazarAlAncla />
             <main className="contenedor">
                 {/* ===== Header: 3 accesos principales + acciones ===== */}
                 <header className="app-header">

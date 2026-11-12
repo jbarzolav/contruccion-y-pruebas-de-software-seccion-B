@@ -23,9 +23,15 @@ export async function registrar(nombre, correo, password, confirmacionPassword) 
   return data
 }
 
-// HU 22 - Recuperación mediante enlace temporal de un solo uso.
+// HU 22 - Recuperación mediante código temporal de un solo uso.
 export async function solicitarRecuperacion(correo) {
   const { data } = await apiAuth.post('/recuperacion', { correo })
+  return data
+}
+
+// HU 22 - Paso 1: valida el código recibido por correo sin consumirlo.
+export async function verificarCodigoRecuperacion(codigo) {
+  const { data } = await apiAuth.post('/recuperacion/verificar', { codigo })
   return data
 }
 

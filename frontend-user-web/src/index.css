@@ -98,6 +98,20 @@ button:disabled {
 .formulario-resena blockquote { margin: 0; padding: 12px; background: #f4f6f8; border-left: 4px solid #2563eb; }
 .pedido-historial { margin: 16px 0; }
 
+/* Avisos con ancla: resalta el destino al que se navega desde la notificación. */
+.ancla-destacada {
+  outline: 3px solid #f59e0b;
+  outline-offset: 3px;
+  border-radius: 10px;
+  animation: ancla-pulso 2.4s ease-out;
+}
+
+@keyframes ancla-pulso {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  60%  { box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
 /* HU 50 - Detalle del pedido: tabla de productos, cantidades y totales. */
 .tabla {
   width: 100%;

@@ -11,13 +11,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class RecuperacionService {
     public static final String MENSAJE_SOLICITUD =
-            "Si el correo está registrado, recibirás un enlace para recuperar tu acceso.";
+            "Si el correo está registrado, recibirás un código para recuperar tu acceso.";
+    private static final SecureRandom ALEATORIO = new SecureRandom();
     private final UsuarioRepository usuarios;
     private final TokenRecuperacionRepository tokens;
     private final PasswordEncoder encoder;
@@ -39,11 +40,32 @@ public class RecuperacionService {
     @Transactional
     public void solicitar(String correo) {
         usuarios.findByCorreoIgnoreCase(correo).ifPresent(usuario -> {
-            String token = UUID.randomUUID().toString();
+            String token = generarCodigo();
             tokens.save(new TokenRecuperacion(token, usuario,
                     Instant.now().plusSeconds(minutosVigencia * 60)));
             correoService.enviar(usuario.getCorreo(), token);
         });
+    }
+
+    // Código de 6 dígitos enviado por correo; se repite si ya existe otro pendiente.
+    private String generarCodigo() {
+        String codigo;
+        do {
+            codigo = String.format("%06d", ALEATORIO.nextInt(1_000_000));
+        } while (tokens.existsById(codigo));
+        return codigo;
+    }
+
+    /**
+     * Valida el código sin consumirlo: la contraseña solo se cambia después de
+     * que el usuario haya confirmado que el código es correcto.
+     */
+    @Transactional(readOnly = true)
+    public boolean codigoValido(String codigo) {
+        if (codigo == null || codigo.isBlank()) return false;
+        return tokens.buscarPorToken(codigo.trim())
+                .filter(t -> t.getVencimiento().isAfter(Instant.now()))
+                .isPresent();
     }
 
     @Transactional
@@ -57,7 +79,7 @@ public class RecuperacionService {
         TokenRecuperacion token = tokens.buscarParaConsumir(solicitud.getToken())
                 .filter(t -> t.getVencimiento().isAfter(Instant.now()))
                 .orElseThrow(() -> new RecuperacionInvalidaException(
-                        "El enlace de recuperación es inválido o ha vencido."));
+                        "El código de recuperación es inválido o ha vencido."));
         var usuario = token.getUsuario();
         usuario.setPasswordHash(encoder.encode(solicitud.getPassword()));
         usuarios.save(usuario);
