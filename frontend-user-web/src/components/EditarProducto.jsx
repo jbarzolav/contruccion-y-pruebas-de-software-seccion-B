@@ -1,3 +1,4 @@
+import { CATEGORIAS_PRODUCTO } from '../utils/categoriasProducto.js'
 import { useEffect, useRef, useState } from 'react'
 import { actualizarProducto, retirarProducto } from '../api/productos.js'
 import { usuarioActualId } from '../api/sesion.js'
@@ -21,14 +22,14 @@ const FORM_INICIAL = {
  * @param {function} onGuardado - Se ejecuta con el producto actualizado
  * @param {function} onCancelar - Se ejecuta al cancelar la edición
  */
-export default function EditarProducto({ producto, onGuardado, onCancelar }) {
+export default function EditarProducto({ producto, onGuardado, onCancelar, confirmarRetiroInicial = false }) {
   const [formulario, setFormulario] = useState(FORM_INICIAL)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState(null)
   const [cargando, setCargando] = useState(false)
 
   // HU 04 - Retiro de la publicación
-  const [confirmarRetiro, setConfirmarRetiro] = useState(false)
+  const [confirmarRetiro, setConfirmarRetiro] = useState(confirmarRetiroInicial)
   const [retirando, setRetirando] = useState(false)
 
   const idAnteriorRef = useRef(null)
@@ -52,8 +53,8 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
       estado: producto.estado ?? 'DISPONIBLE',
     })
     setErrores({})
-    setConfirmarRetiro(false)
-  }, [producto])
+    setConfirmarRetiro(confirmarRetiroInicial)
+  }, [producto, confirmarRetiroInicial])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -78,7 +79,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
 
   // HU 04 - Retirar publicación (baja lógica, sin delete físico)
   const retirarPublicacion = async () => {
-    setConfirmarRetiro(false)
+    if (!confirmarRetiroInicial) setConfirmarRetiro(false)
     setMensaje(null)
 
     try {
@@ -91,7 +92,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
 
       setMensaje({
         tipo: 'exito',
-        texto: `Publicación retirada (estado ${actualizado.estado}). El producto no se eliminó: es una baja lógica.`,
+        texto: 'Retiraste la publicación del catálogo.',
       })
 
       onGuardado?.(actualizado)
@@ -198,6 +199,75 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
     )
   }
 
+  function cerrarConfirmacion() {
+    if (confirmarRetiroInicial) onCancelar?.()
+    else setConfirmarRetiro(false)
+  }
+
+  const confirmacionRetiro = confirmarRetiro && (
+    <div
+      className="modal-overlay modal-confirmacion"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => {
+        if (!retirando) cerrarConfirmacion()
+      }}
+    >
+      <div
+        className="modal"
+        onClick={(evento) => evento.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-cerrar"
+          onClick={() => cerrarConfirmacion()}
+          disabled={retirando}
+          aria-label="Cerrar la confirmación"
+        >
+          ✕
+        </button>
+
+        <span className="confirmacion-icono" aria-hidden="true">
+          ⚠
+        </span>
+
+        <h3 className="confirmacion-titulo">
+          ¿Retirar esta publicación?
+        </h3>
+
+        <p className="confirmacion-texto">
+          <strong>{producto.nombre}</strong> dejará de aparecer en el catálogo.
+        </p>
+
+        {confirmarRetiroInicial && mensaje?.tipo === 'error' && (
+          <p className="alerta error" role="alert">{mensaje.texto}</p>
+        )}
+
+        <div className="confirmacion-botones">
+          <button
+            type="button"
+            className="btn-secundario"
+            onClick={() => cerrarConfirmacion()}
+            disabled={retirando}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="btn-peligro"
+            onClick={retirarPublicacion}
+            disabled={retirando}
+          >
+            {retirando ? 'Retirando…' : 'Sí, retirar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (confirmarRetiroInicial) return confirmacionRetiro
+
   const estaRetirado = producto.estado === 'RETIRADO'
 
   return (
@@ -267,13 +337,13 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
         <div className="fila">
           <div className="campo">
             <label htmlFor="ed-categoria">Categoría *</label>
-            <input
-              id="ed-categoria"
-              name="categoria"
-              type="text"
-              value={formulario.categoria}
-              onChange={handleChange}
-            />
+            <select id="ed-categoria" name="categoria" value={formulario.categoria} onChange={handleChange}>
+              <option value="" disabled>Selecciona una categoría</option>
+              {producto.categoria && !CATEGORIAS_PRODUCTO.includes(producto.categoria) &&
+                <option value={producto.categoria}>{producto.categoria} (actual)</option>}
+              {CATEGORIAS_PRODUCTO.map(categoria =>
+                <option key={categoria} value={categoria}>{categoria}</option>)}
+            </select>
             {errores.categoria && (
               <span className="error">{errores.categoria}</span>
             )}
@@ -331,66 +401,7 @@ export default function EditarProducto({ producto, onGuardado, onCancelar }) {
         </p>
       )}
 
-      {/* HU 04 - Diálogo de confirmación antes de retirar */}
-      {confirmarRetiro && (
-        <div
-          className="modal-overlay modal-confirmacion"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => {
-            if (!retirando) setConfirmarRetiro(false)
-          }}
-        >
-          <div
-            className="modal"
-            onClick={(evento) => evento.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="modal-cerrar"
-              onClick={() => setConfirmarRetiro(false)}
-              disabled={retirando}
-              aria-label="Cerrar la confirmación"
-            >
-              ✕
-            </button>
-
-            <span className="confirmacion-icono" aria-hidden="true">
-              ⚠
-            </span>
-
-            <h3 className="confirmacion-titulo">
-              ¿Retirar esta publicación?
-            </h3>
-
-            <p className="confirmacion-texto">
-              El producto <strong>{producto.nombre}</strong> (ID {producto.id})
-              quedará en estado <strong>RETIRADO</strong>. Es una{' '}
-              <strong>baja lógica</strong>: no se elimina de la base de datos.
-            </p>
-
-            <div className="confirmacion-botones">
-              <button
-                type="button"
-                className="btn-secundario"
-                onClick={() => setConfirmarRetiro(false)}
-                disabled={retirando}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="btn-peligro"
-                onClick={retirarPublicacion}
-                disabled={retirando}
-              >
-                {retirando ? 'Retirando…' : 'Sí, retirar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {confirmacionRetiro}
     </section>
   )
 }

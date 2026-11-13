@@ -129,7 +129,7 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
 
             <aside className="drawer-panel" aria-label="Carrito de compras">
                 <div className="drawer-cabecera">
-                    <h2>🛒 Mi carrito</h2>
+                    <h2>Mi carrito</h2>
                     <button
                         type="button"
                         className="modal-cerrar"

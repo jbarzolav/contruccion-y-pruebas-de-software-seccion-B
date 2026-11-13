@@ -1,3 +1,4 @@
+import { CATEGORIAS_PRODUCTO } from '../utils/categoriasProducto.js'
 import { useEffect, useState } from 'react'
 import { crearProducto, subirImagenProducto } from '../api/productos.js'
 import { usuarioActualId } from '../api/sesion.js'
@@ -266,7 +267,7 @@ export default function PublicarProducto({ onProductoCreado }) {
                   onChange={handleChange}
               >
                 <option value="" disabled>Selecciona una categoría</option>
-                {['Accesorios', 'Audio y video', 'Celulares y tablets', 'Componentes de PC', 'Computadoras', 'Electrónica', 'Otros', 'Periféricos'].map(categoria => (
+                {CATEGORIAS_PRODUCTO.map(categoria => (
                   <option key={categoria} value={categoria}>{categoria}</option>
                 ))}
               </select>

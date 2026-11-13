@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { listarBandeja, marcarNotificacionLeida, marcarTodasComoLeidas } from '../api/notificaciones.js'
 import { fechaHoraPedidoVisible, resumenNotificacionVisible } from '../utils/formatoPedidos.js'
 
@@ -12,6 +12,13 @@ const OPCIONES_TIPO = [
   // HU 58 - Avisos de stock bajo de las publicaciones del vendedor.
   { valor: 'STOCK_BAJO', etiqueta: 'Stock bajo' },
 ]
+
+const ACCIONES_POR_TIPO = {
+  NUEVO_MENSAJE: 'Abrir conversación',
+  CAMBIO_ESTADO_PEDIDO: 'Ver compra',
+  NUEVA_COMPRA: 'Ver compra',
+  STOCK_BAJO: 'Ver producto',
+}
 
 const OPCIONES_ESTADO = [
   { valor: '', etiqueta: 'Todos los estados' },
@@ -38,6 +45,7 @@ function rangoFechas(preset) {
 }
 
 export default function BandejaNotificaciones() {
+  const navegar = useNavigate()
   const [tipo, setTipo] = useState('')
   const [estado, setEstado] = useState('')
   const [fecha, setFecha] = useState('')
@@ -67,18 +75,27 @@ export default function BandejaNotificaciones() {
     return (evento) => { setter(evento.target.value); setPagina(0) }
   }
 
-  async function marcarLeida(aviso) {
+  async function marcarLeida(aviso, destino) {
     if (accionando) return
     try {
       setAccionando(aviso.idNotificacion)
       setError('')
       await marcarNotificacionLeida(aviso.idNotificacion)
-      setVersion((valor) => valor + 1)
+      if (destino) navegar(destino)
+      else setVersion((valor) => valor + 1)
     } catch (err) {
       setError(err?.response?.data?.messages?.[0] || 'No se pudo marcar la notificación como leída.')
     } finally {
       setAccionando(null)
     }
+  }
+
+  function abrirDetalle(evento, aviso) {
+    if (evento.defaultPrevented || evento.button !== 0 || evento.metaKey || evento.ctrlKey
+      || evento.shiftKey || evento.altKey || aviso.estado !== 'PENDIENTE') return
+
+    evento.preventDefault()
+    marcarLeida(aviso, aviso.enlace)
   }
 
   async function marcarTodas() {
@@ -97,20 +114,23 @@ export default function BandejaNotificaciones() {
 
   const { notificaciones, pendientes, totalElementos, totalPaginas, tieneSiguiente } = bandeja
 
-  return <section>
-    <h2>Notificaciones</h2>
-    <p>
-      {pendientes > 0
-        ? <><strong>{pendientes}</strong> notificación(es) pendiente(s) en toda tu bandeja.</>
-        : 'No tienes notificaciones pendientes.'}
-    </p>
-    <button className="btn-primario" type="button" disabled={accionando !== null || !pendientes}
-      onClick={marcarTodas}>
-      {accionando === 'todas' ? 'Marcando…' : 'Marcar todas como leídas'}
-    </button>
+  const cantidadAvisos = `${totalElementos} ${totalElementos === 1 ? 'aviso' : 'avisos'}`
 
-    {/* HU 53 - Filtros combinables de tipo, estado y rango de fechas. */}
-    <div className="campo" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
+  return <section className="bandeja-notificaciones">
+    <header className="bandeja-cabecera">
+      <div>
+        <h2>Notificaciones</h2>
+        <p aria-live="polite">{pendientes === 0
+          ? 'Estás al día'
+          : pendientes === 1 ? '1 aviso sin leer' : `${pendientes} avisos sin leer`}</p>
+      </div>
+      <button className="btn-secundario" type="button" disabled={accionando !== null || !pendientes}
+        onClick={marcarTodas}>
+        {accionando === 'todas' ? 'Marcando…' : 'Marcar todas como leídas'}
+      </button>
+    </header>
+
+    <div className="bandeja-filtros" role="group" aria-label="Filtrar notificaciones">
       <label>Tipo
         <select value={tipo} onChange={cambiarFiltro(setTipo)}>
           {OPCIONES_TIPO.map((opcion) => <option key={opcion.valor} value={opcion.valor}>{opcion.etiqueta}</option>)}
@@ -133,27 +153,40 @@ export default function BandejaNotificaciones() {
     {error && <div className="alerta error" role="alert">{error}</div>}
     {cargando && <p role="status">Cargando notificaciones…</p>}
     {!cargando && !error && !notificaciones.length &&
-      <p>No hay notificaciones con los filtros seleccionados.</p>}
+      <p className="bandeja-vacia">{tipo || estado || fecha
+        ? 'No hay avisos que coincidan con estos filtros.'
+        : 'Todavía no tienes notificaciones.'}</p>}
 
-    {!cargando && notificaciones.map((aviso) => <article className="tarjeta" key={aviso.idNotificacion}>
-      <p>
-        <span className="badge">{aviso.estado === 'LEIDA' ? 'Leída' : 'Pendiente'}</span>{' '}
-        {resumenNotificacionVisible(aviso)} · {fechaHoraPedidoVisible(aviso.fecha)}
-      </p>
-      {aviso.fechaLectura && <p>Leída el {fechaHoraPedidoVisible(aviso.fechaLectura)}</p>}
-      <Link className="btn-secundario" to={aviso.enlace}>Ver detalle</Link>
-      {aviso.estado === 'PENDIENTE' && <button className="btn-secundario" type="button"
-        disabled={accionando !== null}
-        onClick={() => marcarLeida(aviso)}>
-        {accionando === aviso.idNotificacion ? 'Marcando…' : 'Marcar como leída'}
-      </button>}
-    </article>)}
+    {!cargando && notificaciones.length > 0 && <div className="bandeja-lista">
+      {notificaciones.map((aviso) => <article className="bandeja-aviso"
+        data-pendiente={aviso.estado === 'PENDIENTE'} key={aviso.idNotificacion}>
+        <div className="bandeja-aviso-texto">
+          <div className="bandeja-aviso-meta">
+            <span className="bandeja-estado">{aviso.estado === 'LEIDA' ? 'Leída' : 'Sin leer'}</span>
+            <span>{fechaHoraPedidoVisible(aviso.fecha)}</span>
+          </div>
+          <p>{resumenNotificacionVisible(aviso)}</p>
+          {aviso.fechaLectura && <small>Leída el {fechaHoraPedidoVisible(aviso.fechaLectura)}</small>}
+        </div>
+        <div className="bandeja-acciones">
+          <Link className="btn-secundario" to={aviso.enlace}
+            onClick={(evento) => abrirDetalle(evento, aviso)}>
+            {ACCIONES_POR_TIPO[aviso.tipo] ?? 'Ver detalle'}
+          </Link>
+          {aviso.estado === 'PENDIENTE' && <button className="btn-secundario" type="button"
+            disabled={accionando !== null}
+            onClick={() => marcarLeida(aviso)}>
+            {accionando === aviso.idNotificacion ? 'Marcando…' : 'Marcar como leída'}
+          </button>}
+        </div>
+      </article>)}
+    </div>}
 
-    {totalElementos > 0 && <nav aria-label="Paginación de notificaciones"
-      style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+    {!cargando && !error && totalElementos > 0 && totalPaginas <= 1 && <span>{cantidadAvisos}</span>}
+    {totalPaginas > 1 && <nav className="bandeja-paginacion" aria-label="Paginación de notificaciones">
       <button className="btn-secundario" type="button" disabled={cargando || pagina === 0}
         onClick={() => setPagina((valor) => Math.max(0, valor - 1))}>Anterior</button>
-      <span>Página {pagina + 1} de {Math.max(totalPaginas, 1)} · {totalElementos} notificación(es)</span>
+      <span>Página {pagina + 1} de {totalPaginas} · {cantidadAvisos}</span>
       <button className="btn-secundario" type="button" disabled={cargando || !tieneSiguiente}
         onClick={() => setPagina((valor) => valor + 1)}>Siguiente</button>
     </nav>}

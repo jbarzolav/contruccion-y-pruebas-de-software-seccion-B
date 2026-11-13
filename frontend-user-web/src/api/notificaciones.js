@@ -20,14 +20,37 @@ export async function listarBandeja({ tipo, estado, desde, hasta, page } = {}) {
   return data
 }
 
+export const EVENTO_LECTURA_NOTIFICACIONES = 'pulgatec:lectura-notificaciones'
+
 /** HU 54 - Marca una notificación propia como leída (idempotente). */
 export async function marcarNotificacionLeida(idNotificacion) {
   const { data } = await api.patch(`/${idNotificacion}/leida`)
+  window.dispatchEvent(new Event(EVENTO_LECTURA_NOTIFICACIONES))
   return data
 }
 
 /** HU 54 - Marca todas las notificaciones pendientes del usuario como leídas. */
 export async function marcarTodasComoLeidas() {
   const { data } = await api.patch('/leidas')
+  window.dispatchEvent(new Event(EVENTO_LECTURA_NOTIFICACIONES))
   return data
+}
+
+export async function listarMensajesPendientes() {
+  const avisos = []
+  let page = 0
+  let bandeja
+  do {
+    bandeja = await listarBandeja({ tipo: 'NUEVO_MENSAJE', estado: 'PENDIENTE', page })
+    avisos.push(...bandeja.notificaciones)
+    page += 1
+  } while (bandeja.tieneSiguiente)
+  return avisos
+}
+
+export async function marcarMensajesLeidos(ids) {
+  const resultados = await Promise.allSettled(ids.map(id => api.patch(`/${id}/leida`)))
+  const leidos = ids.filter((_, indice) => resultados[indice].status === 'fulfilled')
+  if (leidos.length) window.dispatchEvent(new Event(EVENTO_LECTURA_NOTIFICACIONES))
+  return leidos
 }

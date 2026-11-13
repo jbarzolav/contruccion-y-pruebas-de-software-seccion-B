@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { configuracionConsultas } from '../api/conversaciones.js'
 
-export default function FormularioConsulta({ enviar, titulo = 'Consultar al vendedor', onEnviado }) {
+export default function FormularioConsulta({ enviar, titulo = 'Consultar al vendedor', onEnviado, enChat = false }) {
     const [mensaje, setMensaje] = useState('')
     const [maximo, setMaximo] = useState(null)
     const [cargando, setCargando] = useState(false)
@@ -28,18 +28,18 @@ export default function FormularioConsulta({ enviar, titulo = 'Consultar al vend
             await enviar(texto)
             if (!vigente.current) return
             setMensaje('')
-            setExito('Mensaje enviado correctamente.')
+            if (!enChat) setExito('Mensaje enviado correctamente.')
             onEnviado?.()
         } catch (err) {
             if (vigente.current) setError(err?.response?.data?.messages?.[0] || 'No se pudo enviar. Revisa la conexión e inténtalo nuevamente.')
         } finally { if (vigente.current) setCargando(false) }
     }
-    return <form onSubmit={enviarMensaje} className="tarjeta">
-        <h3>{titulo}</h3>
+    return <form onSubmit={enviarMensaje} className={enChat ? "consulta-redactar" : "tarjeta"}>
+        {!enChat && <h3>{titulo}</h3>}
         {!maximo && <p>Cargando configuración… <button type="button" onClick={() => { setError(''); setIntento(i => i + 1) }}>Reintentar</button></p>}
-        <label>Mensaje<textarea aria-label="Mensaje" value={mensaje} maxLength={maximo || undefined}
+        <label>{!enChat && "Mensaje"}<textarea rows={enChat ? 2 : undefined} placeholder={enChat ? "Escribe un mensaje…" : undefined} aria-label="Mensaje" value={mensaje} maxLength={maximo || undefined}
             disabled={cargando || !maximo} onChange={e => setMensaje(e.target.value)} required /></label>
-        {maximo && <p>{mensaje.length}/{maximo} caracteres</p>}
+        {maximo && !enChat && <p>{mensaje.length}/{maximo} caracteres</p>}
         <button className="btn-primario" disabled={cargando || !maximo || !mensaje.trim()}>{cargando ? 'Enviando…' : 'Enviar mensaje'}</button>
         {exito && <p role="status" className="alerta exito">{exito}</p>}
         {error && <p role="alert" className="alerta error">{error}</p>}

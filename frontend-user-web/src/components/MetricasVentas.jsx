@@ -53,28 +53,31 @@ function entero(valor) {
   return Number.isFinite(numero) ? String(numero) : '0'
 }
 
-/** Texto de la variación porcentual; null cuando el periodo anterior fue 0. */
-function variacionVisible(comparativa) {
-  if (!comparativa || comparativa.variacionPorcentual === null || comparativa.variacionPorcentual === undefined) {
-    return 'Sin base de comparación'
-  }
-  const valor = Number(comparativa.variacionPorcentual)
-  const signo = valor > 0 ? '+' : ''
-  return `${signo}${valor.toFixed(2)} %`
+const formatoFecha = new Intl.DateTimeFormat('es-PE', {
+  day: 'numeric', month: 'short', year: 'numeric',
+})
+
+function rangoVisible(desde, hasta) {
+  return formatoFecha.formatRange(new Date(desde + 'T00:00:00'), new Date(hasta + 'T00:00:00'))
 }
 
-function tendenciaVisible(comparativa) {
-  if (!comparativa) return ''
-  if (comparativa.tendencia === 'AUMENTO') return 'Aumento'
-  if (comparativa.tendencia === 'DISMINUCION') return 'Disminución'
-  return 'Sin cambios'
-}
+function Metrica({ titulo, valor, anterior, comparativa }) {
+  const variacion = comparativa?.variacionPorcentual
+  const tendencia = variacion == null ? 'neutra' : {
+    AUMENTO: 'aumento', DISMINUCION: 'disminucion',
+  }[comparativa.tendencia] || 'neutra'
 
-function claseTendencia(comparativa) {
-  if (!comparativa) return 'metrica-tendencia neutra'
-  if (comparativa.tendencia === 'AUMENTO') return 'metrica-tendencia aumento'
-  if (comparativa.tendencia === 'DISMINUCION') return 'metrica-tendencia disminucion'
-  return 'metrica-tendencia neutra'
+  return <article className="metrica">
+    <h3>{titulo}</h3>
+    <p className="metrica-valor">{valor}</p>
+    {comparativa && <p className={`metrica-tendencia ${tendencia}`}>
+      {variacion == null
+        ? 'Variación porcentual no disponible'
+        : new Intl.NumberFormat('es-PE', { signDisplay: 'exceptZero', maximumFractionDigits: 2 })
+          .format(variacion) + ' % respecto al período anterior'}
+    </p>}
+    {anterior != null && <p className="metrica-valor-anterior">Anterior · {anterior}</p>}
+  </article>
 }
 
 export default function MetricasVentas() {
@@ -145,6 +148,9 @@ export default function MetricasVentas() {
   }
 
   const periodo = metricas?.periodoActual
+  const anterior = comparar ? metricas?.periodoAnterior : null
+  const sinVentasAnteriores = anterior != null && Number(anterior.cantidadPedidos) === 0
+  const mostrarVariacion = anterior != null && !sinVentasAnteriores
   const hayVentas = useMemo(
     () => !!periodo && Number(periodo.cantidadPedidos) > 0,
     [periodo],
@@ -186,65 +192,41 @@ export default function MetricasVentas() {
     {error && <div className="alerta error" role="alert">{error}</div>}
 
     {!error && metricas && <>
-      <p className="metricas-periodo">
-        Periodo analizado: <strong>{metricas.desde}</strong> al <strong>{metricas.hasta}</strong>
-        {comparar && metricas.desdeAnterior && (
-          <> · Periodo anterior: {metricas.desdeAnterior} al {metricas.hastaAnterior}</>
-        )}
-      </p>
+      <div className="metricas-periodo">
+        <strong>{rangoVisible(metricas.desde, metricas.hasta)}</strong>
+        {comparar && metricas.desdeAnterior && metricas.hastaAnterior &&
+          <span>Comparado con {rangoVisible(metricas.desdeAnterior, metricas.hastaAnterior)}</span>}
+        {sinVentasAnteriores && <span>Sin ventas confirmadas en el período anterior.</span>}
+      </div>
 
       {!hayVentas && <div className="alerta" role="status">
         No hay ventas confirmadas en el periodo seleccionado.
       </div>}
 
       <div className="metricas-tarjetas">
-        <article className="metrica">
-          <h3>Ingresos confirmados</h3>
-          <p className="metrica-valor">{moneda(periodo?.ingresosConfirmados)}</p>
-          {comparar && metricas.comparativaIngresos && <p className={claseTendencia(metricas.comparativaIngresos)}>
-            {tendenciaVisible(metricas.comparativaIngresos)} · {variacionVisible(metricas.comparativaIngresos)} ·
-            {' '}diferencia {moneda(metricas.comparativaIngresos.diferenciaAbsoluta)}
-          </p>}
-          {comparar && metricas.periodoAnterior && <p className="metrica-valor-anterior">
-            Periodo anterior: {moneda(metricas.periodoAnterior.ingresosConfirmados)}
-          </p>}
-        </article>
-
-        <article className="metrica">
-          <h3>N.º de pedidos</h3>
-          <p className="metrica-valor">{entero(periodo?.cantidadPedidos)}</p>
-          {comparar && metricas.comparativaPedidos && <p className={claseTendencia(metricas.comparativaPedidos)}>
-            {tendenciaVisible(metricas.comparativaPedidos)} · {variacionVisible(metricas.comparativaPedidos)} ·
-            {' '}diferencia {entero(metricas.comparativaPedidos.diferenciaAbsoluta)}
-          </p>}
-          {comparar && metricas.periodoAnterior && <p className="metrica-valor-anterior">
-            Periodo anterior: {entero(metricas.periodoAnterior.cantidadPedidos)}
-          </p>}
-        </article>
-
-        <article className="metrica">
-          <h3>Promedio por pedido</h3>
-          <p className="metrica-valor">{moneda(periodo?.promedioPorPedido)}</p>
-          {comparar && metricas.comparativaPromedio && <p className={claseTendencia(metricas.comparativaPromedio)}>
-            {tendenciaVisible(metricas.comparativaPromedio)} · {variacionVisible(metricas.comparativaPromedio)} ·
-            {' '}diferencia {moneda(metricas.comparativaPromedio.diferenciaAbsoluta)}
-          </p>}
-          {comparar && metricas.periodoAnterior && <p className="metrica-valor-anterior">
-            Periodo anterior: {moneda(metricas.periodoAnterior.promedioPorPedido)}
-          </p>}
-        </article>
+        <Metrica titulo="Ingresos confirmados" valor={moneda(periodo?.ingresosConfirmados)}
+          comparativa={mostrarVariacion && metricas.comparativaIngresos}
+          anterior={mostrarVariacion ? moneda(anterior.ingresosConfirmados) : null} />
+        <Metrica titulo="Pedidos" valor={entero(periodo?.cantidadPedidos)}
+          comparativa={mostrarVariacion && metricas.comparativaPedidos}
+          anterior={mostrarVariacion ? entero(anterior.cantidadPedidos) : null} />
       </div>
 
-      <h3>Productos más vendidos</h3>
-      {(!metricas.productosMasVendidos || metricas.productosMasVendidos.length === 0) && (
-        <p>No hay productos vendidos en el periodo seleccionado.</p>
-      )}
-      {metricas.productosMasVendidos?.length > 0 && <ul className="metricas-productos">
-        {metricas.productosMasVendidos.map((producto) => <li key={producto.idProducto}>
-          <Link to={`/producto/${producto.idProducto}`}>{producto.nombre}</Link>
-          {' · '}{producto.unidadesVendidas} unidad(es) vendida(s) · {moneda(producto.importeAtribuido)}
-        </li>)}
-      </ul>}
+      <section className="metricas-productos" aria-labelledby="metricas-productos-titulo">
+        <h3 id="metricas-productos-titulo">Productos más vendidos</h3>
+        {metricas.productosMasVendidos?.length > 0 ? <table aria-labelledby="metricas-productos-titulo">
+          <thead>
+            <tr><th scope="col">Producto</th><th scope="col">Unidades</th><th scope="col">Ingresos</th></tr>
+          </thead>
+          <tbody>
+            {metricas.productosMasVendidos.map(producto => <tr key={producto.idProducto}>
+              <td><Link className="pedido-enlace-producto" to={`/producto/${producto.idProducto}`}>{producto.nombre}</Link></td>
+              <td>{entero(producto.unidadesVendidas)}</td>
+              <td>{moneda(producto.importeAtribuido)}</td>
+            </tr>)}
+          </tbody>
+        </table> : <p>No hay productos vendidos en el período seleccionado.</p>}
+      </section>
     </>}
   </section>
 }

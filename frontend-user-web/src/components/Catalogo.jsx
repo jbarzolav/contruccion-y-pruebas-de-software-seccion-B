@@ -76,9 +76,13 @@ export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando,
 }
 
 // HU 07 + HU 08 - Catálogo público con tarjetas clickeables hacia el detalle.
+function categoriaProducto(producto) {
+    return producto.categoria?.trim() || ''
+}
+
 // Rediseño UI/UX: recibe la búsqueda (HU 06) y el orden (HU 09) desde Inicio
 // y muestra insignias visuales de Destacado (HU 19) y Agotado.
-export default function Catalogo({ nombre = '', sort = '', actualizar }) {
+export default function Catalogo({ nombre = '', sort = '', actualizar, categoria = '', alCargarCategorias }) {
     const sesion = useSesion()
     const puedeGuardar = tienePermiso(sesion, 'COMPRAR')
     const [productos, setProductos] = useState([])
@@ -179,7 +183,10 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
                 limpiarRecomendaciones()
 
                 // Sin texto: catálogo completo (destacados primero) + orden local
-                data = ordenarLocal(await obtenerCatalogo(), sort)
+                const catalogo = await obtenerCatalogo()
+                alCargarCategorias?.([...new Set(catalogo.map(categoriaProducto).filter(Boolean))]
+                    .sort((a, b) => a.localeCompare(b, 'es')))
+                data = ordenarLocal(catalogo, sort)
             }
 
             setProductos(data)
@@ -242,9 +249,11 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
     // HU 20 - derivados para la sección de recomendaciones
     const termino = nombre.trim()
     // Evita duplicados entre los resultados de búsqueda y las recomendaciones
-    const idsEnResultados = new Set(productos.map((producto) => producto.id))
+    const coincideCategoria = (producto) => !categoria || categoriaProducto(producto) === categoria
+    const productosVisibles = productos.filter(coincideCategoria)
+    const idsEnResultados = new Set(productosVisibles.map((producto) => producto.id))
     const recomendacionesVisibles = recomendaciones.filter(
-        (producto) => !idsEnResultados.has(producto.id)
+        (producto) => coincideCategoria(producto) && !idsEnResultados.has(producto.id)
     )
     // Cargando real o término tecleado aún no solicitado (debounce)
     const recomendacionesPendientes =
@@ -287,12 +296,12 @@ export default function Catalogo({ nombre = '', sort = '', actualizar }) {
 
             {mensaje && <p className="catalogo-mensaje">{mensaje}</p>}
 
-            {!cargando && !error && !mensaje && productos.length === 0 && (
-                <p>No hay productos disponibles por ahora.</p>
+            {!cargando && !error && !mensaje && productosVisibles.length === 0 && (
+                <p>{categoria ? 'No hay productos que coincidan con esta categoría y búsqueda.' : 'No hay productos disponibles por ahora.'}</p>
             )}
 
             <div className="catalogo-grilla">
-                {productos.map(renderTarjeta)}
+                {productosVisibles.map(renderTarjeta)}
             </div>
 
             {/* HU 20 - recomendaciones asociadas al término buscado */}

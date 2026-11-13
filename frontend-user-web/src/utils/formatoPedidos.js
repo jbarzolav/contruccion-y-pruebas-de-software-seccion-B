@@ -20,9 +20,13 @@ export function fechaHoraPedidoVisible(valor, alternativa = 'Sin información') 
   }).format(fecha)
 }
 
+export function numeroPedidoVisible(idPedido) {
+  return idPedido == null ? '' : String(idPedido).padStart(6, '0')
+}
+
 export function resumenNotificacionVisible(aviso) {
-  const idPedido = aviso.idPedido ?? ''
-  if (aviso.tipo === 'NUEVA_COMPRA') return `Nueva compra recibida · N.º de compra: ${idPedido}.`
+  const idPedido = numeroPedidoVisible(aviso.idPedido)
+  if (aviso.tipo === 'NUEVA_COMPRA') return `Nueva compra recibida · N.º de pedido: ${idPedido}.`
   // HU 53 - El aviso de mensaje ya llega redactado por el backend.
   if (aviso.tipo === 'NUEVO_MENSAJE') return aviso.resumen || 'Nuevo mensaje en una consulta.'
   // HU 58 - El aviso de stock bajo identifica la publicación del vendedor.
@@ -33,6 +37,6 @@ export function resumenNotificacionVisible(aviso) {
 
   const estado = String(aviso.resumen || '').match(/cambió a\s+(.+?)[.]?$/i)?.[1]
   return estado
-    ? `La compra N.º ${idPedido} cambió a ${estadoPedidoVisible(estado.replace(/[.]$/, ''))}.`
-    : `El estado de la compra N.º ${idPedido} fue actualizado.`
+    ? `El pedido N.º ${idPedido} cambió a ${estadoPedidoVisible(estado.replace(/[.]$/, ''))}.`
+    : `El estado del pedido N.º ${idPedido} fue actualizado.`
 }

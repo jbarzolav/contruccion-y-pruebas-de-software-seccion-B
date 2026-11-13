@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { guardarUmbralStock, listarAvisosStockBajo, listarUmbralesStock } from '../api/umbralesStock.js'
+import { obtenerMisProductos } from '../api/productos.js'
 import { fechaHoraPedidoVisible } from '../utils/formatoPedidos.js'
 
 /**
@@ -13,14 +14,17 @@ import { fechaHoraPedidoVisible } from '../utils/formatoPedidos.js'
  * una reposicion. Al configurar un umbral con el stock ya por debajo NO se
  * genera un aviso inmediato: el panel muestra el estado "Stock bajo".
  */
-export default function UmbralesStock({ onEditar }) {
+export default function UmbralesStock({ onEditar, actualizar }) {
   const [publicaciones, setPublicaciones] = useState([])
   const [avisos, setAvisos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [abriendoId, setAbriendoId] = useState(null)
   const [mensaje, setMensaje] = useState('')
   const [ediciones, setEdiciones] = useState({})
   const [errores, setErrores] = useState({})
+  const [filtro, setFiltro] = useState('')
+  const [editandoId, setEditandoId] = useState(null)
   const [guardandoId, setGuardandoId] = useState(null)
 
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function UmbralesStock({ onEditar }) {
       })
       .finally(() => { if (vigente) setCargando(false) })
     return () => { vigente = false }
-  }, [])
+  }, [actualizar])
 
   /** Valida el umbral introducido: entero mayor o igual a cero. */
   function validarUmbral(valor) {
@@ -69,6 +73,7 @@ export default function UmbralesStock({ onEditar }) {
   }
 
   async function guardar(publicacion) {
+    if (guardandoId !== null) return
     const valor = ediciones[publicacion.idProducto]
     const problema = validarUmbral(valor)
     if (problema) {
@@ -84,6 +89,7 @@ export default function UmbralesStock({ onEditar }) {
       setPublicaciones((lista) => lista.map((item) => item.idProducto === publicacion.idProducto
         ? { ...item, ...respuesta }
         : item))
+      setEditandoId(null)
       setMensaje(`Umbral guardado para «${publicacion.nombre}».`)
       // El aviso solo se emite al cruzar el umbral: recargamos la lista.
       listarAvisosStockBajo().then(setAvisos).catch(() => {})
@@ -95,69 +101,109 @@ export default function UmbralesStock({ onEditar }) {
     }
   }
 
+  async function gestionarPublicacion(id) {
+    setAbriendoId(id)
+    setError('')
+    try {
+      const productos = await obtenerMisProductos()
+      const producto = productos.find(item => item.id === id)
+      if (!producto) {
+        setError('La publicación ya no está disponible para editar.')
+        return
+      }
+      onEditar(producto)
+    } catch {
+      setError('No se pudo cargar la publicación. Inténtalo de nuevo.')
+    } finally {
+      setAbriendoId(null)
+    }
+  }
+
+  const visibles = publicaciones.filter(producto => {
+    if (filtro === 'agotados') return producto.stock === 0
+    if (filtro === 'bajo') return producto.stockBajo
+    if (filtro === 'sin-alerta') return producto.umbral == null
+    return true
+  })
+
   if (cargando) {
-    return <section className="tarjeta umbrales-stock"><h2>Umbrales de stock</h2>
+    return <section className="tarjeta umbrales-stock"><h2>Alertas de stock</h2>
       <p role="status">Cargando umbrales de stock…</p>
     </section>
   }
 
   return <section className="tarjeta umbrales-stock">
-    <h2>Umbrales de stock</h2>
+    <h2>Alertas de stock</h2>
     <p className="umbrales-explicacion">
-      Configura el mínimo de unidades que quieres mantener en cada publicación.
-      Te avisaremos cuando el stock cruce ese umbral (una sola vez por cada
-      Bajada); si repones el stock, la alerta se rearma para el siguiente cruce.
+      Define el mínimo de unidades para recibir un aviso cuando el stock baje hasta ese nivel o menos.
     </p>
 
     {error && <div className="alerta error" role="alert">{error}</div>}
     {mensaje && <div className="alerta exito" role="status">{mensaje}</div>}
 
-    <h3>Mis publicaciones</h3>
-    {publicaciones.length === 0 && <p>Todavía no tienes publicaciones publicadas.</p>}
+    {publicaciones.length > 0 && <label className="campo umbrales-filtro">
+      Filtrar publicaciones
+      <select value={filtro} onChange={evento => {
+        setFiltro(evento.target.value)
+        setEditandoId(null)
+      }}>
+        <option value="">Todas</option>
+        <option value="agotados">Agotados</option>
+        <option value="bajo">Stock bajo</option>
+        <option value="sin-alerta">Sin alerta</option>
+      </select>
+    </label>}
+    {!error && publicaciones.length === 0 && <p>Aún no tienes publicaciones.</p>}
+    {publicaciones.length > 0 && visibles.length === 0 && <p role="status">No hay publicaciones para este filtro.</p>}
 
-    {!publicaciones.length ? null : <div className="umbrales-lista">
-      {publicaciones.map((publicacion) => {
-        const sinUmbral = publicacion.umbral === null || publicacion.umbral === undefined
-        return <article className="umbral-item" id={`producto-${publicacion.idProducto}`}
-          key={publicacion.idProducto}>
-          <div className="umbral-item-info">
-            <h4>{publicacion.nombre}</h4>
-            <p>Stock actual: <strong>{publicacion.stock}</strong> unidad(es)</p>
-            {sinUmbral
-              ? <span className="badge">Sin umbral configurado</span>
-              : <p>Umbral configurado: <strong>{publicacion.umbral}</strong></p>}
-            {publicacion.stockBajo && <span className="badge badge-stock-bajo">Stock bajo</span>}
-            {publicacion.alertaNotificada && !publicacion.stockBajo &&
-              <span className="badge badge-avisado">Aviso ya notificado</span>}
-          </div>
-          <div className="umbral-item-edicion">
-            <label className="campo" htmlFor={`umbral-${publicacion.idProducto}`}>Umbral mínimo</label>
-            <input
-              id={`umbral-${publicacion.idProducto}`}
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              value={ediciones[publicacion.idProducto] ?? ''}
-              onChange={(e) => setEdiciones((actual) => ({ ...actual, [publicacion.idProducto]: e.target.value }))}
-            />
-            {errores[publicacion.idProducto] &&
-              <p className="error">{errores[publicacion.idProducto]}</p>}
-            <div className="botones">
-              <button className="btn-primario" type="button"
-                disabled={guardandoId === publicacion.idProducto}
-                onClick={() => guardar(publicacion)}>
-                {guardandoId === publicacion.idProducto ? 'Guardando...' : 'Guardar umbral'}
-              </button>
-              {onEditar && <button className="btn-secundario" type="button"
-                onClick={() => onEditar(publicacion)}>
-                Gestionar publicación
-              </button>}
-              <Link className="btn-secundario" to={`/producto/${publicacion.idProducto}`}>Ver publicación</Link>
-            </div>
-          </div>
-        </article>
-      })}
+    {visibles.length > 0 && <div className="umbrales-lista">
+      <table aria-label="Alertas de stock por publicación">
+        <thead>
+          <tr><th scope="col">Producto</th><th scope="col">Stock actual</th><th scope="col">Alerta</th><th scope="col">Acciones</th></tr>
+        </thead>
+        <tbody>
+          {visibles.map(publicacion => {
+            const id = publicacion.idProducto
+            const editando = editandoId === id
+            return <Fragment key={id}>
+              <tr id={`producto-${id}`}>
+                <th scope="row"><Link className="pedido-enlace-producto" to={`/producto/${id}`}>{publicacion.nombre}</Link></th>
+                <td>{publicacion.stock === 0
+                  ? <span className="badge badge-stock-bajo">0 · Agotado</span>
+                  : <>{publicacion.stock}{publicacion.stockBajo && <span className="badge badge-stock-bajo">Stock bajo</span>}</>}</td>
+                <td>{publicacion.umbral == null ? 'Sin configurar' : `Mínimo: ${publicacion.umbral}`}</td>
+                <td><div className="umbral-acciones">
+                  <button className="btn-secundario" type="button" aria-expanded={editando}
+                    disabled={guardandoId !== null} onClick={() => setEditandoId(editando ? null : id)}>
+                    {editando ? 'Cerrar edición' : publicacion.umbral == null ? 'Configurar alerta' : 'Editar alerta'}
+                  </button>
+                  {onEditar && <button className="btn-secundario" type="button"
+                    disabled={abriendoId !== null}
+                    onClick={() => gestionarPublicacion(id)}>
+                    {abriendoId === id ? 'Abriendo…' : 'Gestionar publicación'}
+                  </button>}
+                </div></td>
+              </tr>
+              {editando && <tr><td colSpan={4}>
+                <form className="umbral-item-edicion" onSubmit={evento => {
+                  evento.preventDefault()
+                  guardar(publicacion)
+                }}>
+                  <label className="campo">Umbral mínimo
+                    <input type="number" min="0" step="1" inputMode="numeric" required
+                      disabled={guardandoId !== null} value={ediciones[id] ?? ''}
+                      onChange={evento => setEdiciones(actual => ({ ...actual, [id]: evento.target.value }))} />
+                  </label>
+                  <button className="btn-primario" type="submit" disabled={guardandoId !== null}>
+                    {guardandoId === id ? 'Guardando…' : 'Guardar'}
+                  </button>
+                  {errores[id] && <p role="alert">{errores[id]}</p>}
+                </form>
+              </td></tr>}
+            </Fragment>
+          })}
+        </tbody>
+      </table>
     </div>}
 
     <h3>Avisos de stock bajo</h3>

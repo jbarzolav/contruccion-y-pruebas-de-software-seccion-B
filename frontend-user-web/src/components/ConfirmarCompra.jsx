@@ -1,3 +1,4 @@
+import { numeroPedidoVisible } from '../utils/formatoPedidos.js'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -6,7 +7,6 @@ import {
     obtenerTotalCarrito
 } from '../api/productos.js'
 import { useEffect } from 'react'
-import ExperienciaCompra from './ExperienciaCompra.jsx'
 
 /**
  * HU 15 - Confirmar mi compra (Checkout).
@@ -75,35 +75,46 @@ export default function ConfirmarCompra({ onCarritoActualizado }) {
 
     // Éxito: comprobante con el ID del pedido generado
     if (pedido) {
+        const productos = new Map()
+        for (const detalle of pedido.detalles) {
+            const clave = detalle.idProducto
+            const anterior = productos.get(clave)
+            productos.set(clave, {
+                ...detalle,
+                cantidad: (anterior?.cantidad ?? 0) + Number(detalle.cantidad),
+                subtotal: (anterior?.subtotal ?? 0) + Math.round(Number(detalle.subtotal) * 100),
+            })
+        }
+
         return (
             <section className="tarjeta pedido-exito">
-                <h2>✅ Pedido registrado</h2>
+                <h2>Pedido registrado</h2>
                 <p className="pedido-exito-id">
-                    Tu compra fue registrada correctamente. N.º de compra: <strong>{pedido.idPedido}</strong>.
+                    N.º de pedido: <strong>{numeroPedidoVisible(pedido.idPedido)}</strong>
                 </p>
 
                 <ul className="carrito-lista">
-                    {pedido.detalles.map((detalle) => (
+                    {Array.from(productos.values()).map((detalle) => (
                         <li key={detalle.idProducto} className="carrito-item">
                             <div className="carrito-item-datos">
                                 <strong>{detalle.nombreProducto}</strong>
                                 <span>
-                                    {detalle.cantidad} × S/ {Number(detalle.precioUnitario).toFixed(2)}
+                                    Cantidad: {detalle.cantidad}
                                 </span>
                             </div>
                             <div className="carrito-subtotal">
-                                Subtotal: <strong>S/ {Number(detalle.subtotal).toFixed(2)}</strong>
+                                Subtotal: <strong>S/ {(detalle.subtotal / 100).toFixed(2)}</strong>
                             </div>
                         </li>
                     ))}
                 </ul>
 
                 <div className="carrito-total">
-                    Total pagado: <strong>S/ {Number(pedido.total).toFixed(2)}</strong>
+                    Total del pedido: <strong>S/ {Number(pedido.total).toFixed(2)}</strong>
                 </div>
 
-                <ExperienciaCompra pedido={{ ...pedido, resenas: [], calificacion: null }} onActualizado={setPedido} />
                 <div className="botones">
+                    <Link className="btn-primario" to={`/pedidos/${pedido.idPedido}`}>Ver pedido</Link>
                     <button type="button" onClick={() => navigate('/')}>
                         Seguir comprando
                     </button>

@@ -1,3 +1,4 @@
+import { EVENTO_LECTURA_NOTIFICACIONES, listarBandeja, listarMensajesPendientes } from './api/notificaciones.js'
 import { useEffect, useState } from 'react'
 import { HashRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Inicio from './components/Inicio.jsx'
@@ -26,7 +27,6 @@ import { obtenerPerfil, obtenerSesion } from './api/auth.js'
 import { cerrarSesion as solicitarCierre } from './api/auth.js'
 import { guardarSesion, limpiarSesion, leerSesion, tienePermiso, useSesion } from './api/sesion.js'
 import { obtenerCarrito } from './api/productos.js'
-import { listarConversaciones } from './api/conversaciones.js'
 
 // HU 23 - Las rutas protegidas también comprueban el permiso al abrirlas directamente.
 function AccesoProtegido({ permiso, children }) {
@@ -91,50 +91,71 @@ export default function App() {
     const puedeComprar = tienePermiso(sesion, 'COMPRAR')
     const puedePublicar = tienePermiso(sesion, 'GESTIONAR_PRODUCTOS')
     const [avisoSesion, setAvisoSesion] = useState('')
-    const [avisoMensaje, setAvisoMensaje] = useState(null)
     const [cerrandoSesion, setCerrandoSesion] = useState(false)
 
-    // HU 39 - Detecta mensajes nuevos de otros participantes mientras hay sesión.
+    const puedeConsultar = ['CLIENTE', 'VENDEDOR'].includes(sesion?.rol)
+    const tokenNotificaciones = sesion?.token
+    const [tokenConAvisosPendientes, setTokenConAvisosPendientes] = useState(null)
+
     useEffect(() => {
-        if (!sesion?.token || !['CLIENTE', 'VENDEDOR'].includes(sesion.rol)) {
-            setAvisoMensaje(null)
-            return
-        }
+        setTokenConAvisosPendientes(null)
+        if (!tokenNotificaciones) return
+
         let vigente = true
-        let inicializado = false
-        let ultimosMensajes = new Map()
-        let consultando = false
-        async function revisarMensajes() {
-            if (consultando || document.visibilityState === 'hidden') return
-            consultando = true
+        let consulta = 0
+
+        async function actualizarAvisosPendientes() {
+            const actual = ++consulta
             try {
-                const conversaciones = await listarConversaciones()
-                if (!vigente) return
-                const entrante = []
-                for (const conversacion of conversaciones) {
-                    const mensaje = conversacion.ultimoMensaje
-                    if (!mensaje) continue
-                    const anterior = ultimosMensajes.get(conversacion.idConversacion)
-                    if (inicializado && (anterior === undefined || anterior !== mensaje.id) && mensaje.emisorId !== sesion.id) {
-                        entrante.push(conversacion)
-                    }
-                    ultimosMensajes.set(conversacion.idConversacion, mensaje.id)
+                const { pendientes } = await listarBandeja()
+                if (vigente && actual === consulta) {
+                    setTokenConAvisosPendientes(pendientes > 0 ? tokenNotificaciones : null)
                 }
-                inicializado = true
-                if (entrante.length) setAvisoMensaje(entrante[0])
             } catch {
-                // La vista sigue funcionando si temporalmente no hay conexión.
-            } finally {
-                consultando = false
+                // Conserva el último estado conocido hasta la siguiente consulta.
             }
         }
-        revisarMensajes()
-        const intervalo = window.setInterval(revisarMensajes, 15000)
+
+        actualizarAvisosPendientes()
+        const intervalo = window.setInterval(actualizarAvisosPendientes, 15000)
+        window.addEventListener(EVENTO_LECTURA_NOTIFICACIONES, actualizarAvisosPendientes)
         return () => {
             vigente = false
             window.clearInterval(intervalo)
+            window.removeEventListener(EVENTO_LECTURA_NOTIFICACIONES, actualizarAvisosPendientes)
         }
-    }, [sesion?.id, sesion?.rol, sesion?.token])
+    }, [tokenNotificaciones])
+
+    const [mensajesPendientes, setMensajesPendientes] = useState(null)
+    const pendientesConsulta = mensajesPendientes?.token === tokenNotificaciones
+        ? mensajesPendientes?.avisos ?? [] : []
+
+    useEffect(() => {
+        if (!puedeConsultar || !tokenNotificaciones) return
+        let vigente = true
+        let consulta = 0
+
+        async function actualizarMensajesPendientes() {
+            const actual = ++consulta
+            try {
+                const avisos = await listarMensajesPendientes()
+                if (vigente && actual === consulta) {
+                    setMensajesPendientes({ token: tokenNotificaciones, avisos })
+                }
+            } catch {
+                // Conserva el último conteo hasta la próxima actualización.
+            }
+        }
+
+        actualizarMensajesPendientes()
+        const intervalo = window.setInterval(actualizarMensajesPendientes, 15000)
+        window.addEventListener(EVENTO_LECTURA_NOTIFICACIONES, actualizarMensajesPendientes)
+        return () => {
+            vigente = false
+            window.clearInterval(intervalo)
+            window.removeEventListener(EVENTO_LECTURA_NOTIFICACIONES, actualizarMensajesPendientes)
+        }
+    }, [puedeConsultar, tokenNotificaciones])
 
     async function cerrarSesion() {
         if (!sesion || cerrandoSesion || !window.confirm('¿Deseas cerrar la sesión?')) return
@@ -188,6 +209,7 @@ export default function App() {
         }
     }, [sesion?.token])
     const [productoEnEdicion, setProductoEnEdicion] = useState(null)
+    const [confirmarRetiroInicial, setConfirmarRetiroInicial] = useState(false)
     const [publicando, setPublicando] = useState(false)
     const [drawerCarritoAbierto, setDrawerCarritoAbierto] = useState(false)
     const [actualizarMisProductos, setActualizarMisProductos] = useState(0)
@@ -221,11 +243,13 @@ export default function App() {
     const modalAbierto = publicando || productoEnEdicion !== null
 
     function abrirPublicacion() {
+        setConfirmarRetiroInicial(false)
         setProductoEnEdicion(null)
         setPublicando(true)
     }
 
-    function abrirEdicion(producto) {
+    function abrirEdicion(producto, retirar = false) {
+        setConfirmarRetiroInicial(retirar)
         setPublicando(false)
         setProductoEnEdicion(producto)
     }
@@ -233,6 +257,7 @@ export default function App() {
     function cerrarModal() {
         setPublicando(false)
         setProductoEnEdicion(null)
+        setConfirmarRetiroInicial(false)
     }
 
     const refrescarPublicaciones = () => {
@@ -248,6 +273,7 @@ export default function App() {
     const handleProductoGuardado = (producto) => {
         refrescarPublicaciones()
         setProductoEnEdicion(producto)
+        setConfirmarRetiroInicial(false)
     }
 
     return (
@@ -261,18 +287,26 @@ export default function App() {
                     <nav id="navegacion-principal" className="nav-principal" aria-label="Navegación principal">
                         <NavLink to="/" end>Inicio</NavLink>
                         {puedePublicar && <NavLink to="/mis-publicaciones">Mis Publicaciones</NavLink>}
-                        <NavLink to="/premium">Plan Premium</NavLink>
+                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/premium">Plan Premium</NavLink>}
                         {!sesion && <NavLink to="/login">Iniciar sesión</NavLink>}
                         {sesion && <NavLink to="/perfil">Mi perfil</NavLink>}
-                        {['CLIENTE', 'VENDEDOR'].includes(sesion?.rol) && <NavLink to="/consultas">Consultas</NavLink>}
-                        {sesion && <NavLink to="/notificaciones">Notificaciones</NavLink>}
+                        {puedeConsultar && <NavLink to="/consultas">
+                            Consultas
+                            {pendientesConsulta.length > 0 &&
+                                <span className="notificaciones-punto" role="img" aria-label="Hay mensajes sin leer" />}
+                        </NavLink>}
+                        {sesion && <NavLink to="/notificaciones">
+                            Notificaciones
+                            {tokenNotificaciones && tokenConAvisosPendientes === tokenNotificaciones &&
+                                <span className="notificaciones-punto" role="img" aria-label="Hay notificaciones sin leer" />}
+                        </NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/favoritos">Favoritos</NavLink>}
                         {sesion && tienePermiso(sesion, 'COMPRAR') && <NavLink to="/pedidos">Mis compras</NavLink>}
                         {sesion?.rol === 'VENDEDOR' && <NavLink to="/pedidos-recibidos">Pedidos recibidos</NavLink>}
                         {/* HU 57 - Panel de métricas de ventas del vendedor. */}
                         {sesion?.rol === 'VENDEDOR' && <NavLink to="/metricas-ventas">Métricas</NavLink>}
                         {/* HU 58 - Umbrales de stock y avisos de stock bajo. */}
-                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/umbrales-stock">Umbrales de stock</NavLink>}
+                        {sesion?.rol === 'VENDEDOR' && <NavLink to="/umbrales-stock">Alertas de stock</NavLink>}
                         {sesion && <span className="app-usuario-nombre">{sesion.nombre || 'Mi cuenta'}</span>}
                         {sesion && <button className="btn-secundario" type="button" disabled={cerrandoSesion}
                             onClick={cerrarSesion}>{cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>}
@@ -305,13 +339,8 @@ export default function App() {
                 {avisoSesion && <div className="alerta error" role="alert">{avisoSesion}
                     <button type="button" className="btn-secundario" onClick={() => setAvisoSesion('')}>Cerrar aviso</button>
                 </div>}
-                {avisoMensaje && <div className="alerta" role="status">
-                    Nuevo mensaje sobre «{avisoMensaje.productoNombre}».{' '}
-                    <Link to="/consultas" onClick={() => setAvisoMensaje(null)}>Ver consultas</Link>{' '}
-                    <button type="button" className="btn-secundario" onClick={() => setAvisoMensaje(null)}>Cerrar aviso</button>
-                </div>}
                 <Routes>
-                    <Route path="/consultas" element={<AccesoAutenticado><Conversaciones key={sesion?.token} /></AccesoAutenticado>} />
+                    <Route path="/consultas" element={<AccesoAutenticado><Conversaciones key={sesion?.token} avisosPendientes={pendientesConsulta} /></AccesoAutenticado>} />
                     {/* HU 53/HU 54 - Bandeja unificada con filtros y lectura de avisos. */}
                     <Route path="/notificaciones" element={<AccesoAutenticado><BandejaNotificaciones key={sesion?.token} /></AccesoAutenticado>} />
                     {/* Inicio: catálogo con búsqueda (HU 06) y orden (HU 09)
@@ -353,7 +382,7 @@ export default function App() {
                     />
 
                     {/* HU 18 - Beneficios Premium */}
-                    <Route path="/premium" element={<PlanPremium />} />
+                    <Route path="/premium" element={<AccesoVendedor><PlanPremium /></AccesoVendedor>} />
 
                     {/* HU 21 - Inicio de sesión (no bloquea el resto de rutas) */}
                     <Route path="/login" element={<Login />} />
@@ -384,15 +413,26 @@ export default function App() {
                     <Route path="/metricas-ventas" element={<AccesoVendedor><MetricasVentas /></AccesoVendedor>} />
 
                     {/* HU 58 - Umbrales de stock y avisos de stock bajo del vendedor. */}
-                    <Route path="/umbrales-stock" element={<AccesoVendedor><UmbralesStock onEditar={abrirEdicion} /></AccesoVendedor>} />
+                    <Route path="/umbrales-stock" element={<AccesoVendedor><UmbralesStock onEditar={abrirEdicion} actualizar={actualizarMisProductos} /></AccesoVendedor>} />
                 </Routes>
 
                 {/* Modal flotante de Publicar (HU 01/02) o Editar (HU 03) */}
-                {puedePublicar && modalAbierto && (
+                {puedePublicar && productoEnEdicion && confirmarRetiroInicial && (
+                    <EditarProducto
+                        producto={productoEnEdicion}
+                        confirmarRetiroInicial
+                        onGuardado={() => {
+                            refrescarPublicaciones()
+                            cerrarModal()
+                        }}
+                        onCancelar={cerrarModal}
+                    />
+                )}
+                {puedePublicar && modalAbierto && !confirmarRetiroInicial && (
                     <ProductoModal
                         titulo={
                             productoEnEdicion
-                                ? `Editar producto (ID ${productoEnEdicion.id})`
+                                ? 'Editar publicación'
                                 : 'Publicar producto'
                         }
                         onCerrar={cerrarModal}

@@ -239,6 +239,11 @@ export async function obtenerPedido(idPedido) {
   return obtenerDetallePedido(idPedido)
 }
 
+export async function obtenerExperienciaPedido(idPedido) {
+  const { data } = await apiPedidos.get('')
+  return data.find(pedido => String(pedido.idPedido) === String(idPedido))
+}
+
 export async function calificarPedido(idPedido, valor) {
   const { data } = await apiPedidos.post(`/${idPedido}/calificacion`, { valor })
   return data

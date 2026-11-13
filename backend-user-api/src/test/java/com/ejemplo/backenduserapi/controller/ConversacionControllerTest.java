@@ -170,10 +170,11 @@ class ConversacionControllerTest {
         mvc.perform(post("/api/conversaciones/999999/mensajes").header("Authorization", "Bearer " + tv).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"mensaje\":\"Hola\"}")).andExpect(status().isNotFound());
     }
-    @Test void clienteNoPuedeResponderComoVendedor() throws Exception {
+    @Test void clientePuedeResponderEnSuConversacion() throws Exception {
         long id = consultar();
         mvc.perform(post("/api/conversaciones/{id}/mensajes", id).header("Authorization", "Bearer " + tc).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"mensaje\":\"Hola\"}")).andExpect(status().isForbidden());
+                .content("{\"mensaje\":\"Hola\"}")).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.emisorId").value(cliente.getId()));
     }
     @Test void retiradoNoAdmiteConsultaYConfiguracionEsCompartida() throws Exception {
         producto.setEstado("RETIRADO"); productos.saveAndFlush(producto);

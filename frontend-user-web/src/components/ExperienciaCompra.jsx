@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { calificarPedido, editarResena, resenarPedido } from '../api/productos.js'
 
-export default function ExperienciaCompra({ pedido, onActualizado }) {
+function CampoResena({ value, ...props }) {
+  return <div className="campo-resena-ajustable" data-texto={value}>
+    <textarea {...props} value={value} rows={1} aria-label="Texto de la reseña" />
+  </div>
+}
+
+export default function ExperienciaCompra({ pedido, onActualizado, mostrarTitulo = true }) {
   const [valor, setValor] = useState(pedido.calificacion?.valor || 0)
   const [destino, setDestino] = useState('PRODUCTO')
   const [texto, setTexto] = useState('')
@@ -46,7 +52,7 @@ export default function ExperienciaCompra({ pedido, onActualizado }) {
   }
 
   return <section className="experiencia-compra tarjeta">
-    <h3>Tu experiencia</h3>
+    {mostrarTitulo && <h3>Tu experiencia</h3>}
     <div className="calificacion-compra">
       <strong>{pedido.calificacion ? 'Calificación guardada' : 'Calificar compra'}</strong>
       <div className="estrellas" role="radiogroup" aria-label="Calificación de 1 a 5">
@@ -64,14 +70,14 @@ export default function ExperienciaCompra({ pedido, onActualizado }) {
         <option value="PRODUCTO">Producto</option><option value="VENDEDOR">Vendedor</option>
       </select>
       {reseñaActual ? (editandoId === reseñaActual.id ? <div className="formulario-resena">
-        <textarea value={textoEdicion} maxLength={1000} disabled={guardando} onChange={(e) => setTextoEdicion(e.target.value)} rows="4" />
+        <CampoResena value={textoEdicion} maxLength={1000} disabled={guardando} onChange={(e) => setTextoEdicion(e.target.value)} />
         <small>{textoEdicion.length} / 1000</small>
         <div className="botones"><button type="button" className="btn-primario" disabled={guardando || !textoEdicion.trim()} onClick={guardarEdicion}>{guardando ? 'Guardando...' : 'Guardar cambios'}</button>
           <button type="button" className="btn-secundario" disabled={guardando} onClick={() => setEditandoId(null)}>Cancelar</button></div>
       </div> : <><blockquote>{reseñaActual.texto}</blockquote>
         <button type="button" className="btn-secundario" disabled={guardando} onClick={() => { setEditandoId(reseñaActual.id); setTextoEdicion(reseñaActual.texto) }}>Editar reseña</button></>) : <>
-        <textarea value={texto} maxLength={1000} disabled={guardando} onChange={(e) => setTexto(e.target.value)}
-          placeholder="Cuéntanos tu experiencia (máximo 1000 caracteres)" rows="4" />
+        <CampoResena value={texto} maxLength={1000} disabled={guardando} onChange={(e) => setTexto(e.target.value)}
+          placeholder="Cuéntanos tu experiencia (máximo 1000 caracteres)" />
         <small>{texto.length} / 1000</small>
         <button className="btn-primario" disabled={guardando || !texto.trim()}>{guardando ? 'Publicando...' : 'Publicar reseña'}</button>
       </>}

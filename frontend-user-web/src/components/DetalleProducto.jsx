@@ -265,7 +265,6 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                             Sin imagen disponible
                         </div>
                     )}
-                    <p className="galeria-pie">Imagen 1 de 1</p>
                 </div>
 
                 <div className="detalle-datos">
@@ -282,64 +281,12 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                             {etiquetaDisponibilidad}
                         </li>
                         <li>
-                            <strong>Stock:</strong> {stock} unidades
-                        </li>
-                        <li>
                             <strong>Estado:</strong> {estado}
                         </li>
                         <li>
                             <strong>Categoría:</strong> {producto.categoria}
                         </li>
-                        <li>
-                            <strong>Vendedor:</strong> #{producto.vendedorId}
-                        </li>
-                        <li>
-                            <strong>ID del producto:</strong> #{producto.id}
-                        </li>
                     </ul>
-
-                    {/* HU 43 - Resumen público del vendedor asociado al producto. */}
-                    <section className="resumen-calificaciones-vendedor" aria-live="polite">
-                        <h3>Calificaciones del vendedor</h3>
-                        {cargandoResumenVendedor ? (
-                            <p>Cargando calificaciones…</p>
-                        ) : errorResumenVendedor ? (
-                            <p role="status">{errorResumenVendedor}</p>
-                        ) : resumenVendedor ? (
-                            <>
-                                {resumenVendedor.cantidad === 0 ? (
-                                    <p>Este vendedor aún no tiene calificaciones.</p>
-                                ) : (
-                                    <p className="calificaciones-promedio">
-                                        <strong>{Number(resumenVendedor.promedio).toFixed(2)} / 5</strong>
-                                        {' · '}{resumenVendedor.cantidad} calificaciones
-                                    </p>
-                                )}
-                                <ul className="calificaciones-distribucion" aria-label="Distribución de calificaciones">
-                                    {[5, 4, 3, 2, 1].map((valor) => {
-                                        const total = Number(resumenVendedor.distribucion?.[valor] || 0)
-                                        const porcentaje = resumenVendedor.cantidad > 0
-                                            ? (total / resumenVendedor.cantidad) * 100
-                                            : 0
-                                        return (
-                                            <li key={valor}>
-                                                <span>{valor} estrellas</span>
-                                                <span className="calificaciones-barra" aria-hidden="true">
-                                                    <span style={{ width: `${porcentaje}%` }} />
-                                                </span>
-                                                <span>{total}</span>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
-                            </>
-                        ) : null}
-                    </section>
-
-                    <h3>Descripción</h3>
-                    <p className="detalle-descripcion">
-                        {producto.descripcion}
-                    </p>
 
                     {!disponible && (
                         <div className="alerta error">
@@ -348,8 +295,173 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                                 : 'Este producto no se encuentra disponible para compra.'}
                         </div>
                     )}
+                    {/* HU 11 - Selector de cantidad y agregar al carrito */}
+                    {puedeComprar && <div className="detalle-carrito">
+                        <div className="cantidad-selector">
+                            <span>Cantidad:</span>
+
+                            <button
+                                type="button"
+                                className="btn-cantidad"
+                                onClick={() =>
+                                    setCantidad((valor) => Math.max(1, valor - 1))
+                                }
+                                disabled={agregando || cantidad <= 1}
+                                aria-label="Restar una unidad"
+                            >
+                                &minus;
+                            </button>
+
+                            <input
+                                type="number"
+                                min="1"
+                                max={stock}
+                                value={cantidad}
+                                onChange={(evento) => {
+                                    const valor = Number(evento.target.value)
+                                    setCantidad(
+                                        Number.isNaN(valor)
+                                            ? 1
+                                            : Math.max(1, Math.trunc(valor))
+                                    )
+                                }}
+                                disabled={!disponible || agregando}
+                                aria-label="Cantidad a agregar"
+                            />
+
+                            <button
+                                type="button"
+                                className="btn-cantidad"
+                                onClick={() =>
+                                    setCantidad((valor) => valor + 1)
+                                }
+                                disabled={agregando || cantidad >= stock}
+                                aria-label="Sumar una unidad"
+                            >
+                                +
+                            </button>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            className="btn-primario"
+                            onClick={() => handleAgregarAlCarrito(false)}
+                            disabled={
+                                !disponible ||
+                                agregando ||
+                                cantidad > stock
+                            }
+                            title={
+                                disponible
+                                    ? 'Agregar esta cantidad al carrito'
+                                    : 'Producto agotado o no disponible'
+                            }
+                        >
+                            {agregando ? 'Agregando...' : 'Agregar al carrito'}
+                        </button>
+
+                        {mensajeCarrito && (
+                            <div className="alerta exito">{mensajeCarrito}</div>
+                        )}
+
+                        {/* HU 11 - Atajo: ir al carrito sin volver al catálogo */}
+                        {mensajeCarrito && onVerCarrito && (
+                            <button
+                                type="button"
+                                className="btn-primario"
+                                onClick={onVerCarrito}
+                            >
+                                Ir al carrito
+                            </button>
+                        )}
+
+                        {errorCarrito && (
+                            <div className="alerta error">{errorCarrito}</div>
+                        )}
+                    </div>}
+
+                    {puedeComprar && <div className="botones">
+                        {/* HU 15 - Comprar y abrir confirmación de compra */}
+                        <button
+                            type="button"
+                            className="btn-primario"
+                            onClick={() => handleAgregarAlCarrito(true)}
+                            disabled={
+                                !disponible ||
+                                agregando ||
+                                cantidad > stock
+                            }
+                            title={
+                                disponible
+                                    ? 'Agregar al carrito y confirmar compra'
+                                    : 'Producto agotado o no disponible'
+                            }
+                        >
+                            {agregando ? 'Procesando...' : 'Comprar'}
+                        </button>
+                    </div>}
+                    {puedeComprar && (
+                        <div className="detalle-favorito">
+                            <button
+                                type="button"
+                                className="btn-secundario"
+                                onClick={guardarFavorito}
+                                disabled={cargandoFavorito || guardandoFavorito || esFavorito}
+                            >
+                                {cargandoFavorito ? 'Consultando…' : guardandoFavorito ? 'Guardando…' : esFavorito ? '♥ Guardado en favoritos' : '♡ Guardar en favoritos'}
+                            </button>
+                            {avisoFavorito && <p role="status">{avisoFavorito}</p>}
+                        </div>
+                    )}
+
                 </div>
             </div>
+
+            <section className="detalle-seccion">
+                <h3>Descripción</h3>
+                <p className="detalle-descripcion">
+                    {producto.descripcion}
+                </p>
+            </section>
+            {/* HU 43 - Resumen público del vendedor asociado al producto. */}
+            <section className="resumen-calificaciones-vendedor" aria-live="polite">
+                <h3>Calificaciones del vendedor</h3>
+                {cargandoResumenVendedor ? (
+                    <p>Cargando calificaciones…</p>
+                ) : errorResumenVendedor ? (
+                    <p role="status">{errorResumenVendedor}</p>
+                ) : resumenVendedor ? (
+                    <>
+                        {resumenVendedor.cantidad === 0 ? (
+                            <p>Este vendedor aún no tiene calificaciones.</p>
+                        ) : (
+                            <p className="calificaciones-promedio">
+                                <strong>{Number(resumenVendedor.promedio).toFixed(2)} / 5</strong>
+                                {' · '}{resumenVendedor.cantidad} calificaciones
+                            </p>
+                        )}
+                        <ul className="calificaciones-distribucion" aria-label="Distribución de calificaciones">
+                            {[5, 4, 3, 2, 1].map((valor) => {
+                                const total = Number(resumenVendedor.distribucion?.[valor] || 0)
+                                const porcentaje = resumenVendedor.cantidad > 0
+                                    ? (total / resumenVendedor.cantidad) * 100
+                                    : 0
+                                return (
+                                    <li key={valor}>
+                                        <span>{valor} estrellas</span>
+                                        <span className="calificaciones-barra" aria-hidden="true">
+                                            <span style={{ width: `${porcentaje}%` }} />
+                                        </span>
+                                        <span>{total}</span>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </>
+                ) : null}
+            </section>
+
 
             {/* HU 44 - Reseñas públicas de compradores verificadas mediante su compra. */}
             <section className="resenas-producto-publicas" aria-live="polite">
@@ -380,132 +492,10 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                 )}
             </section>
 
-            {puedeComprar && (
-                <div className="detalle-favorito">
-                    <button
-                        type="button"
-                        className="btn-secundario"
-                        onClick={guardarFavorito}
-                        disabled={cargandoFavorito || guardandoFavorito || esFavorito}
-                    >
-                        {cargandoFavorito ? 'Consultando…' : guardandoFavorito ? 'Guardando…' : esFavorito ? '♥ Guardado en favoritos' : '♡ Guardar en favoritos'}
-                    </button>
-                    {avisoFavorito && <p role="status">{avisoFavorito}</p>}
-                </div>
-            )}
-
             {sesion?.rol === 'CLIENTE' && ['DISPONIBLE', 'AGOTADO'].includes(estado) &&
                 <FormularioConsulta key={`${sesion.token}-${idProducto}`} enviar={texto => enviarConsulta(Number(idProducto), texto)} />}
 
-            {/* HU 11 - Selector de cantidad y agregar al carrito */}
-            {puedeComprar && <div className="detalle-carrito">
-                <div className="cantidad-selector">
-                    <span>Cantidad:</span>
-
-                    <button
-                        type="button"
-                        className="btn-cantidad"
-                        onClick={() =>
-                            setCantidad((valor) => Math.max(1, valor - 1))
-                        }
-                        disabled={agregando || cantidad <= 1}
-                        aria-label="Restar una unidad"
-                    >
-                        &minus;
-                    </button>
-
-                    <input
-                        type="number"
-                        min="1"
-                        max={stock}
-                        value={cantidad}
-                        onChange={(evento) => {
-                            const valor = Number(evento.target.value)
-                            setCantidad(
-                                Number.isNaN(valor)
-                                    ? 1
-                                    : Math.max(1, Math.trunc(valor))
-                            )
-                        }}
-                        disabled={!disponible || agregando}
-                        aria-label="Cantidad a agregar"
-                    />
-
-                    <button
-                        type="button"
-                        className="btn-cantidad"
-                        onClick={() =>
-                            setCantidad((valor) => valor + 1)
-                        }
-                        disabled={agregando || cantidad >= stock}
-                        aria-label="Sumar una unidad"
-                    >
-                        +
-                    </button>
-
-                    <span className="cantidad-stock">
-                        Stock: {stock}
-                    </span>
-                </div>
-
-                <button
-                    type="button"
-                    className="btn-primario"
-                    onClick={() => handleAgregarAlCarrito(false)}
-                    disabled={
-                        !disponible ||
-                        agregando ||
-                        cantidad > stock
-                    }
-                    title={
-                        disponible
-                            ? 'Agregar esta cantidad al carrito'
-                            : 'Producto agotado o no disponible'
-                    }
-                >
-                    {agregando ? 'Agregando...' : 'Agregar al carrito'}
-                </button>
-
-                {mensajeCarrito && (
-                    <div className="alerta exito">{mensajeCarrito}</div>
-                )}
-
-                {/* HU 11 - Atajo: ir al carrito sin volver al catálogo */}
-                {mensajeCarrito && onVerCarrito && (
-                    <button
-                        type="button"
-                        className="btn-primario"
-                        onClick={onVerCarrito}
-                    >
-                        Ir al carrito
-                    </button>
-                )}
-
-                {errorCarrito && (
-                    <div className="alerta error">{errorCarrito}</div>
-                )}
-            </div>}
-
             <div className="botones">
-                {/* HU 15 - Comprar y abrir confirmación de compra */}
-                {puedeComprar && <button
-                    type="button"
-                    className="btn-primario"
-                    onClick={() => handleAgregarAlCarrito(true)}
-                    disabled={
-                        !disponible ||
-                        agregando ||
-                        cantidad > stock
-                    }
-                    title={
-                        disponible
-                            ? 'Agregar al carrito y confirmar compra'
-                            : 'Producto agotado o no disponible'
-                    }
-                >
-                    {agregando ? 'Procesando...' : 'Comprar'}
-                </button>}
-
                 <button
                     type="button"
                     className="btn-secundario"

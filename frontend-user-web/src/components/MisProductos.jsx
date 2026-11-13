@@ -1,12 +1,58 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { obtenerMisProductos, gestionarDestacado, urlImagen } from '../api/productos.js'
+
+import { listarUmbralesStock } from '../api/umbralesStock.js'
+
+const estados = {
+    DISPONIBLE: 'Disponible',
+    AGOTADO: 'Agotada',
+    RETIRADO: 'Retirada',
+    INACTIVO: 'Inactiva',
+}
+
+function estadoVisible(producto) {
+    return producto.estado === 'DISPONIBLE' && producto.stock === 0
+        ? 'AGOTADO'
+        : producto.estado
+}
 
 export default function MisProductos({ actualizar, onEditar, onActualizado }) {
     const [productos, setProductos] = useState([])
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
     const [aviso, setAviso] = useState('')
+    const [busqueda, setBusqueda] = useState('')
+    const [filtro, setFiltro] = useState('')
+    const [stockBajo, setStockBajo] = useState(new Set())
+    const { hash, key } = useLocation()
+
+    useEffect(() => {
+        if (hash.startsWith('#producto-')) {
+            setBusqueda('')
+            setFiltro('')
+        }
+    }, [hash, key])
+
+    useEffect(() => {
+        let vigente = true
+        listarUmbralesStock()
+            .then((publicaciones) => {
+                if (vigente) {
+                    setStockBajo(new Set(publicaciones.filter((item) => item.stockBajo).map((item) => item.idProducto)))
+                }
+            })
+            .catch(() => {
+                if (vigente) setStockBajo(new Set())
+            })
+        return () => { vigente = false }
+    }, [actualizar])
+
+    const termino = busqueda.trim().toLocaleLowerCase('es')
+    const visibles = productos.filter((producto) =>
+        producto.nombre.toLocaleLowerCase('es').includes(termino) &&
+        (!filtro || estadoVisible(producto) === filtro)
+    )
 
     useEffect(() => {
         cargarProductos()
@@ -44,7 +90,24 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
 
     return (
         <section className="tarjeta mis-productos">
-            <h2>Mis Publicaciones</h2>
+            <h2>Mis publicaciones</h2>
+            <div className="publicaciones-filtros">
+                <label className="campo">
+                    Buscar publicación
+                    <input type="search" placeholder="Nombre del producto" value={busqueda}
+                        onChange={(event) => setBusqueda(event.target.value)} />
+                </label>
+                <label className="campo">
+                    Estado
+                    <select value={filtro} onChange={(event) => setFiltro(event.target.value)}>
+                        <option value="">Todas</option>
+                        <option value="DISPONIBLE">Disponibles</option>
+                        <option value="AGOTADO">Agotadas</option>
+                        <option value="RETIRADO">Retiradas</option>
+                        <option value="INACTIVO">Inactivas</option>
+                    </select>
+                </label>
+            </div>
 
             {cargando && <p>Cargando productos...</p>}
 
@@ -57,7 +120,11 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
                 <p>Todavía no tienes productos publicados.</p>
             )}
 
-            {!cargando && !error && productos.map((producto) => (
+            {!cargando && !error && productos.length > 0 && visibles.length === 0 && (
+                <p>No hay publicaciones que coincidan con la búsqueda y el estado seleccionados.</p>
+            )}
+
+            {!cargando && !error && visibles.map((producto) => (
                 /* HU 58 - ancla usada por el aviso de stock bajo: /mis-publicaciones#producto-{id} */
                 <article className="producto-item" id={`producto-${producto.id}`} key={producto.id}>
                     {/* HU 08 - toda la tarjeta abre el detalle (HU 07) */}
@@ -82,18 +149,25 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
                                 </span>
                             )}
                             <p>Precio: S/ {Number(producto.precio).toFixed(2)}</p>
-                            <p>Stock: {producto.stock}</p>
-                            <p>Estado: {producto.estado}</p>
+                            <p><strong>Stock: {producto.stock}</strong></p>
+                            <div className="publicaciones-estados">
+                                <span className={`publicacion-estado publicacion-estado--${estadoVisible(producto)}`}>
+                                    {estados[estadoVisible(producto)] ?? producto.estado}
+                                </span>
+                                {estadoVisible(producto) === 'DISPONIBLE' && stockBajo.has(producto.id) && (
+                                    <span className="badge badge-stock-bajo">Stock bajo</span>
+                                )}
+                            </div>
                         </div>
                     </Link>
 
                     <div className="producto-acciones">
                         <button
                             type="button"
-                            className="btn-secundario"
+                            className="btn-primario"
                             onClick={() => onEditar?.(producto)}
                         >
-                            Editar
+                            Editar publicación
                         </button>
                         {/* HU 19 - gestionar el destacado: activar o desactivar */}
                         <button
@@ -111,8 +185,14 @@ export default function MisProductos({ actualizar, onEditar, onActualizado }) {
                             to={`/producto/${producto.id}`}
                             className="btn-secundario"
                         >
-                            Ver detalle
+                            Ver ficha
                         </Link>
+                        {producto.estado !== 'RETIRADO' && (
+                            <button type="button" className="btn-secundario"
+                                onClick={() => onEditar?.(producto, true)}>
+                                Retirar publicación
+                            </button>
+                        )}
                     </div>
                 </article>
             ))}

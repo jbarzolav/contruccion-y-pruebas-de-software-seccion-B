@@ -84,8 +84,10 @@ class ConversacionServiceTest {
         assertEquals(403, assertThrows(AutorizacionException.class, () -> servicio.responder(usuario(4L, Rol.VENDEDOR), 9L, "Hola")).getEstado().value());
         verifyNoInteractions(mensajes);
     }
-    @Test void clienteNoRespondeComoVendedor() {
-        assertEquals(403, assertThrows(AutorizacionException.class, () -> servicio.responder(cliente, 9L, "Hola")).getEstado().value());
+    @Test void clientePuedeResponderEnSuConversacion() {
+        var respuesta = servicio.responder(cliente, 9L, "Hola");
+        assertEquals(cliente.getId(), respuesta.emisorId());
+        assertEquals("Hola", respuesta.contenido());
     }
     @Test void vendedorNoIniciaConsulta() {
         assertEquals(403, assertThrows(AutorizacionException.class, () -> servicio.consultar(vendedor, 3L, "Hola")).getEstado().value());

@@ -57,13 +57,11 @@ public class ConversacionService {
         return respuesta(conversacion);
     }
 
-    public MensajeResponse responder(Usuario vendedor, Long id, String texto) {
-        exigirRol(vendedor, Rol.VENDEDOR);
+    public MensajeResponse responder(Usuario usuario, Long id, String texto) {
+        exigirParticipanteRol(usuario);
         Conversacion conversacion = buscar(id);
-        if (!conversacion.getVendedor().getId().equals(vendedor.getId()))
-            throw error(HttpStatus.FORBIDDEN, "No participas como vendedor en esta conversación.");
-        // HU 53 - El cliente recibe un aviso cuando el vendedor responde.
-        Mensaje mensaje = mensajes.save(new Mensaje(conversacion, vendedor, validarMensaje(texto)));
+        exigirParticipante(usuario, conversacion);
+        Mensaje mensaje = mensajes.save(new Mensaje(conversacion, usuario, validarMensaje(texto)));
         notificaciones.notificarMensaje(mensaje);
         return MensajeResponse.desde(mensaje);
     }

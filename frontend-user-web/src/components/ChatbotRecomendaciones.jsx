@@ -17,7 +17,7 @@ export default function ChatbotRecomendaciones() {
     const [mensajes, setMensajes] = useState([
         {
             rol: 'bot',
-            texto: '¡Hola! 👋 Puedo recomendarte productos y responder consultas técnicas sobre componentes electrónicos.',
+            texto: '¡Hola! Puedo recomendarte productos y responder consultas técnicas sobre componentes electrónicos.',
             productos: []
         }
     ])
@@ -86,7 +86,7 @@ export default function ChatbotRecomendaciones() {
 
     return (
         <section className="tarjeta chatbot">
-            <h2>🤖 Asistente PulgaTec</h2>
+            <h2>Asistente PulgaTec</h2>
 
             <p>
                 Busca productos disponibles o resuelve dudas
@@ -102,7 +102,7 @@ export default function ChatbotRecomendaciones() {
                     disabled={enviando}
                     aria-pressed={modo === 'recomendaciones'}
                 >
-                    🛒 Recomendaciones
+                    Recomendaciones
                 </button>
 
                 <button
@@ -112,7 +112,7 @@ export default function ChatbotRecomendaciones() {
                     disabled={enviando}
                     aria-pressed={modo === 'tecnico'}
                 >
-                    🔧 Consultas técnicas
+                    Consultas técnicas
                 </button>
             </div>
 
@@ -157,7 +157,7 @@ export default function ChatbotRecomendaciones() {
 
                 {enviando && (
                     <div className="chatbot-mensaje chatbot-bot">
-                        <p>🤖 Estoy preparando mi respuesta...</p>
+                        <p>Estoy preparando mi respuesta...</p>
                     </div>
                 )}
 

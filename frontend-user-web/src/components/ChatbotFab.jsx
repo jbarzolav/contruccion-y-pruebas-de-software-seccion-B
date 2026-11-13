@@ -24,7 +24,7 @@ export default function ChatbotFab() {
             {abierto && (
                 <div className="chatbot-panel" role="dialog" aria-label="Asistente PulgaTec">
                     <div className="chatbot-panel-cabecera">
-                        <strong>🤖 Asistente PulgaTec</strong>
+                        <strong>Asistente PulgaTec</strong>
                         <button
                             type="button"
                             className="modal-cerrar chatbot-cerrar"
