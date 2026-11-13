@@ -13,11 +13,6 @@ const FORM_INICIAL = {
   estado: 'DISPONIBLE',
 }
 
-const CAMPOS_OCULTOS = {
-  imagenUrl: 'https://via.placeholder.com/300',
-
-}
-
 const FORMATOS_PERMITIDOS = ['image/jpeg', 'image/png']
 
 export default function PublicarProducto({ onProductoCreado }) {
@@ -130,7 +125,7 @@ export default function PublicarProducto({ onProductoCreado }) {
     }
 
     const payload = {
-      ...CAMPOS_OCULTOS,
+      imagenUrl: imagen.name,
       vendedorId: usuarioActualId(), // HU 23 - Vendedor autenticado.
       ...formulario,
       precio: Number(formulario.precio),
@@ -144,12 +139,7 @@ export default function PublicarProducto({ onProductoCreado }) {
       const creado = await crearProducto(payload)
 
       // HU02 - Subir el archivo REAL de la imagen (multipart)
-      await subirImagenProducto(creado.id, imagen, usuarioActualId())
-
-      const productoFinalizado = {
-        ...creado,
-        imagenUrl: `producto: ${imagen.name}`,
-      }
+      const productoFinalizado = await subirImagenProducto(creado.id, imagen, payload.vendedorId)
 
       setMensaje({
         tipo: 'exito',

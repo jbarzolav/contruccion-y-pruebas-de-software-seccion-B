@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { buscarProductosPorNombre } from '../api/productos.js'
+import { buscarProductosPorNombre, urlImagen } from '../api/productos.js'
 
 export default function BuscarProductos() {
   const [nombre, setNombre] = useState('')
@@ -104,7 +104,7 @@ export default function BuscarProductos() {
               >
                 {producto.imagenUrl && (
                     <img
-                        src={`http://localhost:9000${producto.imagenUrl}`}
+                        src={urlImagen(producto.imagenUrl)}
                         alt={producto.nombre}
                         width="150"
                     />
