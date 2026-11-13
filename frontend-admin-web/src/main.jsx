@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   cambiarRol, cerrarSesion, iniciarSesion, listarAuditoria, listarUsuarios,
@@ -34,35 +34,146 @@ function Notice({ type = 'info', children }) { return <div className={`notice ${
 
 function RolesView() {
   const [users, setUsers] = useState([])
-  const [roles, setRoles] = useState({})
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('')
+  const [selected, setSelected] = useState(null)
+  const [newRole, setNewRole] = useState('')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [changeError, setChangeError] = useState('')
   const [message, setMessage] = useState('')
-  const [saving, setSaving] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const dialog = useRef(null)
+
   async function load() {
-    setLoading(true); setError('')
-    try { const data = await listarUsuarios(); setUsers(data); setRoles(Object.fromEntries(data.map(u => [u.id, u.rol]))) }
-    catch (err) { setError(mensajeError(err)) }
-    finally { setLoading(false) }
-  }
-  useEffect(() => { load() }, [])
-  async function update(user) {
-    setSaving(user.id); setMessage(''); setError('')
+    setLoading(true)
+    setLoadError('')
+    setMessage('')
     try {
-      const updated = await cambiarRol(user.id, roles[user.id])
-      setUsers(current => current.map(item => item.id === updated.id ? updated : item))
-      setRoles(current => ({ ...current, [updated.id]: updated.rol }))
-      setMessage(`Rol actualizado para ${updated.correo}.`)
-    } catch (err) { setError(mensajeError(err)) }
-    finally { setSaving(null) }
+      setUsers(await listarUsuarios())
+    } catch (err) {
+      setLoadError(mensajeError(err))
+    } finally {
+      setLoading(false)
+    }
   }
-  return <section><div className="section-heading"><div><p className="eyebrow">HU23 · ACCESOS</p><h2>Gestión de usuarios y roles</h2><p className="muted">Asigna el rol que define los permisos de cada cuenta.</p></div><button className="secondary" onClick={load}>Actualizar lista</button></div>
-    {error && <Notice type="error">{error}</Notice>}{message && <Notice type="success">{message}</Notice>}
-    {loading ? <div className="loading">Cargando usuarios…</div> : users.length === 0 ? <div className="empty">No hay usuarios registrados.</div> :
-      <div className="table-wrap"><table><thead><tr><th>Usuario</th><th>Correo</th><th>Rol actual</th><th>Nuevo rol</th><th></th></tr></thead><tbody>
-        {users.map(user => <tr key={user.id}><td><span className="avatar">{user.correo?.[0]?.toUpperCase()}</span>Cuenta #{user.id}</td><td>{user.correo}</td><td><span className="role-pill">{user.rol}</span></td><td><select aria-label={`Nuevo rol de ${user.correo}`} value={roles[user.id] || user.rol} onChange={e => setRoles(current => ({ ...current, [user.id]: e.target.value }))}>{ROLES.map(role => <option key={role}>{role}</option>)}</select></td><td><button className="primary small" disabled={saving === user.id || roles[user.id] === user.rol} onClick={() => update(user)}>{saving === user.id ? 'Guardando…' : 'Guardar'}</button></td></tr>)}
-      </tbody></table></div>}
-  </section>
+
+  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (selected) dialog.current.showModal()
+  }, [selected])
+
+  function openRoleChange(user) {
+    setSelected(user)
+    setNewRole(user.rol)
+    setChangeError('')
+    setMessage('')
+  }
+
+  async function update(event) {
+    event.preventDefault()
+    if (saving || !selected || newRole === selected.rol) return
+
+    setSaving(true)
+    setChangeError('')
+    try {
+      const updated = await cambiarRol(selected.id, newRole)
+      setUsers(current => current.map(user => user.id === updated.id ? updated : user))
+      setMessage(`Rol actualizado para ${updated.correo}.`)
+      dialog.current?.close()
+    } catch (err) {
+      setChangeError(mensajeError(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const term = search.trim().toLowerCase()
+  const visibleUsers = users.filter(user =>
+    user.correo.toLowerCase().includes(term) && (!filter || user.rol === filter)
+  )
+
+  return (
+    <section>
+      <div className="section-heading">
+        <div>
+          <h2>Gestión de usuarios y roles</h2>
+          <p className="muted">Asigna el rol que define los permisos de cada cuenta.</p>
+        </div>
+        <button className="secondary" onClick={load} disabled={loading}>
+          {loadError ? 'Reintentar' : 'Actualizar lista'}
+        </button>
+      </div>
+
+      {loadError && <Notice type="error">{loadError}</Notice>}
+      {message && <Notice type="success">{message}</Notice>}
+      {loading && <div className="loading">Cargando usuarios…</div>}
+      {!loading && !loadError && (
+        <>
+          {users.length > 0 && (
+            <div className="roles-filters">
+              <label>
+                Buscar por correo
+                <input type="search" value={search} onChange={event => setSearch(event.target.value)} />
+              </label>
+              <label>
+                Rol
+                <select value={filter} onChange={event => setFilter(event.target.value)}>
+                  <option value="">Todos los roles</option>
+                  {ROLES.map(role => <option key={role}>{role}</option>)}
+                </select>
+              </label>
+            </div>
+          )}
+          {visibleUsers.length === 0 ? (
+            <div className="empty">
+              {users.length ? 'No hay coincidencias con los filtros.' : 'No hay usuarios registrados.'}
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table className="roles-table">
+                <thead><tr><th>Cuenta</th><th>Rol actual</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  {visibleUsers.map(user => (
+                    <tr key={user.id}>
+                      <td><div className="role-account"><span className="avatar" aria-hidden="true">{user.correo[0]?.toUpperCase()}</span>{user.correo}</div></td>
+                      <td><span className="role-pill">{user.rol}</span></td>
+                      <td><button type="button" className="secondary small" aria-label={`Cambiar rol de ${user.correo}`} onClick={() => openRoleChange(user)}>Cambiar rol</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {selected && (
+        <dialog ref={dialog} className="role-dialog" aria-labelledby="role-dialog-title"
+          onClose={() => setSelected(null)}
+          onCancel={event => { if (saving) event.preventDefault() }}>
+          <form onSubmit={update}>
+            <h3 id="role-dialog-title">Cambiar rol</h3>
+            <p className="role-dialog-email">{selected.correo}</p>
+            <label>
+              Nuevo rol
+              <select value={newRole} disabled={saving} onChange={event => setNewRole(event.target.value)}>
+                {ROLES.map(role => <option key={role}>{role}</option>)}
+              </select>
+            </label>
+            {newRole !== selected.rol && <p className="role-change">{selected.rol} → {newRole}</p>}
+            {changeError && <Notice type="error">{changeError}</Notice>}
+            <div className="role-dialog-actions">
+              <button type="button" className="secondary" disabled={saving} onClick={() => dialog.current.close()}>Cancelar</button>
+              <button type="submit" className="primary" disabled={saving || newRole === selected.rol}>
+                {saving ? 'Guardando…' : 'Confirmar cambio'}
+              </button>
+            </div>
+          </form>
+        </dialog>
+      )}
+    </section>
+  )
 }
 
 function AuditView() {
