@@ -6,7 +6,6 @@ export default function PlanPremium() {
     const [plan, setPlan] = useState(null)
     const [cargando, setCargando] = useState(true)
     const [error, setError] = useState('')
-    const [seleccionado, setSeleccionado] = useState(false)
 
     useEffect(() => {
         let activo = true
@@ -51,22 +50,7 @@ export default function PlanPremium() {
                         ))}
                     </ul>
 
-                    <button
-                        type="button"
-                        onClick={() => setSeleccionado(true)}
-                        disabled={seleccionado}
-                    >
-                        {seleccionado
-                            ? 'Plan seleccionado'
-                            : 'Seleccionar plan Premium'}
-                    </button>
-
-                    {seleccionado && (
-                        <p role="status" className="premium-confirmacion">
-                            Has seleccionado el plan Premium para conocer sus beneficios.
-                            Esta selección no activa una suscripción ni genera pagos.
-                        </p>
-                    )}
+                    <p>La contratación en línea todavía no está disponible.</p>
                 </>
             )}
         </section>

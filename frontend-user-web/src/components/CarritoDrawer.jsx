@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import ImagenCarrito from './ImagenCarrito.jsx'
 import {
@@ -13,7 +14,7 @@ import {
  * HU 11 / HU 12 (cantidades) / HU 13 (eliminar) / HU 14 (total).
  * Se abre con el icono 🛒 del header sin salir de la página actual.
  */
-export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado }) {
+export default function CarritoDrawer({ abierto, cantidad, onCerrar, onCarritoActualizado }) {
     const [items, setItems] = useState([])
     const [total, setTotal] = useState(0)
     const [cargando, setCargando] = useState(false)
@@ -84,8 +85,8 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
                 )
             )
 
-            await actualizarTotal()
             onCarritoActualizado?.()
+            await actualizarTotal()
         } catch (err) {
             setError(err?.response?.data?.messages?.[0] || 'No se pudo actualizar la cantidad.')
         } finally {
@@ -110,8 +111,8 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
 
             setItems((lista) => lista.filter((elemento) => elemento.id !== item.id))
 
-            await actualizarTotal()
             onCarritoActualizado?.()
+            await actualizarTotal()
         } catch (err) {
             setError(err?.response?.data?.messages?.[0] || 'No se pudo eliminar el producto.')
         } finally {
@@ -123,13 +124,18 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
         return null
     }
 
-    return (
+    return createPortal(
         <>
             <div className="drawer-overlay" onClick={onCerrar} />
 
             <aside className="drawer-panel" aria-label="Carrito de compras">
                 <div className="drawer-cabecera">
-                    <h2>Mi carrito</h2>
+                    <div>
+                        <h2>Mi carrito</h2>
+                        <p className="drawer-unidades" aria-live="polite">
+                            {cantidad} {cantidad === 1 ? 'unidad' : 'unidades'}
+                        </p>
+                    </div>
                     <button
                         type="button"
                         className="modal-cerrar"
@@ -236,6 +242,7 @@ export default function CarritoDrawer({ abierto, onCerrar, onCarritoActualizado 
                     )}
                 </div>
             </aside>
-        </>
+        </>,
+        document.body
     )
 }

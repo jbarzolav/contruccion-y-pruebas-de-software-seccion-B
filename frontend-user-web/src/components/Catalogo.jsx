@@ -6,6 +6,7 @@ import {
     obtenerFavoritos,
     obtenerCatalogo,
     obtenerRecomendaciones,
+    quitarFavorito,
     urlImagen
 } from '../api/productos.js'
 import { tienePermiso, useSesion } from '../api/sesion.js'
@@ -20,12 +21,12 @@ const CLASES_ESTADO = {
 // HU 07 + HU 08 + HU 20 - Tarjeta única del catálogo: la usan tanto los
 // resultados de búsqueda como las recomendaciones (mismos estilos y la
 // misma navegación hacia /producto/:id, sin duplicar componentes).
-export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar, alQuitar, destacada = false }) {
+export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando, alGuardar, alQuitar }) {
     const imagen = urlImagen(producto.imagenUrl)
     const agotado = producto.stock === 0
 
     return (
-        <article key={producto.id} className={`catalogo-tarjeta${destacada ? ' catalogo-tarjeta-destacada' : ''}`}>
+        <article key={producto.id} className="catalogo-tarjeta">
             <Link to={`/producto/${producto.id}`} className="catalogo-tarjeta-enlace">
                 {imagen ? (
                     <div className="catalogo-imagen-marco">
@@ -53,14 +54,15 @@ export function tarjetaProducto(producto, { puedeGuardar, esFavorito, guardando,
                 <button
                     type="button"
                     className="catalogo-favorito"
-                    onClick={() => alGuardar(producto)}
-                    disabled={esFavorito || guardando}
-                    aria-label={esFavorito ? `${producto.nombre} guardado en favoritos` : `Guardar ${producto.nombre} en favoritos`}
+                    onClick={() => (esFavorito ? alQuitar : alGuardar)(producto)}
+                    disabled={guardando}
+                    aria-pressed={esFavorito}
+                    aria-label={`Favorito: ${producto.nombre}`}
                 >
-                    {guardando ? 'Guardando…' : esFavorito ? '♥ Guardado' : '♡ Favorito'}
+                    {esFavorito ? "Guardado" : "Guardar"}
                 </button>
             )}
-            {alQuitar && (
+            {!puedeGuardar && alQuitar && (
                 <button
                     type="button"
                     className="catalogo-favorito"
@@ -124,31 +126,38 @@ export default function Catalogo({ nombre = '', sort = '', actualizar, categoria
         cargarFavoritos()
     }, [puedeGuardar, sesion?.token])
 
-    async function guardarFavorito(producto) {
+    async function cambiarFavorito(producto, quitar) {
         if (!producto?.id || idGuardandoFavorito != null) return
         setIdGuardandoFavorito(producto.id)
         setAvisoFavorito('')
         try {
-            await agregarFavorito(producto.id)
-            setFavoritos((actuales) => actuales.some((item) => item.id === producto.id)
-                ? actuales
-                : [producto, ...actuales])
-            setAvisoFavorito(`${producto.nombre} se guardó en tus favoritos.`)
+            if (quitar) {
+                await quitarFavorito(producto.id)
+                setFavoritos((actuales) => actuales.filter((item) => item.id !== producto.id))
+                setAvisoFavorito(`${producto.nombre} se quitó de tus favoritos.`)
+            } else {
+                await agregarFavorito(producto.id)
+                setFavoritos((actuales) => actuales.some((item) => item.id === producto.id)
+                    ? actuales
+                    : [producto, ...actuales])
+                setAvisoFavorito(`${producto.nombre} se guardó en tus favoritos.`)
+            }
         } catch (err) {
-            setAvisoFavorito(err?.response?.data?.messages?.[0] || 'No se pudo guardar el favorito.')
+            setAvisoFavorito(err?.response?.data?.messages?.[0]
+                || (quitar ? 'No se pudo quitar el favorito.' : 'No se pudo guardar el favorito.'))
         } finally {
             setIdGuardandoFavorito(null)
         }
     }
 
     const idsFavoritos = new Set(favoritos.map((producto) => producto.id))
-    function renderTarjeta(producto, indice = 0) {
+    function renderTarjeta(producto) {
         return tarjetaProducto(producto, {
             puedeGuardar,
             esFavorito: idsFavoritos.has(producto.id),
-            guardando: idGuardandoFavorito === producto.id,
-            alGuardar: guardarFavorito,
-            destacada: indice === 0,
+            guardando: cargandoFavoritos || idGuardandoFavorito != null,
+            alGuardar: (item) => cambiarFavorito(item, false),
+            alQuitar: puedeGuardar ? (item) => cambiarFavorito(item, true) : undefined,
         })
     }
 

@@ -318,11 +318,10 @@ export default function App() {
                             type="button"
                             className="btn-carrito"
                             onClick={() => setDrawerCarritoAbierto(true)}
-                            aria-label="Abrir el carrito de compras"
+                            aria-label={`Abrir carrito de compras, ${itemsEnCarrito} unidades`}
                         >
-                            🛒
                             {itemsEnCarrito > 0 && (
-                                <span className="badge-carrito">{itemsEnCarrito}</span>
+                                <span className="badge-carrito" aria-hidden="true">{itemsEnCarrito}</span>
                             )}
                         </button>}
 
@@ -451,6 +450,7 @@ export default function App() {
 
                 {/* Panel lateral del carrito (HU 11 / 12 / 13 / 14) */}
                 {puedeComprar && <CarritoDrawer
+                        cantidad={itemsEnCarrito}
                     abierto={drawerCarritoAbierto}
                     onCerrar={() => setDrawerCarritoAbierto(false)}
                     onCarritoActualizado={recargarCarrito}

@@ -1,3 +1,4 @@
+import CampoTextoAjustable from './CampoTextoAjustable.jsx'
 import { CATEGORIAS_PRODUCTO } from '../utils/categoriasProducto.js'
 import { useEffect, useState } from 'react'
 import { crearProducto, subirImagenProducto } from '../api/productos.js'
@@ -196,10 +197,9 @@ export default function PublicarProducto({ onProductoCreado }) {
 
           <div className="campo">
             <label htmlFor="descripcion">Descripción *</label>
-            <textarea
+            <CampoTextoAjustable
                 id="descripcion"
                 name="descripcion"
-                rows="3"
                 value={formulario.descripcion}
                 onChange={handleChange}
                 placeholder="Describe el producto"

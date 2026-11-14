@@ -235,10 +235,6 @@ export async function obtenerDetallePedido(idPedido) {
   return data
 }
 
-export async function obtenerPedido(idPedido) {
-  return obtenerDetallePedido(idPedido)
-}
-
 export async function obtenerExperienciaPedido(idPedido) {
   const { data } = await apiPedidos.get('')
   return data.find(pedido => String(pedido.idPedido) === String(idPedido))

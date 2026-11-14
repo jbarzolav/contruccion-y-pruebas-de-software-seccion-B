@@ -21,8 +21,8 @@ const ACCIONES_POR_TIPO = {
 }
 
 const OPCIONES_ESTADO = [
-  { valor: '', etiqueta: 'Todos los estados' },
-  { valor: 'PENDIENTE', etiqueta: 'Pendientes' },
+  { valor: '', etiqueta: 'Todas' },
+  { valor: 'PENDIENTE', etiqueta: 'Sin leer' },
   { valor: 'LEIDA', etiqueta: 'Leídas' },
 ]
 
@@ -130,15 +130,16 @@ export default function BandejaNotificaciones() {
       </button>
     </header>
 
+    <div className="bandeja-filtro-estado" role="group" aria-label="Estado de lectura">
+      {OPCIONES_ESTADO.map(({ valor, etiqueta }) => <button key={valor} className="btn-secundario"
+        type="button" aria-pressed={estado === valor}
+        onClick={() => { setEstado(valor); setPagina(0) }}>{etiqueta}</button>)}
+    </div>
+
     <div className="bandeja-filtros" role="group" aria-label="Filtrar notificaciones">
       <label>Tipo
         <select value={tipo} onChange={cambiarFiltro(setTipo)}>
           {OPCIONES_TIPO.map((opcion) => <option key={opcion.valor} value={opcion.valor}>{opcion.etiqueta}</option>)}
-        </select>
-      </label>
-      <label>Estado
-        <select value={estado} onChange={cambiarFiltro(setEstado)}>
-          {OPCIONES_ESTADO.map((opcion) => <option key={opcion.valor} value={opcion.valor}>{opcion.etiqueta}</option>)}
         </select>
       </label>
       <label>Fecha
@@ -161,22 +162,21 @@ export default function BandejaNotificaciones() {
       {notificaciones.map((aviso) => <article className="bandeja-aviso"
         data-pendiente={aviso.estado === 'PENDIENTE'} key={aviso.idNotificacion}>
         <div className="bandeja-aviso-texto">
+          <p>{resumenNotificacionVisible(aviso)}</p>
           <div className="bandeja-aviso-meta">
-            <span className="bandeja-estado">{aviso.estado === 'LEIDA' ? 'Leída' : 'Sin leer'}</span>
+            {aviso.estado === 'PENDIENTE' && <span className="bandeja-estado">Sin leer</span>}
             <span>{fechaHoraPedidoVisible(aviso.fecha)}</span>
           </div>
-          <p>{resumenNotificacionVisible(aviso)}</p>
-          {aviso.fechaLectura && <small>Leída el {fechaHoraPedidoVisible(aviso.fechaLectura)}</small>}
         </div>
         <div className="bandeja-acciones">
-          <Link className="btn-secundario" to={aviso.enlace}
+          <Link className="btn-secundario bandeja-ver-detalle" to={aviso.enlace}
             onClick={(evento) => abrirDetalle(evento, aviso)}>
             {ACCIONES_POR_TIPO[aviso.tipo] ?? 'Ver detalle'}
           </Link>
-          {aviso.estado === 'PENDIENTE' && <button className="btn-secundario" type="button"
-            disabled={accionando !== null}
+          {aviso.estado === 'PENDIENTE' && <button className="btn-secundario bandeja-marcar-leida" type="button"
+            aria-label="Marcar como leída" title="Marcar como leída" disabled={accionando !== null}
             onClick={() => marcarLeida(aviso)}>
-            {accionando === aviso.idNotificacion ? 'Marcando…' : 'Marcar como leída'}
+            <span aria-hidden="true">{accionando === aviso.idNotificacion ? '…' : '✓'}</span>
           </button>}
         </div>
       </article>)}

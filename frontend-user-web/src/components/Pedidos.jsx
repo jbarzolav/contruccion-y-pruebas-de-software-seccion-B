@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { consultarEstadoPedido, listarPedidos } from '../api/productos.js'
+import ImagenCarrito from './ImagenCarrito.jsx'
 import ExperienciaCompra from './ExperienciaCompra.jsx'
 import { estadoPedidoVisible, fechaHoraPedidoVisible, numeroPedidoVisible } from '../utils/formatoPedidos.js'
 
@@ -157,6 +158,14 @@ export default function Pedidos() {
           {estadoPedidoVisible(pedido.estado)}
         </span>
       </header>
+      {pedido.detalles?.length > 0 && <ul className="pedido-recibido-productos" aria-label="Productos comprados">
+        {pedido.detalles.map((producto, indice) => <li key={indice}>
+          <span className="pedido-producto">
+            {producto.idProducto != null && <ImagenCarrito productoId={producto.idProducto} nombre="" />}
+            <span><strong>{producto.nombreProducto}</strong> <small>× {producto.cantidad}</small></span>
+          </span>
+        </li>)}
+      </ul>}
       <p className="compra-total">Total <strong>S/ {Number(pedido.total).toFixed(2)}</strong></p>
       {pedido.fechaActualizacion && <p>Última actualización: {fechaHoraPedidoVisible(pedido.fechaActualizacion)}</p>}
       <div className="compra-acciones">

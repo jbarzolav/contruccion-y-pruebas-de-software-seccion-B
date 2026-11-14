@@ -73,16 +73,6 @@ export async function actualizarPerfil(datos) {
   return data
 }
 
-// HU 29 - Perfil comercial del vendedor autenticado (solo rol VENDEDOR).
-export async function obtenerPerfilVendedor() {
-  const { data } = await apiPermisos.get('/vendedores/me/perfil')
-  return data
-}
-
-export async function guardarPerfilVendedor(datos) {
-  const { data } = await apiPermisos.patch('/vendedores/me/perfil', datos)
-  return data
-}
 // HU25 - El token capturado se envía aunque la interfaz borre la sesión local inmediatamente.
 export async function cerrarSesion(token) {
   const { data } = await apiPermisos.post('/auth/logout', {}, {

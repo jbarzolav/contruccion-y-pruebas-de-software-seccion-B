@@ -1,10 +1,9 @@
+import CampoTextoAjustable from './CampoTextoAjustable.jsx'
 import { useState } from 'react'
 import { calificarPedido, editarResena, resenarPedido } from '../api/productos.js'
 
 function CampoResena({ value, ...props }) {
-  return <div className="campo-resena-ajustable" data-texto={value}>
-    <textarea {...props} value={value} rows={1} aria-label="Texto de la reseña" />
-  </div>
+  return <CampoTextoAjustable {...props} value={value} aria-label="Texto de la reseña" />
 }
 
 export default function ExperienciaCompra({ pedido, onActualizado, mostrarTitulo = true }) {

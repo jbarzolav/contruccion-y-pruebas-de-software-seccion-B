@@ -29,12 +29,6 @@ export async function listarAvisosStockBajo() {
   return data
 }
 
-/** Umbral vigente de una publicación propia (null si no hay). */
-export async function obtenerUmbralStock(idProducto) {
-  const { data } = await apiUmbralProducto.get(`/${idProducto}/umbral-stock`)
-  return data
-}
-
 /** Crea o actualiza el umbral de una publicación propia. */
 export async function guardarUmbralStock(idProducto, umbral) {
   const { data } = await apiUmbralProducto.put(`/${idProducto}/umbral-stock`, { umbral })

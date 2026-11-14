@@ -1,3 +1,4 @@
+import CampoTextoAjustable from './CampoTextoAjustable.jsx'
 import { CATEGORIAS_PRODUCTO } from '../utils/categoriasProducto.js'
 import { useEffect, useRef, useState } from 'react'
 import { actualizarProducto, retirarProducto } from '../api/productos.js'
@@ -293,10 +294,9 @@ export default function EditarProducto({ producto, onGuardado, onCancelar, confi
 
         <div className="campo">
           <label htmlFor="ed-descripcion">Descripción *</label>
-          <textarea
+          <CampoTextoAjustable
             id="ed-descripcion"
             name="descripcion"
-            rows="3"
             value={formulario.descripcion}
             onChange={handleChange}
           />

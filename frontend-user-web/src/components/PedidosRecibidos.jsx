@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import ImagenCarrito from './ImagenCarrito.jsx'
 import { actualizarEstadoPedido, listarPedidosRecibidos } from '../api/pedidosVendedor.js'
 import { estadoPedidoVisible, fechaHoraPedidoVisible, numeroPedidoVisible } from '../utils/formatoPedidos.js'
 
@@ -162,13 +163,16 @@ export default function PedidosRecibidos() {
         </header>
         <ul className="pedido-recibido-productos" aria-label="Tus productos">
           {pedido.productos.map((producto, indice) => <li key={`${producto.idProducto}-${indice}`}>
-            <span>
-              {producto.idProducto != null ? (
-                <Link className="pedido-enlace-producto" to={`/producto/${producto.idProducto}`}>
-                  {producto.nombreProducto}
-                </Link>
-              ) : <strong>{producto.nombreProducto}</strong>}
-              {' '}<small>× {producto.cantidad}</small>
+            <span className="pedido-producto">
+              {producto.idProducto != null && <ImagenCarrito productoId={producto.idProducto} nombre="" />}
+              <span>
+                {producto.idProducto != null ? (
+                  <Link className="pedido-enlace-producto" to={`/producto/${producto.idProducto}`}>
+                    {producto.nombreProducto}
+                  </Link>
+                ) : <strong>{producto.nombreProducto}</strong>}
+                {' '}<small>× {producto.cantidad}</small>
+              </span>
             </span>
             <span>S/ {Number(producto.subtotal).toFixed(2)}</span>
           </li>)}

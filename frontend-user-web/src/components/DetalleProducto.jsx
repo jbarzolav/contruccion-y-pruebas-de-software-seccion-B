@@ -1,3 +1,4 @@
+import { urlFotoPerfil } from '../api/auth.js'
 import { tienePermiso, useSesion } from '../api/sesion.js'
 import FormularioConsulta from './FormularioConsulta.jsx'
 import { enviarConsulta } from '../api/conversaciones.js'
@@ -218,6 +219,12 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
         )
     }
 
+    const perfilPublicoVendedor = puedeComprar
+        && String(resumenVendedor?.vendedorId) === String(producto.vendedorId)
+        ? resumenVendedor
+        : null
+    const nombreVendedor = perfilPublicoVendedor?.nombre?.trim()
+    const fotoVendedor = urlFotoPerfil(perfilPublicoVendedor?.fotoUrl)
     const imagen = urlImagen(producto.imagenUrl)
     const disponible = disponibilidad?.disponible === true
     const stock = disponibilidad?.stock ?? producto.stock
@@ -426,7 +433,16 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
             </section>
             {/* HU 43 - Resumen público del vendedor asociado al producto. */}
             <section className="resumen-calificaciones-vendedor" aria-live="polite">
-                <h3>Calificaciones del vendedor</h3>
+                <h3>Sobre el vendedor</h3>
+                {(nombreVendedor || fotoVendedor) && <div className="ficha-identidad-vendedor">
+                    <span className="ficha-avatar-vendedor" aria-hidden="true">
+                        {nombreVendedor?.[0]?.toUpperCase() || '•'}
+                        {fotoVendedor && <img key={fotoVendedor} src={fotoVendedor} alt=""
+                            width="44" height="44" loading="lazy"
+                            onError={(evento) => { evento.currentTarget.hidden = true }} />}
+                    </span>
+                    {nombreVendedor && <h4>{nombreVendedor}</h4>}
+                </div>}
                 {cargandoResumenVendedor ? (
                     <p>Cargando calificaciones…</p>
                 ) : errorResumenVendedor ? (
@@ -438,7 +454,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                         ) : (
                             <p className="calificaciones-promedio">
                                 <strong>{Number(resumenVendedor.promedio).toFixed(2)} / 5</strong>
-                                {' · '}{resumenVendedor.cantidad} calificaciones
+                                {' · '}{resumenVendedor.cantidad} {resumenVendedor.cantidad === 1 ? 'calificación' : 'calificaciones'}
                             </p>
                         )}
                         <ul className="calificaciones-distribucion" aria-label="Distribución de calificaciones">
@@ -449,7 +465,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
                                     : 0
                                 return (
                                     <li key={valor}>
-                                        <span>{valor} estrellas</span>
+                                        <span>{valor} {valor === 1 ? 'estrella' : 'estrellas'}</span>
                                         <span className="calificaciones-barra" aria-hidden="true">
                                             <span style={{ width: `${porcentaje}%` }} />
                                         </span>
