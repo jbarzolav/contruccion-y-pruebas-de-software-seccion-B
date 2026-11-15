@@ -160,6 +160,6 @@ public class PedidoService {
 
         return new PedidoResponse(
                 pedido.getId(), pedido.getClienteId(), pedido.getFecha(),
-                pedido.getTotal(), detalles);
+                pedido.getEstado(), pedido.getTotal(), detalles);
     }
 }
