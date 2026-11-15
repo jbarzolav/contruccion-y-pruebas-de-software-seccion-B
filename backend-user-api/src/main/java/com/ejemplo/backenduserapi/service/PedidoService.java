@@ -4,15 +4,19 @@ import com.ejemplo.backenduserapi.dto.DetallePedidoResponse;
 import com.ejemplo.backenduserapi.dto.PedidoResponse;
 import com.ejemplo.backenduserapi.entity.Carrito;
 import com.ejemplo.backenduserapi.entity.DetallePedido;
+import com.ejemplo.backenduserapi.entity.IntentoCompra;
 import com.ejemplo.backenduserapi.entity.ItemCarrito;
 import com.ejemplo.backenduserapi.entity.Pedido;
 import com.ejemplo.backenduserapi.entity.Producto;
+import com.ejemplo.backenduserapi.exception.ExperienciaCompraException;
 import com.ejemplo.backenduserapi.exception.PedidoInvalidoException;
 import com.ejemplo.backenduserapi.exception.StockInsuficienteException;
 import com.ejemplo.backenduserapi.repository.CarritoRepository;
+import com.ejemplo.backenduserapi.repository.IntentoCompraRepository;
 import com.ejemplo.backenduserapi.repository.ItemCarritoRepository;
 import com.ejemplo.backenduserapi.repository.PedidoRepository;
 import com.ejemplo.backenduserapi.repository.ProductoRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,25 +48,48 @@ public class PedidoService {
     private final NotificacionService notificaciones;
     /** HU 58 - Avisos de stock bajo: se disparan desde la venta. */
     private final AlertaStockService alertas;
+    /** HU 59.2 - Clave de intento: asocia un reenvío al pedido ya registrado. */
+    private final IntentoCompraRepository intentos;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoRepository carritoRepository,
                          ItemCarritoRepository itemCarritoRepository,
                          ProductoRepository productoRepository,
                          NotificacionService notificaciones,
-                         AlertaStockService alertas) {
+                         AlertaStockService alertas,
+                         IntentoCompraRepository intentos) {
         this.pedidoRepository = pedidoRepository;
         this.carritoRepository = carritoRepository;
         this.itemCarritoRepository = itemCarritoRepository;
         this.productoRepository = productoRepository;
         this.notificaciones = notificaciones;
         this.alertas = alertas;
+        this.intentos = intentos;
     }
 
+    /** Compatibilidad: compra sin cabecera de idempotencia (cliente viejo). */
     @Transactional
     public PedidoResponse confirmarCompra(Long clienteId) {
+        return confirmarCompra(clienteId, null);
+    }
+
+    /**
+     * HU 59.2 - Confirmar la compra con identificador de intento.
+     *
+     * Si la clave ya está asociada a un pedido de ESTE cliente (el 201 se
+     * perdió en la red y el cliente reenvía), se devuelve el mismo comprobante
+     * sin repetir el pedido, sin descontar stock y sin emitir avisos nuevos.
+     */
+    @Transactional
+    public PedidoResponse confirmarCompra(Long clienteId, String claveIntento) {
 
         Long cliente = resolverCliente(clienteId);
+
+        // Reenvío con la misma clave -> se recupera el pedido original.
+        Pedido previo = pedidoDeIntento(claveIntento, cliente);
+        if (previo != null) {
+            return toResponse(previo);
+        }
 
         Carrito carrito = carritoRepository.findByClienteId(cliente)
                 .orElseThrow(() -> new PedidoInvalidoException("El carrito está vacío"));
@@ -117,6 +144,11 @@ public class PedidoService {
 
         pedido.setTotal(total);
         Pedido guardado = pedidoRepository.save(pedido);
+        // HU 59.2 - La clave queda asociada al pedido en la MISMA transacción:
+        // si algo falla después, el reenvío no encuentra nada que repetir.
+        if (claveIntento != null && !claveIntento.isBlank()) {
+            intentos.save(new IntentoCompra(claveIntento, cliente, guardado.getId(), LocalDateTime.now()));
+        }
         // HU 52 - La compra confirmada avisa a cada vendedor con productos en el pedido.
         notificaciones.notificarNuevaCompra(guardado);
 
@@ -132,6 +164,28 @@ public class PedidoService {
             throw new PedidoInvalidoException("El clienteId debe ser mayor a 0");
         }
         return (clienteId == null) ? CLIENTE_DEFECTO : clienteId;
+    }
+
+    /**
+     * HU 59.2 - Pedido ya registrado con esta clave de intento, o null si la
+     * clave es nueva (o no se envió). Una clave usada por otra cuenta no
+     * revela el pedido ajeno: responde 409.
+     */
+    private Pedido pedidoDeIntento(String claveIntento, Long cliente) {
+        if (claveIntento == null || claveIntento.isBlank()) {
+            return null;
+        }
+        IntentoCompra intento = intentos.findByClave(claveIntento).orElse(null);
+        if (intento == null) {
+            return null;
+        }
+        if (!cliente.equals(intento.getClienteId())) {
+            throw new ExperienciaCompraException(HttpStatus.CONFLICT,
+                    "La clave de intento ya fue usada por otra cuenta.");
+        }
+        return pedidoRepository.findById(intento.getIdPedido())
+                .orElseThrow(() -> new PedidoInvalidoException(
+                        "El pedido registrado con esta clave ya no existe"));
     }
 
     /**

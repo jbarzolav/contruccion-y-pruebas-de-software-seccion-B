@@ -66,8 +66,9 @@ No recibe cuerpo (JSON vacío): todo sale del carrito de la sesión.
 3. Crea la notificación de **nueva compra** para cada vendedor (HU 52).
 4. Evalúa el umbral de stock bajo de cada producto (HU 58).
 
-> ⚠️ Si la respuesta se pierde (timeout/red), **reenviar el mismo `POST` sin
-> cambios no debe duplicar el pedido**: ver §5 (identificador de intento).
+> ⚠️ Si la respuesta se pierde (timeout/red), **reenviar el mismo `POST` no
+> debe duplicar el pedido**: envía la cabecera `Idempotency-Key` (ver §5) y
+> el servidor responde con el **mismo `idPedido`**.
 
 ### 1.2 Errores del `POST /api/pedidos`
 
@@ -83,9 +84,10 @@ Todos los errores usan el mismo formato:
 | `401` | `Autorización` | `La sesión es inválida o ha vencido.` | Token inválido/expirado o usuario ya no existe. |
 | `403` | `Autorización` | `No tienes permiso para realizar esta acción.` | Rol sin permiso `COMPRAR` (p. ej. `ADMINISTRADOR`). |
 | `403` | `Autorización` | `No puedes operar con datos de otro usuario.` | `clienteId` distinto del de la sesión. |
-| `400` | `Pedido inválido` | `El carrito está vacío.` | Sin carrito o sin ítems. **No se registra nada.** |
+| `400` | `Pedido inválido` | `El carrito está vacío` | Sin carrito o sin ítems. **No se registra nada.** |
 | `400` | `Pedido inválido` | `El clienteId debe ser mayor a 0` | `clienteId=0` o negativo. |
 | `400` | `Stock insuficiente` | `Stock insuficiente para "<nombre>": se solicitan N y hay M disponibles` | Alguna línea pide más unidades que el stock. **No se descuenta nada, no se vacía el carrito.** |
+| `409` | `Experiencia de compra inválida` | `La clave de intento ya fue usada por otra cuenta.` | Cabecera `Idempotency-Key` ya usada por un cliente distinto (ver §5). |
 
 > La validación de stock se hace **antes** de descontar cualquier unidad: no hay
 > descuentos parciales ni pedidos a medias.
@@ -167,24 +169,45 @@ ajeno; `404` si no existe.
 
 ---
 
-## 5. Identificador de intento (idempotencia) — tarea 59.2
+## 5. Identificador de intento (idempotencia) — tarea 59.2 ✅ implementado
 
 **Problema:** si el `201` se pierde en la red, el cliente reenvía el `POST` y,
-hoy, se descontaría stock dos veces y se crearía un segundo pedido.
+sin protección, respondería `400 carrito vacío` (el carrito ya se vació en la
+primer compra): el cliente no sabe si su compra existió.
 
-**Contrato acordado:**
+**Contrato:** el cliente genera un `uuid` por compra y lo envía como cabecera:
 
 | Elemento | Valor |
 |---|---|
-| Cabecera | `Idempotency-Key: <uuid>` (opcional; generada por el cliente por cada compra) |
-| Primer envío | `201` con el comprobante; la clave queda asociada al `idPedido`. |
-| Reenvío con la **misma** clave | `201` con **el mismo `idPedido`** y el mismo cuerpo: **no** se repite el pedido, **no** se descuenta stock otra vez, **no** se emiten avisos nuevos. |
+| Cabecera | `Idempotency-Key: <uuid>` (opcional; una clave por compra) |
+| Primer envío | `201` con el comprobante; la clave queda asociada al `idPedido` (misma transacción que el pedido). |
+| Reenvío con la **misma** clave (mismo cliente) | `201` con **el mismo `idPedido`** y el mismo cuerpo: **no** se repite el pedido, **no** se descuenta stock otra vez, **no** se emiten avisos nuevos. |
 | Reenvío con clave distinta | Se trata como una compra nueva (comportamiento normal). |
 | Sin cabecera | Comportamiento actual (sin protección), para compatibilidad con clientes viejos. |
+| Clave ya usada por **otra** cuenta | `409` → `{"status":409,"error":"Experiencia de compra inválida","messages":["La clave de intento ya fue usada por otra cuenta."]}` (no revela el pedido ajeno). |
 
-> ⚠️ Estado de implementación: **pendiente** en Spring (tarea 59.2). Mientras
-> tanto, el web debe consultar `GET /api/pedidos/me` antes de reenviar si la
-> confirmación queda incierta (lo pide 59.3).
+Ejemplo de reenvío (segunda petición idéntica a la primera):
+
+```http
+POST /api/pedidos
+Authorization: Bearer <token>
+Idempotency-Key: 8f1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d
+```
+
+```json
+201
+{ "idPedido": 20, "clienteId": 15, "fecha": "2026-11-14T19:29:36.1209853",
+  "estado": "REGISTRADO", "total": 1899.90, "detalles": [ "…" ] }
+```
+
+> La tabla `intentos_compra` guarda `clave` (única), `clienteId`, `idPedido`
+> y `fecha` en la **misma transacción** que el pedido. Si dos peticiones con
+> la misma clave llegan en paralelo, la restricción única de `clave` impide
+> crear dos pedidos: la segunda recibe `409`.
+
+**Recomendación para el web (59.3):** si la confirmación queda incierta por
+red, reenviar con la **misma** `Idempotency-Key`; si no se generó clave,
+consultar `GET /api/pedidos/me` antes de reenviar.
 
 ---
 
@@ -196,7 +219,9 @@ hoy, se descontaría stock dos veces y se crearía un segundo pedido.
 2. `fecha` llega en ISO-8601 sin zona: formatear en el cliente
    (`new Date(fecha)` o `Intl.DateTimeFormat('es-PE')`).
 3. Si el `POST` falla por red (sin respuesta), **no** reenviar a ciegas:
-   consultar `GET /api/pedidos/me` para ver si el pedido ya existe.
+   reenviar con la **misma** `Idempotency-Key` (el servidor devuelve el mismo
+   `idPedido`) o consultar `GET /api/pedidos/me` para ver si el pedido ya
+   existe.
 4. Un `400` de stock **no** modifica el carrito: se puede mostrar el mensaje
    tal cual (`messages[0]`) y dejar al usuario corregir cantidades.
 5. Errores de sesión (`401`) → redirigir a login y conservar la ruta actual.

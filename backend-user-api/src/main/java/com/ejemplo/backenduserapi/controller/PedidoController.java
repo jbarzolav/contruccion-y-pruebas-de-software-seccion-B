@@ -44,14 +44,25 @@ public class PedidoController {
         this.estadoPedidoService = estadoPedidoService;
     }
 
+    /**
+     * HU 15 / HU 59 - Convierte el carrito en un pedido registrado.
+     * 201 con el comprobante (idPedido, fecha, estado, total y detalles).
+     * 400 si el carrito está vacío o si falta stock (no se descuenta nada).
+     *
+     * HU 59.2 - Cabecera opcional "Idempotency-Key": si la confirmación se
+     * pierde en la red y el cliente reenvía la misma clave, responde 201 con
+     * el MISMO idPedido sin repetir pedido, stock ni avisos.
+     */
     @PostMapping
     public ResponseEntity<PedidoResponse> confirmarCompra(
-            @RequestParam(value = "clienteId", required = false) Long clienteId, HttpServletRequest httpRequest) {
+            @RequestParam(value = "clienteId", required = false) Long clienteId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            HttpServletRequest httpRequest) {
         // HU 23 - El propietario proviene de la sesión.
         clienteId = ((Usuario) httpRequest.getAttribute("usuarioSesion")).getId();
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(pedidoService.confirmarCompra(clienteId));
+                .body(pedidoService.confirmarCompra(clienteId, idempotencyKey));
     }
 
     @GetMapping
