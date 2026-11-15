@@ -1,6 +1,8 @@
 package com.ejemplo.publicarproducto.model.remote
 
 import com.ejemplo.publicarproducto.model.RecuperacionRequest
+import com.ejemplo.publicarproducto.model.CodigoRecuperacionRequest
+import com.ejemplo.publicarproducto.model.ValidacionCodigoResponse
 import com.ejemplo.publicarproducto.model.RestablecerRequest
 import com.ejemplo.publicarproducto.model.RecuperacionResponse
 import com.ejemplo.publicarproducto.model.LoginRequest
@@ -36,10 +38,19 @@ interface AuthApi {
     @POST("api/auth/registro")
     suspend fun registro(@Body request: RegistroRequest): Response<AuthMessageResponse>
 
-    // HU 22 - Recuperación mediante enlace temporal de un solo uso.
+    // HU 22 - Solicitud del código de recuperación por correo.
     @POST("api/auth/recuperacion")
     suspend fun solicitarRecuperacion(@Body request: RecuperacionRequest): Response<RecuperacionResponse>
 
+    // HU 22 - Verificación del código de 6 dígitos (paso intermedio del flujo
+    // web /restablecer). 200: {valido, mensaje}; 400: código inválido o
+    // vencido {status, error, messages}; 429: demasiados intentos.
+    // El token del enlace del correo es este mismo código, así que el
+    // deep link pulgatec://restablecer?token=... también pasa por aquí.
+    @POST("api/auth/recuperacion/verificar")
+    suspend fun verificarCodigoRecuperacion(@Body request: CodigoRecuperacionRequest): Response<ValidacionCodigoResponse>
+
+    // HU 22 - Nueva contraseña; el campo token es el código ya verificado.
     @POST("api/auth/restablecer")
     suspend fun restablecer(@Body request: RestablecerRequest): Response<RecuperacionResponse>
 

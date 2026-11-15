@@ -25,6 +25,7 @@ internal object PoliticaErroresAutorizacion {
     private val RUTAS_PUBLICAS = setOf(
         "/api/auth/login",
         "/api/auth/recuperacion",
+        "/api/auth/recuperacion/verificar",
         "/api/auth/restablecer"
     )
 

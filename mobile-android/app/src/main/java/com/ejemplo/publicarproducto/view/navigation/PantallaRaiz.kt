@@ -67,8 +67,7 @@ fun PantallaRaiz(
                     onVolver = {
                         onEstadoRecuperacion(null, false)
                         sesionViewModel.volverAlLogin()
-                    },
-                    onSolicitarEnlace = { onEstadoRecuperacion(null, false) }
+                    }
                 )
 
                 sesionViewModel.validando -> Text("Validando sesión...")

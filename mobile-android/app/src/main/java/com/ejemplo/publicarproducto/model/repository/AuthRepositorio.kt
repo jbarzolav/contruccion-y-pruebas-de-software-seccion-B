@@ -2,6 +2,7 @@ package com.ejemplo.publicarproducto.model.repository
 
 import com.ejemplo.publicarproducto.model.ActualizarPerfilRequest
 import com.ejemplo.publicarproducto.model.AuthMessageResponse
+import com.ejemplo.publicarproducto.model.CodigoRecuperacionRequest
 import com.ejemplo.publicarproducto.model.LoginRequest
 import com.ejemplo.publicarproducto.model.LoginResponse
 import com.ejemplo.publicarproducto.model.PerfilUsuarioResponse
@@ -12,6 +13,7 @@ import com.ejemplo.publicarproducto.model.RecuperacionResponse
 import com.ejemplo.publicarproducto.model.RegistroRequest
 import com.ejemplo.publicarproducto.model.RestablecerRequest
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
+import com.ejemplo.publicarproducto.model.ValidacionCodigoResponse
 import com.ejemplo.publicarproducto.model.remote.AuthApi
 import com.ejemplo.publicarproducto.model.remote.ResultadoApi
 import com.ejemplo.publicarproducto.model.remote.ejecutarPeticion
@@ -133,6 +135,27 @@ class AuthRepositorio(
             leerMensajes = { true }
         ) {
             api.solicitarRecuperacion(RecuperacionRequest(correo))
+        }
+
+    /**
+     * Verifica el código de 6 dígitos antes de permitir la nueva contraseña
+     * (mismo flujo que el web). No consume el código: solo lo valida.
+     * Errores exactos del backend: 400 "El código no es válido o ya venció."
+     * y 429 "Demasiados intentos. Espera un minuto y vuelve a intentarlo."
+     */
+    suspend fun verificarCodigo(codigo: String): ResultadoApi<ValidacionCodigoResponse> =
+        ejecutarPeticion(
+            sinRed = "No hay conexión con el servidor.",
+            fallo = "No se pudo verificar el código. Inténtalo de nuevo.",
+            porCodigo = { codigoHttp ->
+                when (codigoHttp) {
+                    429 -> "Demasiados intentos. Espera un minuto y vuelve a intentarlo."
+                    else -> "El código no es válido o ya venció. Solicita uno nuevo."
+                }
+            },
+            leerMensajes = { true }
+        ) {
+            api.verificarCodigoRecuperacion(CodigoRecuperacionRequest(codigo))
         }
 
     suspend fun restablecer(
