@@ -14,6 +14,7 @@ import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.remote.ResultadoApi
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.UUID
 
 sealed interface ConfirmarCompraUiState {
     data object Loading : ConfirmarCompraUiState
@@ -58,6 +59,14 @@ class ConfirmarCompraViewModel : ViewModel() {
 
     var confirmando by mutableStateOf(false)
         private set
+
+    /**
+     * HU 59.4 - Clave `Idempotency-Key` de la compra en curso: se genera en
+     * el primer intento y se conserva entre reintentos. Si la confirmación
+     * queda incierta por corte de red, reenviarla devuelve el MISMO
+     * `idPedido` en lugar de registrar una compra duplicada.
+     */
+    private var claveIdempotencia: String? = null
 
     var mensajeError by mutableStateOf<String?>(null)
         private set
@@ -116,13 +125,18 @@ class ConfirmarCompraViewModel : ViewModel() {
 
         confirmando = true
         mensajeError = null
+        // HU 59.4 - La clave se mantiene entre reintentos: solo se descarta
+        // cuando el backend confirma el pedido (o al iniciar otra compra).
+        val clave = claveIdempotencia
+            ?: UUID.randomUUID().toString().also { claveIdempotencia = it }
 
         viewModelScope.launch {
-            when (val resultado = repositorioPedidos.confirmarCompra()) {
+            when (val resultado = repositorioPedidos.confirmarCompra(clave)) {
                 is ResultadoApi.Exito -> {
                     pedido = resultado.valor
                     items = emptyList()
                     totalCarrito = BigDecimal.ZERO
+                    claveIdempotencia = null
                 }
 
                 is ResultadoApi.Error -> mensajeError = resultado.mensaje

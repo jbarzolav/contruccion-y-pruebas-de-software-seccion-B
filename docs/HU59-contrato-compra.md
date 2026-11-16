@@ -136,6 +136,21 @@ Solo el **vendedor** que tiene productos en el pedido. Cuerpo:
 historial; `400` si la transición no está permitida; `403` si el pedido es
 ajeno; `404` si no existe.
 
+### 2.5 Cancelar la compra — `POST /api/pedidos/{idPedido}/cancelar` (HU 59.5 / HU 65) ✅ implementado
+
+Solo el **comprador dueño** de la compra y solo mientras esté en
+`REGISTRADO`. No recibe cuerpo.
+
+| HTTP | Cuándo ocurre |
+|---|---|
+| `200` | Se cancela: responde como el cambio de estado (origen `REGISTRADO`, destino `CANCELADO`, fecha, siguientes e historial) y deja historial + aviso (HU 49 / HU 51). |
+| `400` | La compra ya no está en `REGISTRADO` (transición inválida para el comprador). |
+| `403` | El pedido pertenece a otro cliente, o el rol no tiene permiso `COMPRAR`. |
+| `404` | Pedido inexistente. |
+
+> Un vendedor que quiera cancelar una compra **en proceso** sigue usando
+> `PATCH /{idPedido}/estado` (§2.4).
+
 ---
 
 ## 3. Catálogo de estados (HU 49)
@@ -150,8 +165,9 @@ ajeno; `404` si no existe.
 - La transición se valida **siempre en el servidor** (`400` si no corresponde).
 - `ENTREGADO` y `CANCELADO` no admiten cambios posteriores.
 - **Cancelación del comprador (HU 59.5 / HU 65):** mientras el pedido esté en
-  `REGISTRADO` el comprador puede cancelar su propio pedido; sobre su pedido
-  ajeno → `403`.
+  `REGISTRADO` el comprador puede cancelar su propio pedido con
+  `POST /api/pedidos/{idPedido}/cancelar` (ver §2.5); sobre su pedido
+  ajeno → `403`, inexistente → `404` y fuera de `REGISTRADO` → `400`.
 
 ---
 

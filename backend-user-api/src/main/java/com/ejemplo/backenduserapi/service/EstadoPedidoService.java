@@ -20,6 +20,8 @@ import java.util.List;
 
 /**
  * HU 49 - "Como vendedor, quiero actualizar el estado de un pedido".
+ * HU 59.5 / HU 65 - "Como comprador, quiero cancelar mi compra mientras
+ * esté registrada".
  *
  * Reglas de negocio:
  *  - Solo un VENDEDOR autenticado puede actualizar el estado (403).
@@ -30,6 +32,14 @@ import java.util.List;
  *    repetir el estado actual (400).
  *  - Cada cambio actualiza el estado y su fecha, y deja una fila en el
  *    historial con el estado anterior, el nuevo, la fecha y el autor.
+ *
+ * Reglas de la cancelación del comprador (HU 59.5):
+ *  - Solo el dueño de la compra puede cancelarla: pedido ajeno → 403,
+ *    pedido inexistente → 404.
+ *  - Solo cancela mientras el pedido esté en REGISTRADO; cualquier otro
+ *    estado → 400 (transición inválida para el comprador).
+ *  - El cambio deja historial y genera el aviso de HU 51, igual que el
+ *    cambio hecho por el vendedor.
  */
 @Service
 public class EstadoPedidoService {
@@ -69,13 +79,61 @@ public class EstadoPedidoService {
                     "No se permite pasar de " + origen.name() + " a " + destino.name() + ".");
         }
 
+        return aplicarCambio(pedido, origen, destino, vendedor);
+    }
+
+    /**
+     * HU 59.5 / HU 65 - El comprador cancela su propia compra mientras
+     * esté registrada.
+     *
+     *  - 404 si el pedido no existe; 403 si pertenece a otro cliente.
+     *  - 400 si ya no está en REGISTRADO (una compra en proceso solo la
+     *    cancela el vendedor con PATCH /estado, y ENTREGADO / CANCELADO
+     *    son estados finales).
+     *  - 200 con el estado nuevo, su fecha y el historial completo.
+     */
+    @Transactional
+    public PedidoEstadoActualizadoResponse cancelarCompra(Long idPedido, Usuario comprador) {
+        Pedido pedido = pedidoDelComprador(idPedido, comprador);
+
+        EstadoPedido origen = EstadoPedido.desde(pedido.getEstado());
+        if (origen == null) {
+            throw error(HttpStatus.BAD_REQUEST, "El estado actual del pedido no es válido.");
+        }
+        if (origen != EstadoPedido.REGISTRADO) {
+            throw error(HttpStatus.BAD_REQUEST,
+                    "Solo se puede cancelar una compra registrada: el pedido está en estado " + origen.name() + ".");
+        }
+
+        return aplicarCambio(pedido, origen, EstadoPedido.CANCELADO, comprador);
+    }
+
+    /**
+     * Compra que debe ser del comprador autenticado: 404 si no existe y
+     * 403 si es de otro cliente (mismo criterio que la experiencia de compra).
+     */
+    private Pedido pedidoDelComprador(Long idPedido, Usuario comprador) {
+        if (idPedido == null || idPedido < 1) {
+            throw error(HttpStatus.NOT_FOUND, "Pedido no encontrado.");
+        }
+        Pedido pedido = pedidos.findById(idPedido)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Pedido no encontrado."));
+        if (comprador == null || !comprador.getId().equals(pedido.getClienteId())) {
+            throw error(HttpStatus.FORBIDDEN, "No puedes operar con una compra de otro cliente.");
+        }
+        return pedido;
+    }
+
+    /** Cambio de estado permitido: persiste, deja historial y avisa (HU 51). */
+    private PedidoEstadoActualizadoResponse aplicarCambio(Pedido pedido, EstadoPedido origen,
+                                                          EstadoPedido destino, Usuario autor) {
         LocalDateTime ahora = LocalDateTime.now();
         pedido.setEstado(destino.name());
         pedido.setFechaActualizacionEstado(ahora);
         pedidos.save(pedido);
 
         HistorialEstadoPedido cambio = historial.save(
-                new HistorialEstadoPedido(pedido, origen.name(), destino.name(), ahora, vendedor.getId()));
+                new HistorialEstadoPedido(pedido, origen.name(), destino.name(), ahora, autor.getId()));
         // HU 51 - Se avisa solo después de guardar una transición permitida.
         notificaciones.notificarCambioEstado(cambio);
 

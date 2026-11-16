@@ -39,6 +39,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -222,8 +223,13 @@ interface ProductoApi {
     suspend fun obtenerTotalCarrito(): Response<CarritoTotalResponse>
 
     // HU 15 - POST /api/pedidos → 201 comprobante (400 si el carrito está vacío o falta stock)
+    // HU 59.4 - Cabecera Idempotency-Key: si la confirmación se pierde en la
+    // red, reenviar la MISMA clave devuelve el mismo idPedido (el backend no
+    // duplica el pedido ni descuenta stock dos veces).
     @POST("api/pedidos")
-    suspend fun confirmarCompra(): Response<PedidoResponse>
+    suspend fun confirmarCompra(
+        @Header("Idempotency-Key") idempotencyKey: String?
+    ): Response<PedidoResponse>
 
     // HU 41/42 - la identidad se toma del Bearer y el pedido del path.
     @POST("api/pedidos/{idPedido}/calificacion")

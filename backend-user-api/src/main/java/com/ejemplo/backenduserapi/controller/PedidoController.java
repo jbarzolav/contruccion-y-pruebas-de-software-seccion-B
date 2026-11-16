@@ -121,6 +121,19 @@ public class PedidoController {
                 (Usuario) httpRequest.getAttribute("usuarioSesion"));
     }
 
+    /**
+     * HU 59.5 / HU 65 - El comprador cancela su propia compra mientras
+     * esté en estado REGISTRADO. 200 con el estado nuevo, su fecha y el
+     * historial; 400 si la compra ya salió de REGISTRADO; 403 si el
+     * pedido es de otro cliente; 404 si no existe.
+     */
+    @PostMapping("/{idPedido}/cancelar")
+    public PedidoEstadoActualizadoResponse cancelarCompra(
+            @PathVariable Long idPedido, HttpServletRequest httpRequest) {
+        return estadoPedidoService.cancelarCompra(idPedido,
+                (Usuario) httpRequest.getAttribute("usuarioSesion"));
+    }
+
     @PostMapping("/{idPedido}/calificacion")
     public ResponseEntity<PedidoExperienciaResponse> calificar(
             @PathVariable Long idPedido, @Valid @RequestBody CalificacionRequest request,

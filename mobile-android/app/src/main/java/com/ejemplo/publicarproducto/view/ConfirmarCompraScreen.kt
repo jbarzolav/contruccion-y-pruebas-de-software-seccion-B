@@ -281,6 +281,14 @@ private fun ComprobantePedido(
                 fontWeight = FontWeight.Bold
             )
 
+            // HU 59.4 - El comprobante muestra los mismos datos que la API
+            // (idPedido, fecha, estado, total y detalles con precio unitario).
+            Text(
+                text = "Estado: ${estadoPedidoVisible(pedido.estado)}",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+
             pedido.fecha?.let { fecha ->
                 Text(
                     text = "Fecha: ${fechaHoraPedidoVisible(fecha)}",
@@ -296,10 +304,17 @@ private fun ComprobantePedido(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "${detalle.nombreProducto.orEmpty()} × ${detalle.cantidad ?: 0}",
-                        fontSize = 14.sp
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${detalle.nombreProducto.orEmpty()} × ${detalle.cantidad ?: 0}",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "S/ ${detalle.precioUnitario ?: "0.00"} c/u",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Text(
                         text = "S/ ${detalle.subtotal ?: "0.00"}",
                         fontWeight = FontWeight.SemiBold,

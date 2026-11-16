@@ -319,20 +319,26 @@ class PedidosRepositorio(
     }
 
     // ==================================================================
-    // Checkout (HU 15, HU 41 y HU 42)
+    // Checkout (HU 15, HU 41, HU 42 y HU 59.4)
     //
     // Son operaciones EN LÍNEA: no escriben en Room y NO se encolan.
-    // `POST /api/pedidos` no es idempotente: reintentarlo automáticamente
-    // (por ejemplo desde WorkManager) podría registrar el pedido dos veces
-    // y descontar el stock dos veces. Por eso el checkout sigue siendo
-    // bloqueante y en línea, exactamente como antes de la refactorización.
+    // El registro del pedido se envía con la cabecera "Idempotency-Key"
+    // (HU 59.4): reintentar con la MISMA clave devuelve el mismo pedido
+    // sin duplicarlo ni descontar stock dos veces, y con una clave nueva
+    // se trata como una compra distinta. Aun así el checkout sigue siendo
+    // bloqueante y en línea, para que la interfaz muestre el comprobante
+    // apenas el backend responde.
     // ==================================================================
 
     /**
      * HU 15 - Registra el pedido con `POST /api/pedidos` y devuelve el
      * comprobante. El backend vacía el carrito al aceptarlo.
+     *
+     * HU 59.4 - `claveIdempotencia` viaja como cabecera `Idempotency-Key`:
+     * el mismo valor debe reenviarse si la confirmación quedó incierta
+     * (timeout o corte de red) para recuperar el pedido ya registrado.
      */
-    suspend fun confirmarCompra(): ResultadoApi<PedidoResponse> =
+    suspend fun confirmarCompra(claveIdempotencia: String? = null): ResultadoApi<PedidoResponse> =
         ejecutarPeticion(
             excepcion = { e ->
                 "No hay conexión con el backend (10.0.2.2:9000): ${e.message}"
@@ -340,7 +346,7 @@ class PedidosRepositorio(
             porCodigo = { "Error $it: no se pudo registrar el pedido." },
             leerMensajes = { true },
             formatearMensajes = { lista -> lista.firstOrNull().orEmpty() }
-        ) { api.confirmarCompra() }
+        ) { api.confirmarCompra(claveIdempotencia) }
 
     /**
      * HU 41 - Califica el pedido propio recién comprado.
