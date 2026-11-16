@@ -32,6 +32,18 @@ class DetallePedidoViewModel : BaseOfflineViewModel() {
     var error by mutableStateOf<String?>(null)
         private set
 
+    /** HU 59.7 - Hay una cancelación en vuelo (bloquea dobles envíos). */
+    var cancelando by mutableStateOf(false)
+        private set
+
+    /** HU 59.7 - Resultado del último intento de cancelación (éxito o error). */
+    var mensajeCancelacion by mutableStateOf<String?>(null)
+        private set
+
+    /** HU 59.7 - El último intento de cancelación falló (pinta el mensaje en rojo). */
+    var errorCancelacion by mutableStateOf(false)
+        private set
+
     private val idPedidoActual = MutableStateFlow(0L)
 
     init {
@@ -62,6 +74,9 @@ class DetallePedidoViewModel : BaseOfflineViewModel() {
         pedido = null
         error = null
         cargando = false
+        cancelando = false
+        mensajeCancelacion = null
+        errorCancelacion = false
         idPedidoActual.value = 0L
     }
 
@@ -92,6 +107,51 @@ class DetallePedidoViewModel : BaseOfflineViewModel() {
                 if (usuario == usuarioId) error = e.message ?: "No se pudo cargar el detalle del pedido."
             } finally {
                 if (usuario == usuarioId) cargando = false
+            }
+        }
+    }
+
+    /**
+     * HU 59.7 - Cancela la compra desde el detalle mientras el backend la
+     * permita (solo estado REGISTRADO).
+     *
+     * [cancelando] es la bandera anti-doble envío: mientras haya un POST en
+     * vuelo no se envía otro. El estado nuevo de la respuesta se aplica a la
+     * copia local (Room) y la tarjeta se actualiza sola a "Cancelado". El
+     * resultado (éxito o el mensaje de error del backend) queda visible en
+     * [mensajeCancelacion].
+     */
+    fun cancelarPedido() {
+        val idPedido = idPedidoActual.value
+        if (cancelando || idPedido <= 0) return
+        // R2 - Se recuerda con qué usuario se lanzó la petición.
+        val usuario = usuarioId
+        cancelando = true
+        mensajeCancelacion = null
+        errorCancelacion = false
+        viewModelScope.launch {
+            try {
+                when (val resultado = contenedor.pedidos.cancelarPedido(usuario, idPedido)) {
+                    is ResultadoApi.Exito -> if (usuario == usuarioId) {
+                        sinConexion = false
+                        mensajeCancelacion = "Compra cancelada."
+                    }
+                    is ResultadoApi.Error -> {
+                        if (usuario != usuarioId) return@launch
+                        if (resultado.temporal) sinConexion = true
+                        mensajeCancelacion = resultado.mensaje
+                        errorCancelacion = true
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (usuario == usuarioId) {
+                    mensajeCancelacion = e.message ?: "No se pudo cancelar la compra."
+                    errorCancelacion = true
+                }
+            } finally {
+                if (usuario == usuarioId) cancelando = false
             }
         }
     }

@@ -258,6 +258,13 @@ interface ProductoApi {
         @Body request: EstadoPedidoRequest
     ): Response<PedidoEstadoActualizadoResponse>
 
+    // HU 59.7 - El comprador cancela su propia compra mientras esté
+    // REGISTRADO. 200 con el estado nuevo (CANCELADO), su fecha y el
+    // historial; 400 si ya salió de REGISTRADO; 403 si el pedido es de
+    // otro cliente; 404 si no existe. El identidad la deriva el Bearer.
+    @POST("api/pedidos/{idPedido}/cancelar")
+    suspend fun cancelarPedido(@Path("idPedido") idPedido: Long): Response<PedidoEstadoActualizadoResponse>
+
     // HU 50 - Detalle del pedido propio con productos, precios y total.
     @GET("api/pedidos/{idPedido}")
     suspend fun obtenerDetallePedido(@Path("idPedido") idPedido: Long): Response<PedidoDetalleResponse>

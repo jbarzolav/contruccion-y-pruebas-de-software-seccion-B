@@ -13,7 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -122,6 +124,36 @@ private fun PedidoCard(
             TextButton(onClick = { detalleVisible = !detalleVisible }) { Text(if (detalleVisible) "Ocultar detalle" else "Ver detalle") }
             // HU 50 - Pantalla dedicada con productos, precios, subtotales y total.
             TextButton(onClick = { pedido.idPedido?.let(onVerDetalle) }) { Text("Detalle del pedido") }
+            // HU 59.7 - Cancelar la compra mientras el backend la permita
+            // (solo REGISTRADO). El envío se confirma antes y el botón queda
+            // bloqueado mientras `cancelandoId` esté en vuelo.
+            if (pedido.estado == "REGISTRADO") {
+                var confirmandoCancelacion by remember(pedido.idPedido) { mutableStateOf(false) }
+                Button(
+                    onClick = { confirmandoCancelacion = true },
+                    enabled = viewModel.cancelandoId == null,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(if (viewModel.cancelandoId == pedido.idPedido) "Cancelando..." else "Cancelar pedido")
+                }
+                if (confirmandoCancelacion) {
+                    AlertDialog(
+                        onDismissRequest = { confirmandoCancelacion = false },
+                        title = { Text("Cancelar pedido") },
+                        text = { Text("¿Seguro que quieres cancelar la compra N.º ${pedido.idPedido}? Esta acción no se puede deshacer.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                confirmandoCancelacion = false
+                                pedido.idPedido?.let(viewModel::cancelarPedido)
+                            }) { Text("Sí, cancelar") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { confirmandoCancelacion = false }) { Text("No, volver") }
+                        }
+                    )
+                }
+            }
             if (detalleVisible) {
                 pedido.detalles.orEmpty().forEach { Text("${it.nombreProducto.orEmpty()} × ${it.cantidad ?: 0}") }
                 pedido.resenas.orEmpty().forEach { resena -> ResenaEditable(pedido.idPedido ?: return@forEach, resena, viewModel) }

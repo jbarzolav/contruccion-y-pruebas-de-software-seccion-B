@@ -9,6 +9,7 @@ import com.ejemplo.publicarproducto.model.CalificacionRequest
 import com.ejemplo.publicarproducto.model.ErrorResponse
 import com.ejemplo.publicarproducto.model.EstadoPedidoResponse
 import com.ejemplo.publicarproducto.model.PedidoDetalleResponse
+import com.ejemplo.publicarproducto.model.PedidoEstadoActualizadoResponse
 import com.ejemplo.publicarproducto.model.PedidoResponse
 import com.ejemplo.publicarproducto.model.PedidoVendedorResponse
 import com.ejemplo.publicarproducto.model.ResenaEdicionRequest
@@ -263,6 +264,35 @@ class PedidosRepositorio(
         idPedido: Long
     ): ResultadoApi<EstadoPedidoResponse> {
         val resultado = ejecutarPeticion { api.consultarEstadoPedido(idPedido) }
+        if (resultado is ResultadoApi.Exito) {
+            val cuerpo = resultado.valor
+            bd.pedidoDao().aplicarEstadoServidor(
+                usuarioId = usuarioId,
+                idPedido = idPedido,
+                ambito = Ambitos.COMPRAS,
+                estado = cuerpo.estado,
+                fechaActualizacion = Fechas.normalizar(cuerpo.fechaActualizacion),
+                estadosPermitidos = null
+            )
+        }
+        return resultado
+    }
+
+    /**
+     * HU 59.7 - Cancela la propia compra (`POST /api/pedidos/{id}/cancelar`)
+     * mientras esté en estado REGISTRADO y aplica el estado devuelto por el
+     * servidor a la copia local: así el historial de compras conserva
+     * CANCELADO sin esperar el siguiente refresco (el estado del backend
+     * siempre prevalece, igual que en [refrescarEstadoPedido]).
+     *
+     * `estadosPermitidos` viaja en null: la copia de compras no guarda esa
+     * columna (solo la usa el ámbito de ventas) y el parámetro es COALESCE.
+     */
+    suspend fun cancelarPedido(
+        usuarioId: Long,
+        idPedido: Long
+    ): ResultadoApi<PedidoEstadoActualizadoResponse> {
+        val resultado = ejecutarPeticion { api.cancelarPedido(idPedido) }
         if (resultado is ResultadoApi.Exito) {
             val cuerpo = resultado.valor
             bd.pedidoDao().aplicarEstadoServidor(

@@ -13,15 +13,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +88,43 @@ fun DetallePedidoScreen(
                         Text(
                             "Total: S/ ${pedido.total?.setScale(2)?.toPlainString() ?: "0.00"}",
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                // HU 59.7 - Cancelar la compra mientras el backend la permita
+                // (solo REGISTRADO): confirmación previa, bandera anti-doble
+                // envío y mensaje de resultado (éxito o error) visible.
+                viewModel.mensajeCancelacion?.let { mensaje ->
+                    Text(
+                        mensaje,
+                        color = if (viewModel.errorCancelacion) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.primary
+                    )
+                }
+                if (pedido.estado == "REGISTRADO") {
+                    var confirmandoCancelacion by remember(pedido.idPedido) { mutableStateOf(false) }
+                    Button(
+                        onClick = { confirmandoCancelacion = true },
+                        enabled = !viewModel.cancelando,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(if (viewModel.cancelando) "Cancelando..." else "Cancelar pedido")
+                    }
+                    if (confirmandoCancelacion) {
+                        AlertDialog(
+                            onDismissRequest = { confirmandoCancelacion = false },
+                            title = { Text("Cancelar pedido") },
+                            text = { Text("¿Seguro que quieres cancelar la compra N.º ${pedido.idPedido}? Esta acción no se puede deshacer.") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    confirmandoCancelacion = false
+                                    viewModel.cancelarPedido()
+                                }) { Text("Sí, cancelar") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { confirmandoCancelacion = false }) { Text("No, volver") }
+                            }
                         )
                     }
                 }

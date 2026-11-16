@@ -151,6 +151,13 @@ Solo el **comprador dueño** de la compra y solo mientras esté en
 > Un vendedor que quiera cancelar una compra **en proceso** sigue usando
 > `PATCH /{idPedido}/estado` (§2.4).
 
+**Clientes que consumen este endpoint (HU 59.7):** Android envía el `POST`
+desde el historial de compras y desde el detalle del pedido, **solo cuando el
+estado es `REGISTRADO`** (en cualquier otro estado el botón no se muestra),
+pide confirmación antes de enviar, bloquea el doble envío mientras la petición
+está en vuelo y aplica el estado `CANCELADO` de la respuesta a su copia local
+para que la lista se actualice sin esperar un refresco.
+
 ---
 
 ## 3. Catálogo de estados (HU 49)

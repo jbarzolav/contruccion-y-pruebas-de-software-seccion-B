@@ -43,6 +43,10 @@ class MisPedidosViewModel : BaseOfflineViewModel() {
         private set
     var actualizandoEstadoId by mutableStateOf<Long?>(null)
         private set
+
+    /** HU 59.7 - Pedido que se está cancelando (bloquea dobles envíos). */
+    var cancelandoId by mutableStateOf<Long?>(null)
+        private set
     var notificaciones by mutableStateOf<List<NotificacionResponse>>(emptyList())
         private set
 
@@ -101,6 +105,7 @@ class MisPedidosViewModel : BaseOfflineViewModel() {
         cargando = false
         guardando = false
         actualizandoEstadoId = null
+        cancelandoId = null
     }
 
     /** Valida el borrador y, solo si es válido, lo aplica a la lista. */
@@ -202,6 +207,44 @@ class MisPedidosViewModel : BaseOfflineViewModel() {
                 if (usuario == usuarioId) mensaje = e.message ?: "No se pudo actualizar el estado del pedido."
             } finally {
                 if (usuario == usuarioId) actualizandoEstadoId = null
+            }
+        }
+    }
+
+    /**
+     * HU 59.7 - Cancela la compra propia mientras el backend la permita
+     * (solo estado REGISTRADO).
+     *
+     * [cancelandoId] es la bandera anti-doble envío: mientras haya una
+     * cancelación en vuelo cualquier otro intento se ignora, de modo que un
+     * doble toque no dispara dos POST. El estado nuevo llega en la
+     * respuesta y se aplica a la copia local (Room), así que la tarjeta
+     * pasa a "Cancelado" sola. Cualquier error (400 si la compra ya salió
+     * de REGISTRADO, 403 si es de otro cliente, 404, sin conexión) queda
+     * visible en [mensaje].
+     */
+    fun cancelarPedido(idPedido: Long) {
+        if (cancelandoId != null) return
+        // R2 - La cancelación se lanza sobre el usuario activo en ese momento.
+        val usuario = usuarioId
+        cancelandoId = idPedido
+        mensaje = null
+        viewModelScope.launch {
+            try {
+                when (val resultado = contenedor.pedidos.cancelarPedido(usuario, idPedido)) {
+                    is ResultadoApi.Exito -> if (usuario == usuarioId) mensaje = "Compra cancelada."
+                    is ResultadoApi.Error -> {
+                        if (usuario != usuarioId) return@launch
+                        if (resultado.temporal) sinConexion = true
+                        mensaje = resultado.mensaje
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (usuario == usuarioId) mensaje = e.message ?: "No se pudo cancelar la compra."
+            } finally {
+                if (usuario == usuarioId) cancelandoId = null
             }
         }
     }
