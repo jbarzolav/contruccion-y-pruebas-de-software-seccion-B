@@ -41,6 +41,23 @@ class AdminService:
         )
 
     @classmethod
+    def cambiar_rol_desde_django(cls, id_usuario, datos):
+        status, sesion = cls._decode(UserApiRepository.request(
+            "/api/auth/login", method="POST",
+            body={"correo": datos["correo"], "password": datos["password"]},
+        ))
+        if status != 200:
+            return status, sesion
+        token = sesion.get("token") if isinstance(sesion, dict) else None
+        if not token:
+            return 502, {"messages": ["Spring no devolvió una sesión válida."]}
+        authorization = f"Bearer {token}"
+        try:
+            return cls.asignar_rol(id_usuario, authorization, {"rol": datos["rol"]})
+        finally:
+            UserApiRepository.request("/api/auth/logout", method="POST", authorization=authorization)
+
+    @classmethod
     def listar_auditoria(cls, query_string, authorization):
         status, identity = cls._decode(UserApiRepository.autenticar_administrador(authorization))
         if status != 200:

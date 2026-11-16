@@ -1,0 +1,44 @@
+html[data-theme] {
+    --primary: #245443;
+    --secondary: #102b25;
+    --header-color: #fff;
+    --header-branding-color: #fff;
+    --breadcrumbs-bg: #1b4035;
+    --button-bg: #245443;
+    --button-hover-bg: #173c30;
+    --default-button-bg: #1b4035;
+    --default-button-hover-bg: #102b25;
+    --link-fg: #28654f;
+    --link-hover-color: #173c30;
+    --link-selected-fg: #245443;
+    --selected-row: #e4f2df;
+}
+
+html[data-theme="dark"] {
+    --link-fg: #a3d5bd;
+    --link-hover-color: #cfeedd;
+    --link-selected-fg: #cfeedd;
+    --selected-row: #294a3d;
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+        --link-fg: #a3d5bd;
+        --link-hover-color: #cfeedd;
+        --link-selected-fg: #cfeedd;
+        --selected-row: #294a3d;
+    }
+}
+
+#nav-sidebar .current-model {
+    background: var(--selected-row);
+}
+
+#changelist .results thead th .text {
+    white-space: normal;
+}
+
+#changelist .results tbody th,
+#changelist .results tbody td {
+    overflow-wrap: anywhere;
+}

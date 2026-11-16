@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import call, patch
+
+from django.contrib.auth import get_user_model
 
 from django.db import connection
-from django.test import SimpleTestCase, TransactionTestCase
+from django.test import SimpleTestCase, TestCase, TransactionTestCase
+from django.urls import reverse
 from rest_framework.test import APIClient
 
-from .models import RegistroAuditoriaCompartido, UsuarioCompartido
+from .models import ListaRevision, RegistroAuditoriaCompartido, UsuarioCompartido
 from .services import AdminService
 
 
@@ -180,3 +183,55 @@ class MySqlSharedReadTests(TransactionTestCase):
         authenticate.return_value = (200, b'{"id":1,"correo":"admin@example.test","rol":"ADMINISTRADOR"}')
         code, _ = AdminService.listar_auditoria("?page=-1&size=101", "Bearer test-token")
         self.assertEqual(code, 400)
+
+    @patch("admin_api.repositories.UserApiRepository.asignar_rol")
+    @patch("admin_api.repositories.UserApiRepository.request")
+    def test_admin_django_lista_filtra_y_delega_cambio_de_rol(self, request_spring, assign):
+        self.client.force_login(get_user_model().objects.create_superuser("operador"))
+        users_url = reverse("admin:admin_api_usuariocompartido_changelist")
+        users = self.client.get(users_url, {"q": "safe@", "rol": "ADMINISTRADOR"})
+        self.assertContains(users, "safe@example.test")
+        audit_url = reverse("admin:admin_api_registroauditoriacompartido_changelist")
+        audit = self.client.get(audit_url, {"accion": "CAMBIO_ROL"})
+        self.assertEqual(audit.context["cl"].result_count, 1)
+
+        request_spring.side_effect = [
+            (200, b'{"token":"sesion-temporal"}'),
+            (200, b'{"rol":"ADMINISTRADOR"}'),
+            (200, b'{}'),
+        ]
+        assign.return_value = (200, b'{"rol":"VENDEDOR"}')
+        role_url = reverse("admin:pulgatec_cambiar_rol", args=[50])
+        self.assertContains(self.client.get(role_url), "Guardar cambio")
+        response = self.client.post(role_url, {
+            "rol": "VENDEDOR", "correo": "admin@example.test", "password": "clave-de-prueba",
+        })
+        self.assertRedirects(response, users_url, fetch_redirect_response=False)
+        assign.assert_called_once_with(50, "Bearer sesion-temporal", {"rol": "VENDEDOR"})
+        self.assertEqual(request_spring.call_args_list, [
+            call("/api/auth/login", method="POST",
+                 body={"correo": "admin@example.test", "password": "clave-de-prueba"}),
+            call("/api/auth/me", authorization="Bearer sesion-temporal"),
+            call("/api/auth/logout", method="POST", authorization="Bearer sesion-temporal"),
+        ])
+
+    def test_cambio_de_rol_rechaza_personal_sin_superusuario(self):
+        staff = get_user_model().objects.create_user("staff", is_staff=True)
+        self.client.force_login(staff)
+        response = self.client.get(reverse("admin:pulgatec_cambiar_rol", args=[50]))
+        self.assertEqual(response.status_code, 403)
+
+
+class ListaRevisionAdminTests(TestCase):
+    def test_alta_guarda_el_item_en_el_formulario_de_lista(self):
+        self.client.force_login(get_user_model().objects.create_superuser("operador"))
+        response = self.client.post(reverse("admin:admin_api_listarevision_add"), {
+            "nombre": "Revisión de pedidos",
+            "items-TOTAL_FORMS": "1", "items-INITIAL_FORMS": "0",
+            "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
+            "items-0-tarea": "Validar el estado del pedido", "items-0-completado": "on",
+        })
+        self.assertEqual(response.status_code, 302)
+        item = ListaRevision.objects.get(nombre="Revisión de pedidos").items.get()
+        self.assertEqual(item.tarea, "Validar el estado del pedido")
+        self.assertTrue(item.completado)

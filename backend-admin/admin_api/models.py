@@ -11,6 +11,8 @@ class UsuarioCompartido(models.Model):
     class Meta:
         managed = False
         db_table = "usuarios"
+        verbose_name = "usuario de PulgaTec"
+        verbose_name_plural = "usuarios de PulgaTec"
 
 
 class RegistroAuditoriaCompartido(models.Model):
@@ -24,3 +26,27 @@ class RegistroAuditoriaCompartido(models.Model):
     class Meta:
         managed = False
         db_table = "registros_auditoria"
+        verbose_name = "registro de auditoría"
+        verbose_name_plural = "registros de auditoría"
+
+
+class ListaRevision(models.Model):
+    nombre = models.CharField(max_length=120)
+    fecha = models.DateField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "lista de revisión"
+        verbose_name_plural = "listas de revisión"
+
+    def __str__(self):
+        return self.nombre
+
+
+class ItemRevision(models.Model):
+    lista = models.ForeignKey(ListaRevision, on_delete=models.CASCADE, related_name="items")
+    tarea = models.CharField(max_length=180)
+    completado = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "ítem de revisión"
+        verbose_name_plural = "ítems de revisión"

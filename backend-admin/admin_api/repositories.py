@@ -43,12 +43,12 @@ class UserApiRepository:
         return [
             {"id": user.id, "correo": user.correo, "rol": user.rol,
              "permisos": permisos.get(user.rol, [])}
-            for user in UsuarioCompartido.objects.using("default").only("id", "correo", "rol").order_by("id")
+            for user in UsuarioCompartido.objects.using(settings.SHARED_DB_ALIAS).only("id", "correo", "rol").order_by("id")
         ]
 
     @staticmethod
     def leer_auditoria(page, size):
-        query = RegistroAuditoriaCompartido.objects.using("default").only(
+        query = RegistroAuditoriaCompartido.objects.using(settings.SHARED_DB_ALIAS).only(
             "id", "accion", "usuario", "fecha"
         ).order_by("-fecha", "-id")
         total = query.count()

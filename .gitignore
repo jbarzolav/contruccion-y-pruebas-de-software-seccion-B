@@ -15,6 +15,7 @@ __pycache__/
 venv/
 env/
 .venv/
+/backend-admin/db.sqlite3
 
 # Android
 .gradle/

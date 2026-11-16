@@ -7,7 +7,11 @@
     <title>PulgaTec | Administración</title>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <p><a id="admin" href="http://127.0.0.1:8001/admin/">Abrir Administración de PulgaTec</a></p>
+    <script type="module">
+      const enlace = document.querySelector('#admin')
+      enlace.href = new URL('/admin/', import.meta.env.VITE_ADMIN_API_URL || enlace.href)
+      window.location.replace(enlace.href)
+    </script>
   </body>
 </html>
