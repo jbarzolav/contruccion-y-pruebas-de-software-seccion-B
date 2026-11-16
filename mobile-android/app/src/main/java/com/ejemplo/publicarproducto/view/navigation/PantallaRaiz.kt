@@ -1,12 +1,8 @@
 package com.ejemplo.publicarproducto.view.navigation
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,17 +41,6 @@ fun PantallaRaiz(
     val usuario = sesionViewModel.usuario
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (usuario != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth().statusBarsPadding(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = {
-                    sesionViewModel.reiniciarEstadoLogout()
-                    mostrarDialogoLogout = true
-                }) { Text("Cerrar sesión") }
-            }
-        }
         sesionViewModel.aviso?.let { aviso ->
             Text(aviso, color = MaterialTheme.colorScheme.error)
             TextButton(onClick = { sesionViewModel.cerrarAviso() }) { Text("Cerrar aviso") }
@@ -96,7 +81,12 @@ fun PantallaRaiz(
                 else -> AppNavegacion(
                     usuario = usuario,
                     sesionViewModel = sesionViewModel,
-                    avisosConversacionViewModel = avisosConversacionViewModel
+                    avisosConversacionViewModel = avisosConversacionViewModel,
+                    // Cerrar sesión ahora vive al final de "Mi perfil".
+                    onCerrarSesion = {
+                        sesionViewModel.reiniciarEstadoLogout()
+                        mostrarDialogoLogout = true
+                    }
                 )
             }
         }

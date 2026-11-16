@@ -3,8 +3,11 @@ package com.ejemplo.publicarproducto.view
 import com.ejemplo.publicarproducto.domain.*
 import com.ejemplo.publicarproducto.view.components.*
 import com.ejemplo.publicarproducto.viewmodel.*
+import com.ejemplo.publicarproducto.view.navigation.IndicesNavegacion
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,11 +21,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -59,6 +65,8 @@ import com.ejemplo.publicarproducto.model.remote.ConfiguracionServidor
 fun PerfilScreen(
     onVolver: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavegarA: (Int) -> Unit = {},
+    onCerrarSesion: () -> Unit = {}
 ) {
     val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<PerfilViewModel>()
     val selectorFoto = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
@@ -132,6 +140,51 @@ fun PerfilScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     SeccionVendedor(viewModel)
                 }
+
+                // Rediseño de navegación: accesos que antes vivían en la
+                // barra inferior. Premium es para cualquier cuenta; Ventas,
+                // Métricas y Umbrales forman el apartado del vendedor.
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = "Cuenta", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OpcionFila(
+                            titulo = "Plan Premium",
+                            detalle = "Beneficios y mejoras para tu cuenta",
+                            onClick = { onNavegarA(IndicesNavegacion.PREMIUM) }
+                        )
+                    }
+                }
+
+                if (estado.perfil.rol == "VENDEDOR") {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Zona de vendedor",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            OpcionFila(
+                                titulo = "Ventas",
+                                detalle = "Pedidos recibidos de tus publicaciones",
+                                onClick = { onNavegarA(IndicesNavegacion.VENTAS) }
+                            )
+                            OpcionFila(
+                                titulo = "Métricas",
+                                detalle = "Resumen de tus ventas (HU 57)",
+                                onClick = { onNavegarA(IndicesNavegacion.METRICAS) }
+                            )
+                            OpcionFila(
+                                titulo = "Umbrales de stock",
+                                detalle = "Avisos de stock bajo (HU 58)",
+                                onClick = { onNavegarA(IndicesNavegacion.UMBRALES) }
+                            )
+                        }
+                    }
+                }
             }
             is PerfilUiState.Error -> {
                 Card(
@@ -161,6 +214,19 @@ fun PerfilScreen(
             colors = ButtonDefaults.outlinedButtonColors()
         ) {
             Text("Volver")
+        }
+
+        // Rediseño: cerrar sesión vive al final de "Mi perfil" (antes era
+        // una fila en la barra superior de PantallaRaiz).
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(
+            onClick = onCerrarSesion,
+            enabled = !viewModel.editando,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Text("Cerrar sesión")
         }
     }
 }
@@ -414,5 +480,32 @@ private fun DatosFila(etiqueta: String, valor: String) {
         Text(text = etiqueta, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = valor, color = Color.DarkGray, fontSize = 14.sp)
+    }
+}
+
+/**
+ * Fila de acceso desde "Mi perfil" a una pantalla que antes estaba en la
+ * barra inferior (Premium) o en la zona del vendedor (Ventas, Métricas,
+ * Umbrales). Solo presenta el enlace: quién navega es AppNavegacion.
+ */
+@Composable
+private fun OpcionFila(titulo: String, detalle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = titulo, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Text(text = detalle, color = Color.Gray, fontSize = 13.sp)
+        }
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.Gray
+        )
     }
 }

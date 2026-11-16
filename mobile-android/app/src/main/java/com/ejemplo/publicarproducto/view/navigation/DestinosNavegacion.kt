@@ -1,16 +1,13 @@
 package com.ejemplo.publicarproducto.view.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ManageAccounts
-import androidx.compose.material.icons.filled.NotificationImportant
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QueryStats
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.SmartToy
-import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
 
@@ -67,22 +64,23 @@ data class Pestana(
     val icono: ImageVector
 )
 
-/** Catálogo de pestañas; la visibilidad se decide según permisos y rol. */
+/**
+ * Catálogo de pestañas; la visibilidad se decide según permisos y rol.
+ *
+ * Rediseño de navegación: la barra inferior queda con pocas entradas para
+ * que ninguna etiqueta se parta a mitad de palabra. El chatbot es un FAB
+ * flotante y Premium, Ventas, Métricas y Umbrales se abren desde "Mi perfil".
+ */
 val PESTANAS = listOf(
-    Pestana(IndicesNavegacion.INICIO, "Inicio", Icons.Default.Search),
+    Pestana(IndicesNavegacion.INICIO, "Inicio", Icons.Default.Home),
     Pestana(IndicesNavegacion.PRODUCTOS, "Productos", Icons.Default.Inventory2),
     Pestana(IndicesNavegacion.CARRITO, "Carrito", Icons.Default.ShoppingCart),
-    Pestana(IndicesNavegacion.CHATBOT, "Chatbot", Icons.Default.SmartToy),
-    Pestana(IndicesNavegacion.PREMIUM, "Premium", Icons.Default.WorkspacePremium),
     Pestana(IndicesNavegacion.ROLES, "Roles", Icons.Default.ManageAccounts),
     Pestana(IndicesNavegacion.AUDITORIA, "Auditoría", Icons.Default.History),
+    // Consultas baja de la barra superior a la barra inferior.
+    Pestana(IndicesNavegacion.CONSULTAS, "Consultas", Icons.Default.Forum),
     Pestana(IndicesNavegacion.PERFIL, "Mi perfil", Icons.Default.Person),
-    Pestana(IndicesNavegacion.PEDIDOS, "Pedidos", Icons.Default.History),
-    Pestana(IndicesNavegacion.VENTAS, "Ventas", Icons.Default.History),
-    // HU 57 - métricas de ventas del vendedor.
-    Pestana(IndicesNavegacion.METRICAS, "Métricas", Icons.Default.QueryStats),
-    // HU 58 - umbrales de stock del vendedor.
-    Pestana(IndicesNavegacion.UMBRALES, "Umbrales", Icons.Default.NotificationImportant)
+    Pestana(IndicesNavegacion.PEDIDOS, "Pedidos", Icons.Default.History)
 )
 
 /**
@@ -95,17 +93,14 @@ fun pestanasPermitidas(usuario: UsuarioRolResponse?): List<Pestana> {
     val puedeComprar = usuario?.permisos?.contains("COMPRAR") == true
     val puedePublicar = usuario?.permisos?.contains("GESTIONAR_PRODUCTOS") == true
     val puedeAdministrar = usuario?.permisos?.contains("ASIGNAR_ROLES") == true
-    val esVendedor = usuario?.rol == "VENDEDOR"
     return PESTANAS.filter { pestana ->
         when (pestana.indice) {
             IndicesNavegacion.PRODUCTOS -> puedePublicar
             IndicesNavegacion.CARRITO -> puedeComprar
             IndicesNavegacion.ROLES, IndicesNavegacion.AUDITORIA -> puedeAdministrar
+            IndicesNavegacion.CONSULTAS -> usuario?.rol == "CLIENTE" || usuario?.rol == "VENDEDOR"
             IndicesNavegacion.PERFIL -> usuario != null
             IndicesNavegacion.PEDIDOS -> puedeComprar
-            IndicesNavegacion.VENTAS,
-            IndicesNavegacion.METRICAS,
-            IndicesNavegacion.UMBRALES -> esVendedor
             else -> true
         }
     }

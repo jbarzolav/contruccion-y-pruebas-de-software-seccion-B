@@ -1,11 +1,18 @@
 package com.ejemplo.publicarproducto.view.navigation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,8 +26,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ejemplo.publicarproducto.model.UsuarioRolResponse
 import com.ejemplo.publicarproducto.view.AdministrarRolesScreen
@@ -57,7 +66,8 @@ import com.ejemplo.publicarproducto.viewmodel.SesionViewModel
 fun AppNavegacion(
     usuario: UsuarioRolResponse,
     sesionViewModel: SesionViewModel,
-    avisosConversacionViewModel: AvisosConversacionViewModel
+    avisosConversacionViewModel: AvisosConversacionViewModel,
+    onCerrarSesion: () -> Unit = {}
 ) {
     val estado = rememberEstadoNavegacion(usuario.id to usuario.rol)
     val pestanasPermitidas = remember(usuario.id, usuario.rol) { pestanasPermitidas(usuario) }
@@ -156,18 +166,13 @@ fun AppNavegacion(
             if (estado.enPantallaPrincipal) {
                 TopAppBar(
                     actions = {
-                        if (usuario.rol in setOf("CLIENTE", "VENDEDOR")) {
-                            TextButton(onClick = {
-                                estado.limpiarConversacion()
-                                estado.irA(IndicesNavegacion.CONSULTAS)
-                                avisosConversacionViewModel.limpiarAviso()
-                            }) {
-                                Text(if (avisoMensaje == null) "Consultas" else "Nuevo mensaje · Consultas")
-                            }
-                        }
-                        // HU 53/54 - Bandeja unificada de notificaciones.
-                        TextButton(onClick = { estado.irA(IndicesNavegacion.NOTIFICACIONES) }) {
-                            Text("Notificaciones")
+                        // HU 53/54 - bandeja de notificaciones como campanita
+                        // en la esquina (antes era un enlace de texto).
+                        IconButton(onClick = { estado.irA(IndicesNavegacion.NOTIFICACIONES) }) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notificaciones"
+                            )
                         }
                     },
                     title = {
@@ -192,12 +197,30 @@ fun AppNavegacion(
                     pestanasPermitidas.forEach { item ->
                         NavigationBarItem(
                             selected = estado.pestana == item.indice,
-                            onClick = { estado.irA(item.indice) },
+                            onClick = {
+                                // HU39 - al entrar a Consultas se consume el
+                                // aviso de mensaje nuevo (como antes).
+                                if (item.indice == IndicesNavegacion.CONSULTAS) {
+                                    estado.limpiarConversacion()
+                                    avisosConversacionViewModel.limpiarAviso()
+                                }
+                                estado.irA(item.indice)
+                            },
                             icon = {
-                                Icon(
-                                    imageVector = item.icono,
-                                    contentDescription = item.etiqueta
-                                )
+                                // HU39 - punto de aviso cuando llegó un mensaje.
+                                if (item.indice == IndicesNavegacion.CONSULTAS && avisoMensaje != null) {
+                                    BadgedBox(badge = { Badge { Text("!") } }) {
+                                        Icon(
+                                            imageVector = item.icono,
+                                            contentDescription = item.etiqueta
+                                        )
+                                    }
+                                } else {
+                                    Icon(
+                                        imageVector = item.icono,
+                                        contentDescription = item.etiqueta
+                                    )
+                                }
                             },
                             label = { Text(item.etiqueta) },
                             alwaysShowLabel = true
@@ -207,17 +230,39 @@ fun AppNavegacion(
             }
         },
         floatingActionButton = {
-            // HU 01 - publicar desde "Mis productos" sin ocupar una pestaña
-            if (puedePublicar && estado.pestana == IndicesNavegacion.PRODUCTOS && estado.enPantallaPrincipal) {
-                FloatingActionButton(
-                    onClick = { estado.abrirPublicacion() },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+            if (estado.enPantallaPrincipal) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Publicar producto"
-                    )
+                    // HU 16 - el chatbot ahora es un acceso flotante (antes
+                    // ocupaba una pestaña de la barra inferior).
+                    if (estado.pestana != IndicesNavegacion.CHATBOT) {
+                        FloatingActionButton(
+                            onClick = { estado.irA(IndicesNavegacion.CHATBOT) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SmartToy,
+                                contentDescription = "Chatbot"
+                            )
+                        }
+                    }
+
+                    // HU 01 - publicar desde "Mis productos" sin ocupar una pestaña
+                    if (puedePublicar && estado.pestana == IndicesNavegacion.PRODUCTOS) {
+                        FloatingActionButton(
+                            onClick = { estado.abrirPublicacion() },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Publicar producto"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -342,9 +387,12 @@ fun AppNavegacion(
                 // HU24 - Historial exclusivo para el rol administrativo.
                 IndicesNavegacion.AUDITORIA -> AuditoriaScreen(modifier = Modifier.padding(padding))
 
-                // HU 27 - Mi perfil
+                // HU 27 - Mi perfil (con los accesos a Premium y a la zona
+                // del vendedor que antes estaban en la barra inferior).
                 IndicesNavegacion.PERFIL -> PerfilScreen(
                     onVolver = { estado.irA(IndicesNavegacion.INICIO) },
+                    onNavegarA = { estado.irA(it) },
+                    onCerrarSesion = onCerrarSesion,
                     modifier = Modifier.padding(padding)
                 )
 

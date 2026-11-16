@@ -21,13 +21,14 @@ class DestinosNavegacionTest {
     ) = UsuarioRolResponse(7L, "correo@pulga.test", rol, permisos)
 
     @Test
-    fun `el cliente sin permisos ve inicio chatbot premium y su perfil`() {
+    fun `el cliente sin permisos ve inicio consultas y su perfil`() {
+        // Rediseño: el chatbot es un FAB, Premium se abre desde el perfil y
+        // Consultas baja de la cabecera a la barra inferior.
         val visibles = pestanasPermitidas(usuario()).map { it.indice }
         assertEquals(
             listOf(
                 IndicesNavegacion.INICIO,
-                IndicesNavegacion.CHATBOT,
-                IndicesNavegacion.PREMIUM,
+                IndicesNavegacion.CONSULTAS,
                 IndicesNavegacion.PERFIL
             ),
             visibles
@@ -43,14 +44,16 @@ class DestinosNavegacionTest {
     }
 
     @Test
-    fun `el vendedor ve ventas metricas y umbrales`() {
+    fun `el vendedor ve productos en la barra y su zona vive en el perfil`() {
+        // Rediseño: Ventas, Métricas y Umbrales salen de la barra inferior
+        // y se abren desde el apartado del vendedor en "Mi perfil".
         val visibles = pestanasPermitidas(
             usuario(rol = "VENDEDOR", permisos = setOf("GESTIONAR_PRODUCTOS"))
         ).map { it.indice }
         assertTrue(IndicesNavegacion.PRODUCTOS in visibles)
-        assertTrue(IndicesNavegacion.VENTAS in visibles)
-        assertTrue(IndicesNavegacion.METRICAS in visibles)
-        assertTrue(IndicesNavegacion.UMBRALES in visibles)
+        assertFalse(IndicesNavegacion.VENTAS in visibles)
+        assertFalse(IndicesNavegacion.METRICAS in visibles)
+        assertFalse(IndicesNavegacion.UMBRALES in visibles)
     }
 
     @Test
@@ -63,9 +66,12 @@ class DestinosNavegacionTest {
     }
 
     @Test
-    fun `sin sesion solo quedan las pestanas publicas`() {
+    fun `sin sesion solo queda la pestana de inicio`() {
+        // Rediseño: Chatbot y Premium ya no son pestañas públicas de la
+        // barra (el chatbot es un FAB de la sesión iniciada; Premium se
+        // abre desde el perfil).
         assertEquals(
-            listOf(IndicesNavegacion.INICIO, IndicesNavegacion.CHATBOT, IndicesNavegacion.PREMIUM),
+            listOf(IndicesNavegacion.INICIO),
             pestanasPermitidas(null).map { it.indice }
         )
     }
