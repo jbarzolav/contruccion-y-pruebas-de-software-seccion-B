@@ -166,6 +166,11 @@ fun AppNavegacion(
             if (estado.enPantallaPrincipal) {
                 TopAppBar(
                     actions = {
+                        if (estado.pestana != IndicesNavegacion.CHATBOT) {
+                            IconButton(onClick = { estado.irA(IndicesNavegacion.CHATBOT) }) {
+                                Icon(Icons.Default.SmartToy, contentDescription = "Chatbot")
+                            }
+                        }
                         // HU 53/54 - bandeja de notificaciones como campanita
                         // en la esquina (antes era un enlace de texto).
                         IconButton(onClick = { estado.irA(IndicesNavegacion.NOTIFICACIONES) }) {
@@ -235,20 +240,6 @@ fun AppNavegacion(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // HU 16 - el chatbot ahora es un acceso flotante (antes
-                    // ocupaba una pestaña de la barra inferior).
-                    if (estado.pestana != IndicesNavegacion.CHATBOT) {
-                        FloatingActionButton(
-                            onClick = { estado.irA(IndicesNavegacion.CHATBOT) },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SmartToy,
-                                contentDescription = "Chatbot"
-                            )
-                        }
-                    }
 
                     // HU 01 - publicar desde "Mis productos" sin ocupar una pestaña
                     if (puedePublicar && estado.pestana == IndicesNavegacion.PRODUCTOS) {

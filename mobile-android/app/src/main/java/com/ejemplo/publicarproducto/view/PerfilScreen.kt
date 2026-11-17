@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +25,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -102,19 +106,23 @@ fun PerfilScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = mensaje, color = MaterialTheme.colorScheme.primary)
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { viewModel.iniciarEdicion() }) {
-                        Text("Editar datos personales")
-                    }
                 }
 
                 // HU 30 - selección, vista previa y guardado de la foto personal.
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { selectorFoto.launch("image/*") },
-                    enabled = !viewModel.subiendoFoto
-                ) {
-                    Text(if (viewModel.fotoLocalUri == null) "Elegir foto JPG o PNG" else "Cambiar foto")
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!viewModel.editando) {
+                        OutlinedButton(onClick = { viewModel.iniciarEdicion() }, modifier = Modifier.weight(1f)) {
+                            Text("Editar datos")
+                        }
+                    }
+                    TextButton(
+                        onClick = { selectorFoto.launch("image/*") },
+                        enabled = !viewModel.subiendoFoto,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(if (viewModel.fotoLocalUri == null) "Elegir foto" else "Cambiar foto")
+                    }
                 }
                 if (viewModel.fotoLocalUri != null) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -138,6 +146,21 @@ fun PerfilScreen(
                 // HU 29 - la sección del vendedor solo aplica a ese rol.
                 if (estado.perfil.rol == "VENDEDOR") {
                     Spacer(modifier = Modifier.height(16.dp))
+                    Text("Mi negocio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            OpcionFila("Ventas", "Pedidos recibidos") { onNavegarA(IndicesNavegacion.VENTAS) }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            OpcionFila("Métricas", "Ingresos y resultados") { onNavegarA(IndicesNavegacion.METRICAS) }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            OpcionFila("Umbrales de stock", "Gestiona tus alertas") { onNavegarA(IndicesNavegacion.UMBRALES) }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                     SeccionVendedor(viewModel)
                 }
 
@@ -145,7 +168,7 @@ fun PerfilScreen(
                 // barra inferior. Premium es para cualquier cuenta; Ventas,
                 // Métricas y Umbrales forman el apartado del vendedor.
                 Spacer(modifier = Modifier.height(16.dp))
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = "Cuenta", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -157,34 +180,6 @@ fun PerfilScreen(
                     }
                 }
 
-                if (estado.perfil.rol == "VENDEDOR") {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Zona de vendedor",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            OpcionFila(
-                                titulo = "Ventas",
-                                detalle = "Pedidos recibidos de tus publicaciones",
-                                onClick = { onNavegarA(IndicesNavegacion.VENTAS) }
-                            )
-                            OpcionFila(
-                                titulo = "Métricas",
-                                detalle = "Resumen de tus ventas (HU 57)",
-                                onClick = { onNavegarA(IndicesNavegacion.METRICAS) }
-                            )
-                            OpcionFila(
-                                titulo = "Umbrales de stock",
-                                detalle = "Avisos de stock bajo (HU 58)",
-                                onClick = { onNavegarA(IndicesNavegacion.UMBRALES) }
-                            )
-                        }
-                    }
-                }
             }
             is PerfilUiState.Error -> {
                 Card(
@@ -208,7 +203,7 @@ fun PerfilScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
+        TextButton(
             onClick = onVolver,
             enabled = !viewModel.editando,
             colors = ButtonDefaults.outlinedButtonColors()
@@ -219,8 +214,9 @@ fun PerfilScreen(
         // Rediseño: cerrar sesión vive al final de "Mi perfil" (antes era
         // una fila en la barra superior de PantallaRaiz).
         Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        OutlinedButton(
             onClick = onCerrarSesion,
+            modifier = Modifier.fillMaxWidth(),
             enabled = !viewModel.editando,
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.error
@@ -235,12 +231,12 @@ fun PerfilScreen(
 private fun PerfilContenido(perfil: PerfilUsuarioResponse, fotoLocalUri: Uri?) {
     val nombre = perfil.nombre?.takeIf { it.isNotBlank() } ?: "Mi cuenta"
     val inicial = nombre.firstOrNull()?.uppercaseChar() ?: 'U'
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
@@ -263,15 +259,22 @@ private fun PerfilContenido(perfil: PerfilUsuarioResponse, fotoLocalUri: Uri?) {
                         text = nombre,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        if (perfil.rol == "VENDEDOR") "Cuenta de vendedor" else "Mi cuenta",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            DatosFila("Nombre", nombre.takeUnless { it == "Mi cuenta" } ?: "Sin nombre registrado")
-            DatosFila("Correo electrónico", perfil.correo)
-            DatosFila("Teléfono", perfil.telefono?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado")
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(perfil.correo, style = MaterialTheme.typography.bodyMedium)
+            Text(perfil.telefono?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -360,7 +363,7 @@ private fun FormularioEdicionPerfil(viewModel: PerfilViewModel) {
  */
 @Composable
 private fun SeccionVendedor(viewModel: PerfilViewModel) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Información del vendedor", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(8.dp))
@@ -398,7 +401,7 @@ private fun SeccionVendedor(viewModel: PerfilViewModel) {
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { viewModel.iniciarEdicionVendedor() }) {
+                    OutlinedButton(onClick = { viewModel.iniciarEdicionVendedor() }) {
                         Text(if (sinCompletar) "Completar información" else "Editar información")
                     }
                 }
@@ -476,10 +479,9 @@ private fun FormularioVendedor(viewModel: PerfilViewModel) {
 
 @Composable
 private fun DatosFila(etiqueta: String, valor: String) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(text = etiqueta, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = valor, color = Color.DarkGray, fontSize = 14.sp)
+    Column(modifier = Modifier.padding(vertical = 5.dp)) {
+        Text(text = etiqueta, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = valor, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -493,14 +495,15 @@ private fun OpcionFila(titulo: String, detalle: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 56.dp)
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(text = titulo, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-            Text(text = detalle, color = Color.Gray, fontSize = 13.sp)
+            Text(text = detalle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         }
         Icon(
             imageVector = Icons.Default.KeyboardArrowRight,

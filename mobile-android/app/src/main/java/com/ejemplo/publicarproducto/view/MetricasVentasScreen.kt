@@ -26,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -171,7 +173,7 @@ private fun MetricaCard(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(titulo, style = MaterialTheme.typography.titleSmall)
-            Text(valor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(valor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             if (comparativa != null) {
                 Text(
                     tendenciaVisible(comparativa.tendencia) + " · " + variacionVisible(comparativa.variacionPorcentual),
@@ -181,7 +183,8 @@ private fun MetricaCard(
                 val diferencia = comparativa.diferenciaAbsoluta
                 Text(
                     "Diferencia: " + (if (esMoneda) "S/ ${moneda(diferencia)}" else diferencia?.toPlainString() ?: "0"),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (anterior != null) {
@@ -231,7 +234,7 @@ internal fun variacionVisible(variacion: BigDecimal?): String {
 /** Color de la tendencia: verde si sube, rojo si baja. */
 @Composable
 internal fun colorTendencia(tendencia: String?) = when (tendencia) {
-    "AUMENTO" -> MaterialTheme.colorScheme.primary
+    "AUMENTO" -> if (isSystemInDarkTheme()) Color(0xFF81C995) else Color(0xFF246B42)
     "DISMINUCION" -> MaterialTheme.colorScheme.error
     else -> MaterialTheme.colorScheme.onSurfaceVariant
 }

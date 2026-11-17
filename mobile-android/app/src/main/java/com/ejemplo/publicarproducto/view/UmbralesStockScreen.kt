@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,9 +55,8 @@ fun UmbralesStockScreen(
         Text("Umbrales de stock", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
         Text(
-            "Configura el mínimo de unidades que quieres mantener en cada publicación. " +
-                "Te avisaremos cuando el stock cruce ese umbral (una sola vez por cada bajada); " +
-                "si repones el stock, la alerta se rearma para el siguiente cruce.",
+            "Recibe un aviso al bajar hasta el mínimo configurado. " +
+                "Al reponer stock, la alerta se reactiva para la siguiente bajada.",
             style = MaterialTheme.typography.bodySmall
         )
 
@@ -173,20 +173,23 @@ private fun PublicacionUmbralCard(
                 value = valor,
                 onValueChange = { valor = it.filter { caracter -> caracter.isDigit() }.take(6) },
                 label = { Text("Umbral mínimo (0 o mayor)") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Button(
                     onClick = { onGuardar(valor) },
                     enabled = !guardando,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 ) { Text(if (guardando) "Guardando..." else "Guardar umbral") }
-                OutlinedButton(onClick = onEditar, modifier = Modifier.weight(1f)) {
-                    Text("Gestionar publicación")
-                }
-                OutlinedButton(onClick = onVer, modifier = Modifier.weight(1f)) {
-                    Text("Ver publicación")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onEditar, modifier = Modifier.weight(1f)) {
+                        Text("Gestionar")
+                    }
+                    TextButton(onClick = onVer, modifier = Modifier.weight(1f)) {
+                        Text("Ver publicación")
+                    }
                 }
             }
         }

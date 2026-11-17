@@ -1,50 +1,36 @@
 package com.ejemplo.publicarproducto.view
 
-import com.ejemplo.publicarproducto.domain.*
-import com.ejemplo.publicarproducto.view.components.*
-import com.ejemplo.publicarproducto.viewmodel.*
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.R
+import com.ejemplo.publicarproducto.model.ProductoResponse
 import com.ejemplo.publicarproducto.model.remote.ConfiguracionServidor
+import com.ejemplo.publicarproducto.viewmodel.*
 
-/**
- * HU 06 - Búsqueda de productos por nombre.
- * HU 07/HU 08 - catálogo y navegación al detalle.
- * HU 09 - ordenamiento de resultados por precio y nombre.
- */
+/** Catálogo: búsqueda fija y un único scroll para la promoción y los productos. */
 @Composable
 fun BuscarProductosScreen(
     modifier: Modifier = Modifier,
@@ -53,259 +39,162 @@ fun BuscarProductosScreen(
     puedeGuardarFavoritos: Boolean = false
 ) {
     var menuOrdenAbierto by remember { mutableStateOf(false) }
-    var mostrarFavoritos by remember { mutableStateOf(false) }
-
+    var mostrarFavoritos by rememberSaveable { mutableStateOf(false) }
+    val teclado = LocalSoftwareKeyboardController.current
+    val buscar = {
+        viewModel.buscarProductos()
+        teclado?.hide()
+        Unit
+    }
     LaunchedEffect(puedeGuardarFavoritos) {
         viewModel.cargarCatalogo()
         if (puedeGuardarFavoritos) viewModel.cargarFavoritos()
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "PULGATEC / COMUNIDAD TECNOLÓGICA",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Compra entre la comunidad.\nVende sin complicarte.",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Productos que siguen circulando entre estudiantes y profesionales Tecsup.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Image(
-                    painter = painterResource(R.drawable.hero_pulgatec),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(148.dp)
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        // Una columna en ventanas estrechas; dos en teléfonos y más en tabletas.
+        val columnas = if (maxWidth < 340.dp) GridCells.Fixed(1) else GridCells.Adaptive(156.dp)
+        Column(Modifier.fillMaxSize()) {
+            if (!mostrarFavoritos) {
+                OutlinedTextField(
+                    value = viewModel.nombre,
+                    onValueChange = viewModel::cambiarNombre,
+                    placeholder = { Text("Buscar productos", maxLines = 1) },
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = buscar) { Icon(Icons.Default.Search, "Buscar") }
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { buscar() }),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )
             }
-        }
-
-        if (puedeGuardarFavoritos) {
-            OutlinedButton(
-                onClick = {
-                    mostrarFavoritos = !mostrarFavoritos
-                    if (mostrarFavoritos) viewModel.cargarFavoritos()
-                },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(if (mostrarFavoritos) "Volver al catálogo" else "Mis favoritos (${viewModel.favoritos.size})")
-            }
-            viewModel.avisoFavorito?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        }
-
-        if (mostrarFavoritos) {
-            when {
-                viewModel.cargandoFavoritos -> CircularProgressIndicator()
-                viewModel.errorFavoritos != null -> Text(
-                    viewModel.errorFavoritos.orEmpty(), color = MaterialTheme.colorScheme.error
+                Text(
+                    if (mostrarFavoritos) "Mis favoritos" else "Catálogo",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                viewModel.favoritos.isEmpty() -> Text("Aún no has guardado productos como favoritos.")
-                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(viewModel.favoritos, key = { "fav-${it.id ?: 0L}" }) { producto ->
-                        TarjetaProductoListado(
-                            producto = producto,
-                            onSeleccionarProducto = onSeleccionarProducto,
-                            puedeGuardarFavoritos = true,
-                            esFavorito = true,
-                            guardando = viewModel.idQuitandoFavorito == producto.id,
-                            onGuardarFavorito = viewModel::agregarFavorito,
-                            onQuitarFavorito = viewModel::quitarFavorito
-                        )
+                if (puedeGuardarFavoritos) {
+                    TextButton(onClick = {
+                        mostrarFavoritos = !mostrarFavoritos
+                        if (mostrarFavoritos) viewModel.cargarFavoritos()
+                    }) {
+                        Text(if (mostrarFavoritos) "Ver catálogo" else "Favoritos (${viewModel.favoritos.size})")
+                    }
+                }
+                if (!mostrarFavoritos) {
+                    Box {
+                        TextButton(onClick = { menuOrdenAbierto = true }) { Text("Ordenar") }
+                        DropdownMenu(menuOrdenAbierto, { menuOrdenAbierto = false }) {
+                            listOf(
+                                "precio_asc" to "Precio: menor a mayor",
+                                "precio_desc" to "Precio: mayor a menor",
+                                "nombre_asc" to "Nombre: A-Z",
+                                "nombre_desc" to "Nombre: Z-A"
+                            ).forEach { (criterio, etiqueta) ->
+                                DropdownMenuItem(
+                                    text = { Text(if (viewModel.criterioOrden == criterio) "✓ $etiqueta" else etiqueta) },
+                                    onClick = {
+                                        menuOrdenAbierto = false
+                                        viewModel.cambiarOrden(criterio)
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        if (!mostrarFavoritos) {
-
-        OutlinedTextField(
-            value = viewModel.nombre,
-            onValueChange = viewModel::cambiarNombre,
-            label = { Text("Buscar celulares, accesorios, tecnología...") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Button(
-            onClick = viewModel::buscarProductos,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Buscar")
-        }
-
-        Column {
-            OutlinedButton(
-                onClick = { menuOrdenAbierto = true },
-                modifier = Modifier.fillMaxWidth()
+            LazyVerticalGrid(
+                columns = columnas,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    when (viewModel.criterioOrden) {
-                        "precio_asc" -> "Precio: menor a mayor"
-                        "precio_desc" -> "Precio: mayor a menor"
-                        "nombre_asc" -> "Nombre: A-Z"
-                        "nombre_desc" -> "Nombre: Z-A"
-                        else -> "Ordenar por"
-                    }
-                )
-            }
-
-            DropdownMenu(
-                expanded = menuOrdenAbierto,
-                onDismissRequest = { menuOrdenAbierto = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Precio: menor a mayor") },
-                    onClick = {
-                        menuOrdenAbierto = false
-                        viewModel.cambiarOrden("precio_asc")
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = { Text("Precio: mayor a menor") },
-                    onClick = {
-                        menuOrdenAbierto = false
-                        viewModel.cambiarOrden("precio_desc")
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = { Text("Nombre: A-Z") },
-                    onClick = {
-                        menuOrdenAbierto = false
-                        viewModel.cambiarOrden("nombre_asc")
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = { Text("Nombre: Z-A") },
-                    onClick = {
-                        menuOrdenAbierto = false
-                        viewModel.cambiarOrden("nombre_desc")
-                    }
-                )
-            }
-        }
-
-        Text("Explora productos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(
-            "Selecciona un producto para ver su detalle.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        when (val state = viewModel.uiState) {
-            BuscarProductosUiState.Initial -> Unit
-
-            BuscarProductosUiState.Loading -> {
-                CircularProgressIndicator()
-            }
-
-            BuscarProductosUiState.Success -> {
-                // HU 20 - la sección usa el término realmente consultado y
-                // descarta las recomendaciones que ya están en los resultados
-                val terminoBuscado = viewModel.terminoRecomendaciones
-                val recomendacionesVisibles = viewModel.recomendacionesVisibles
-                val hayTermino = viewModel.nombre.trim().isNotBlank()
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (viewModel.productos.isEmpty()) {
-                        item(key = "sin-resultados") {
-                            Text("No se encontraron productos disponibles.")
-                        }
-                    } else {
-                        item(key = "ayuda-busqueda") {
-                            Text(
-                                text = "Toca un producto para ver su detalle.",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        items(
-                            items = viewModel.productos,
-                            key = { it.id ?: 0L }
-                        ) { producto ->
-                            TarjetaProductoListado(
-                                producto = producto,
-                                onSeleccionarProducto = onSeleccionarProducto,
-                                puedeGuardarFavoritos = puedeGuardarFavoritos,
-                                esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
-                                guardando = viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
-                                onGuardarFavorito = viewModel::agregarFavorito,
-                                onQuitarFavorito = viewModel::quitarFavorito
-                            )
-                        }
-                    }
-
-                    // ===== HU 20 - recomendaciones de la búsqueda actual =====
-                    if (hayTermino && terminoBuscado.isNotBlank()) {
-                        item(key = "recomendaciones-titulo") {
-                            Text(
-                                text = "Recomendaciones para “$terminoBuscado”",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        when (val recState = viewModel.uiStateRecomendaciones) {
-                            RecomendacionesUiState.Initial -> Unit
-
-                            RecomendacionesUiState.Loading -> {
-                                item(key = "recomendaciones-cargando") {
-                                    Text("Buscando recomendaciones...")
+                if (!mostrarFavoritos && viewModel.nombre.isBlank()) {
+                    item(key = "comunidad", span = { GridItemSpan(maxLineSpan) }) {
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Tecnología para tu día a día", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                    Text("Compra y vende en tu comunidad", style = MaterialTheme.typography.bodySmall)
                                 }
+                                Image(painterResource(R.drawable.hero_pulgatec), null,
+                                    modifier = Modifier.size(64.dp), contentScale = ContentScale.Fit)
                             }
-
-                            is RecomendacionesUiState.Error -> {
-                                item(key = "recomendaciones-error") {
-                                    Text(
-                                        text = recState.mensaje,
-                                        color = MaterialTheme.colorScheme.error,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                        }
+                    }
+                }
+                if (puedeGuardarFavoritos) {
+                    viewModel.avisoFavorito?.let { aviso ->
+                        item(key = "aviso-favorito", span = { GridItemSpan(maxLineSpan) }) {
+                            Text(aviso, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+                if (mostrarFavoritos) {
+                    when {
+                        viewModel.cargandoFavoritos -> item(span = { GridItemSpan(maxLineSpan) }) { CargandoCatalogo() }
+                        viewModel.errorFavoritos != null -> item(span = { GridItemSpan(maxLineSpan) }) {
+                            Text(viewModel.errorFavoritos.orEmpty(), color = MaterialTheme.colorScheme.error)
+                        }
+                        viewModel.favoritos.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
+                            Text("Aún no has guardado productos como favoritos.")
+                        }
+                        else -> items(viewModel.favoritos, key = { "fav-${it.id ?: 0L}" }) { producto ->
+                            TarjetaProductoListado(producto, onSeleccionarProducto, true, true,
+                                viewModel.idQuitandoFavorito == producto.id,
+                                viewModel::agregarFavorito, viewModel::quitarFavorito)
+                        }
+                    }
+                } else {
+                    when (val estado = viewModel.uiState) {
+                        BuscarProductosUiState.Initial -> Unit
+                        BuscarProductosUiState.Loading -> item(span = { GridItemSpan(maxLineSpan) }) { CargandoCatalogo() }
+                        is BuscarProductosUiState.Error -> item(span = { GridItemSpan(maxLineSpan) }) {
+                            Text(estado.mensaje, color = MaterialTheme.colorScheme.error)
+                        }
+                        BuscarProductosUiState.Success -> {
+                            item(key = "resultados", span = { GridItemSpan(maxLineSpan) }) {
+                                Text(if (viewModel.productos.isEmpty()) "No se encontraron productos disponibles."
+                                    else "${viewModel.productos.size} productos", style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            items(viewModel.productos, key = { "producto-${it.id ?: 0L}" }) { producto ->
+                                TarjetaProductoListado(producto, onSeleccionarProducto, puedeGuardarFavoritos,
+                                    producto.id != null && viewModel.favoritos.any { it.id == producto.id },
+                                    viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
+                                    viewModel::agregarFavorito, viewModel::quitarFavorito)
+                            }
+                            val termino = viewModel.terminoRecomendaciones
+                            if (viewModel.nombre.trim().isNotBlank() && termino.isNotBlank()) {
+                                item(key = "recomendaciones", span = { GridItemSpan(maxLineSpan) }) {
+                                    Text("Recomendaciones para “$termino”", style = MaterialTheme.typography.titleMedium)
                                 }
-                            }
-
-                            RecomendacionesUiState.Success -> {
-                                if (recomendacionesVisibles.isEmpty()) {
-                                    item(key = "recomendaciones-vacio") {
-                                        Text(
-                                            "No hay recomendaciones relacionadas " +
-                                                "con esta búsqueda."
-                                        )
+                                when (val recomendaciones = viewModel.uiStateRecomendaciones) {
+                                    RecomendacionesUiState.Initial -> Unit
+                                    RecomendacionesUiState.Loading -> item(span = { GridItemSpan(maxLineSpan) }) { Text("Buscando recomendaciones...") }
+                                    is RecomendacionesUiState.Error -> item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(recomendaciones.mensaje, color = MaterialTheme.colorScheme.error)
                                     }
-                                } else {
-                                    items(
-                                        items = recomendacionesVisibles,
-                                        key = { "rec-${it.id ?: 0L}" }
-                                    ) { producto ->
-                                        TarjetaProductoListado(
-                                            producto = producto,
-                                            onSeleccionarProducto = onSeleccionarProducto,
-                                            puedeGuardarFavoritos = puedeGuardarFavoritos,
-                                            esFavorito = producto.id != null && viewModel.favoritos.any { it.id == producto.id },
-                                            guardando = viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
-                                            onGuardarFavorito = viewModel::agregarFavorito,
-                                            onQuitarFavorito = viewModel::quitarFavorito
-                                        )
+                                    RecomendacionesUiState.Success -> {
+                                        if (viewModel.recomendacionesVisibles.isEmpty()) {
+                                            item(span = { GridItemSpan(maxLineSpan) }) { Text("No hay recomendaciones relacionadas con esta búsqueda.") }
+                                        }
+                                        items(viewModel.recomendacionesVisibles, key = { "rec-${it.id ?: 0L}" }) { producto ->
+                                            TarjetaProductoListado(producto, onSeleccionarProducto, puedeGuardarFavoritos,
+                                                producto.id != null && viewModel.favoritos.any { it.id == producto.id },
+                                                viewModel.idGuardandoFavorito == producto.id || viewModel.idQuitandoFavorito == producto.id,
+                                                viewModel::agregarFavorito, viewModel::quitarFavorito)
+                                        }
                                     }
                                 }
                             }
@@ -313,25 +202,16 @@ fun BuscarProductosScreen(
                     }
                 }
             }
-
-            is BuscarProductosUiState.Error -> {
-                Text(
-                    text = state.mensaje,
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
         }
     }
 }
 
-/**
- * HU 07/HU 08 + HU 20 - tarjeta compartida del listado: los resultados
- * de búsqueda y las recomendaciones usan exactamente el mismo diseño y
- * navegan al detalle con el mismo mecanismo (onSeleccionarProducto),
- * sin crear una segunda pantalla de detalle.
- */
+@Composable
+private fun CargandoCatalogo() {
+    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+}
+
+/** La tarjeta conserva los mismos eventos de detalle y favoritos. */
 @Composable
 private fun TarjetaProductoListado(
     producto: ProductoResponse,
@@ -340,71 +220,40 @@ private fun TarjetaProductoListado(
     esFavorito: Boolean,
     guardando: Boolean,
     onGuardarFavorito: (ProductoResponse) -> Unit,
-    onQuitarFavorito: ((ProductoResponse) -> Unit)? = null
+    onQuitarFavorito: (ProductoResponse) -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = producto.id != null) {
-                producto.id?.let(onSeleccionarProducto)
-            }
+        modifier = Modifier.fillMaxWidth().clickable(enabled = producto.id != null) { producto.id?.let(onSeleccionarProducto) },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            ConfiguracionServidor.urlImagen(producto.imagenUrl)?.let { urlImagen ->
-                AsyncImage(
-                    model = urlImagen,
-                    contentDescription = "Imagen de ${producto.nombre.orEmpty()}",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                )
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+                val imagen = ConfiguracionServidor.urlImagen(producto.imagenUrl)
+                if (imagen != null) {
+                    AsyncImage(model = imagen, contentDescription = producto.nombre,
+                        contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                } else {
+                    Text("Sin imagen", style = MaterialTheme.typography.labelSmall)
+                }
             }
-
-            Text(
-                text = producto.nombre.orEmpty(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            // HU 19 - distintivo de publicación destacada
+            Text(producto.nombre.orEmpty(), style = MaterialTheme.typography.bodyMedium,
+                minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text("S/ ${producto.precio ?: "0.00"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (producto.esDestacado) {
-                Text(
-                    text = "★ Destacado",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("★ Destacado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
-
-            Text("Precio: S/ ${producto.precio ?: "0.00"}")
-
-            // HU 20 - el DTO de recomendaciones no trae estado: solo se
-            // muestra la disponibilidad cuando el producto la informa
             if (!producto.estado.isNullOrBlank()) {
-                Text("Disponibilidad: ${producto.estado}")
+                Text(producto.estado.orEmpty(), style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
             if (puedeGuardarFavoritos) {
-                OutlinedButton(
-                    onClick = { onGuardarFavorito(producto) },
-                    enabled = !esFavorito && !guardando,
+                TextButton(
+                    onClick = { if (esFavorito) onQuitarFavorito(producto) else onGuardarFavorito(producto) },
+                    enabled = !guardando,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (guardando) "Guardando..." else if (esFavorito) "♥ Guardado" else "♡ Favorito")
-                }
-                if (esFavorito && onQuitarFavorito != null) {
-                    OutlinedButton(
-                        onClick = { onQuitarFavorito(producto) },
-                        enabled = !guardando,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (guardando) "Quitando..." else "Quitar de favoritos")
-                    }
+                    Text(if (guardando) "Guardando..." else if (esFavorito) "♥ Quitar favorito" else "♡ Favorito",
+                        style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

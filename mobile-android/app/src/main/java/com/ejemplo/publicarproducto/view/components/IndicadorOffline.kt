@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +33,18 @@ fun IndicadorOffline(
 ) {
     if (!sinConexion && pendientes <= 0L && aviso.isNullOrBlank() && rechazo.isNullOrBlank()) return
 
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (!rechazo.isNullOrBlank()) MaterialTheme.colorScheme.errorContainer
+            else MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
         Column(
             Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            Text("Estado de sincronización", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
             if (sinConexion) {
                 Text(
                     "Sin conexión: se muestran los últimos datos sincronizados.",
