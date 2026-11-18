@@ -32,4 +32,13 @@ public class EntregaService {
         if (!"PAGADO".equals(p.getEstadoPago())) throw new ResponseStatusException(CONFLICT,"Solo los pedidos pagados tienen chat de entrega");
         return new Hilo(id,p.getCodigoPedido(),p.getClienteId(),p.getVendedorId());
     }
+    public java.util.List<MensajeEntrega> leer(Long id, Usuario u) {
+        abrir(id,u);
+        return em.createQuery("from MensajeEntrega m where m.pedido.id=:id order by m.id",MensajeEntrega.class).setParameter("id",id).getResultList();
+    }
+    public MensajeEntrega enviar(Long id, Usuario u,String texto) {
+        abrir(id,u);
+        if(texto==null || texto.isBlank() || texto.trim().length()>2000) throw new ResponseStatusException(BAD_REQUEST,"Escribe de 1 a 2000 caracteres");
+        var mensaje=new MensajeEntrega(em.getReference(Pedido.class,id),u.getId(),texto.trim()); em.persist(mensaje); return mensaje;
+    }
 }
