@@ -34,3 +34,5 @@ Django guarda sus superusuarios, sesiones y listas de revisión en SQLite. Las c
 El usuario MySQL de Django (`pulgatec_admin_ro`) tiene solo `SELECT` sobre `BD_Pulgatec.usuarios` y `BD_Pulgatec.registros_auditoria`; Spring usa `pulgatec_app` con permisos acotados al esquema para sus escrituras. Las migraciones de Django se ejecutan en SQLite, que es la conexión `default`. La conexión `shared` se usa para consultas. No guardar tokens, claves internas ni credenciales en logs.
 
 Las sesiones Spring siguen en memoria: al reiniciar Spring los tokens opacos dejan de ser válidos; la información de usuarios, productos, recuperación y auditoría sí queda persistida en MySQL. La vigencia/flujo HU25 no cambia.
+
+El flujo de consulta de usuarios, cambio de rol y auditoría de HU61 está documentado en [`docs/HU61-flujo-admin.md`](../docs/HU61-flujo-admin.md). La vista de auditoría muestra los campos disponibles en Spring; el usuario afectado y los roles anterior/nuevo requieren ampliar el contrato y la persistencia de Spring.

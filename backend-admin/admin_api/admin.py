@@ -1,9 +1,8 @@
 from django import forms
 from django.conf import settings
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
@@ -72,8 +71,18 @@ class UsuarioCompartidoAdmin(ConsultaCompartidaAdmin):
             else:
                 status, result = AdminService.cambiar_rol_desde_django(usuario.pk, datos)
                 if status == 200:
-                    self.message_user(request, "Rol actualizado y registrado en Auditoría.", messages.SUCCESS)
-                    return redirect("admin:admin_api_usuariocompartido_changelist")
+                    rol_nuevo = result.get("rol", datos["rol"]) if isinstance(result, dict) else datos["rol"]
+                    auditoria_url = reverse("admin:admin_api_registroauditoriacompartido_changelist")
+                    return TemplateResponse(request, "admin/cambiar_rol.html", {
+                        **self.admin_site.each_context(request),
+                        "title": "Cambio de rol registrado",
+                        "usuario": usuario,
+                        "guardado": True,
+                        "rol_anterior": usuario.rol,
+                        "rol_nuevo": rol_nuevo,
+                        "usuarios_url": reverse("admin:admin_api_usuariocompartido_changelist"),
+                        "auditoria_url": f"{auditoria_url}?accion=CAMBIO_ROL",
+                    })
                 error = result.get("messages") if isinstance(result, dict) else None
                 form.add_error(None, error[0] if error else "No se pudo cambiar el rol. Verifica la cuenta y la conexión con Spring.")
         return TemplateResponse(request, "admin/cambiar_rol.html", {
@@ -108,6 +117,8 @@ class AccionAuditoriaFilter(admin.SimpleListFilter):
 @admin.register(RegistroAuditoriaCompartido)
 class RegistroAuditoriaAdmin(ConsultaCompartidaAdmin):
     list_display = ("accion_visible", "realizado_por", "fecha_local")
+    fields = ("accion_visible", "realizado_por", "fecha_local")
+    readonly_fields = fields
     search_fields = ("usuario",)
     list_filter = (AccionAuditoriaFilter, "fecha")
     ordering = ("-fecha", "-id")
