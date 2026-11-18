@@ -50,7 +50,8 @@ public class CalificacionPublicaService {
 
         BigDecimal promedio = BigDecimal.valueOf(promedioCalculado == null ? 0.0 : promedioCalculado)
                 .setScale(2, RoundingMode.HALF_UP);
-        return new CalificacionesVendedorResumenResponse(vendedor.getId(), promedio, cantidad, distribucion);
+        return new CalificacionesVendedorResumenResponse(vendedor.getId(), promedio, cantidad, distribucion,
+                vendedor.getNombre(), vendedor.getFotoUrl());
     }
 
     private ExperienciaCompraException error(HttpStatus estado, String mensaje) {

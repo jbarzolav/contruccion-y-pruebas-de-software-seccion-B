@@ -8,6 +8,8 @@ public record CalificacionesVendedorResumenResponse(
         Long vendedorId,
         BigDecimal promedio,
         long cantidad,
-        Map<Integer, Long> distribucion
+        Map<Integer, Long> distribucion,
+        String nombre,
+        String fotoUrl
 ) {
 }
