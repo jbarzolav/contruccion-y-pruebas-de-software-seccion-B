@@ -210,6 +210,9 @@ export default function MetricasVentas() {
         <Metrica titulo="Pedidos" valor={entero(periodo?.cantidadPedidos)}
           comparativa={mostrarVariacion && metricas.comparativaPedidos}
           anterior={mostrarVariacion ? entero(anterior.cantidadPedidos) : null} />
+        <Metrica titulo="Promedio por pedido" valor={moneda(periodo?.promedioPorPedido)}
+          comparativa={mostrarVariacion && metricas.comparativaPromedio}
+          anterior={mostrarVariacion ? moneda(anterior.promedioPorPedido) : null} />
       </div>
 
       <section className="metricas-productos" aria-labelledby="metricas-productos-titulo">
