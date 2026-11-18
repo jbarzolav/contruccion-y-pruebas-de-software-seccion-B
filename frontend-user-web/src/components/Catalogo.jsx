@@ -105,6 +105,7 @@ export default function Catalogo({ nombre = '', sort = '', actualizar, categoria
     const [mostrarFavoritos, setMostrarFavoritos] = useState(false)
     // Último término realmente solicitado: descarta respuestas desactualizadas
     const ultimoTermino = useRef('')
+    const solicitudCatalogo = useRef(0)
 
     useEffect(() => {
         if (!puedeGuardar) {
@@ -163,11 +164,17 @@ export default function Catalogo({ nombre = '', sort = '', actualizar, categoria
 
     // Recarga con debounce al escribir, al cambiar el orden o al modificar productos
     useEffect(() => {
-        const timer = setTimeout(() => cargarCatalogo(), 300)
-        return () => clearTimeout(timer)
+        let vigente = true
+        const timer = setTimeout(() => cargarCatalogo(() => vigente), 300)
+        return () => {
+            vigente = false
+            clearTimeout(timer)
+        }
     }, [nombre, sort, actualizar])
 
-    async function cargarCatalogo() {
+    async function cargarCatalogo(esVigente = () => true) {
+        const solicitud = ++solicitudCatalogo.current
+        const sigueVigente = () => esVigente() && solicitud === solicitudCatalogo.current
         try {
             setCargando(true)
             setError('')
@@ -193,16 +200,18 @@ export default function Catalogo({ nombre = '', sort = '', actualizar, categoria
 
                 // Sin texto: catálogo completo (destacados primero) + orden local
                 const catalogo = await obtenerCatalogo()
+                if (!sigueVigente()) return
                 alCargarCategorias?.([...new Set(catalogo.map(categoriaProducto).filter(Boolean))]
                     .sort((a, b) => a.localeCompare(b, 'es')))
                 data = ordenarLocal(catalogo, sort)
             }
 
+            if (!sigueVigente()) return
             setProductos(data)
         } catch {
-            setError('No se pudo cargar el catálogo.')
+            if (sigueVigente()) setError('No se pudo cargar el catálogo.')
         } finally {
-            setCargando(false)
+            if (sigueVigente()) setCargando(false)
         }
     }
 

@@ -223,7 +223,7 @@ export default function DetalleProducto({ onCarritoActualizado, onVerCarrito }) 
         && String(resumenVendedor?.vendedorId) === String(producto.vendedorId)
         ? resumenVendedor
         : null
-    const nombreVendedor = perfilPublicoVendedor?.nombre?.trim()
+    const nombreVendedor = (perfilPublicoVendedor?.nombre ?? perfilPublicoVendedor?.nombreComercial)?.trim()
     const fotoVendedor = urlFotoPerfil(perfilPublicoVendedor?.fotoUrl)
     const imagen = urlImagen(producto.imagenUrl)
     const disponible = disponibilidad?.disponible === true
