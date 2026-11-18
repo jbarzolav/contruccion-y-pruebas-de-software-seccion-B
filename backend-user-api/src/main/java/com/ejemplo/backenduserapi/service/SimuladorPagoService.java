@@ -45,4 +45,24 @@ public class SimuladorPagoService {
         }
         p.setEstadoPago(destino); return CheckoutService.vista(p);
     }
+
+    public CheckoutService.Vista devolver(Long id, Usuario u, Aviso a, boolean solicitud) {
+        Pedido p=checkout.propio(id,u); validar(p,a);
+        if ("REEMBOLSADO".equals(p.getEstadoPago())) return CheckoutService.vista(p);
+        if (!"PAGADO".equals(p.getEstadoPago()) || "ENTREGADO".equals(p.getEstado())) throw new ResponseStatusException(CONFLICT,"El pedido no admite devolución");
+        if (solicitud) {
+            p.setEstadoReembolso("EN_TRAMITE");
+        } else {
+            if (!"EN_TRAMITE".equals(p.getEstadoReembolso())) throw new ResponseStatusException(CONFLICT,"No hay devolución pendiente");
+            if ("FALLIDO".equals(a.resultado())) p.setEstadoReembolso("FALLIDO");
+            else if ("APROBADO".equals(a.resultado())) {
+                for (var d:p.getDetalles().stream().sorted(Comparator.comparing(x->x.getProducto().getId())).toList()) {
+                    Producto pr=d.getProducto(); em.refresh(pr,LockModeType.PESSIMISTIC_WRITE);
+                    int antes=pr.getStock(); pr.setStock(Math.addExact(antes,d.getCantidad())); alertas.registrarCambioStock(pr,antes,pr.getStock());
+                }
+                p.setEstadoPago("REEMBOLSADO"); p.setEstadoReembolso("REEMBOLSADO"); p.setEstado("CANCELADO"); p.setFechaActualizacionEstado(LocalDateTime.now());
+            } else throw new ResponseStatusException(BAD_REQUEST,"Resultado inválido");
+        }
+        return CheckoutService.vista(p);
+    }
 }

@@ -44,6 +44,9 @@ public class Pedido {
     private LocalDateTime reservaHasta;
     @Column(unique = true, length = 36)
     private String referenciaPago;
+    private String estadoReembolso;
+    public String getEstadoReembolso() { return estadoReembolso; }
+    public void setEstadoReembolso(String valor) { estadoReembolso=valor; }
 
     public void iniciarCheckout(Long vendedor) {
         codigoPedido = java.util.UUID.randomUUID().toString();

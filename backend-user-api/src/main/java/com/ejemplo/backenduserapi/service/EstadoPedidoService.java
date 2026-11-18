@@ -63,7 +63,7 @@ public class EstadoPedidoService {
         Pedido pedido = pedidoDelVendedor(idPedido, vendedor);
         if (pedido.getCodigoPedido()!=null) {
             em.refresh(pedido,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-            if (!"PAGADO".equals(pedido.getEstadoPago()) || !"ENTREGADO".equalsIgnoreCase(estadoSolicitado(request)))
+            if (!"PAGADO".equals(pedido.getEstadoPago()) || "EN_TRAMITE".equals(pedido.getEstadoReembolso()) || !"ENTREGADO".equalsIgnoreCase(estadoSolicitado(request)))
                 throw error(HttpStatus.CONFLICT,"Solo se puede entregar un pedido pagado; el comprador gestiona su devolución.");
         }
 

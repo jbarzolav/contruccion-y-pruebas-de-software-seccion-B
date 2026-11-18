@@ -21,10 +21,10 @@ public class CheckoutService {
     public record Linea(Long productoId, int cantidad, BigDecimal precioUnitario) {}
     public record Vista(Long idPedido, String codigoPedido, Long clienteId, Long vendedorId, String moneda,
             BigDecimal total, String estadoPago, String estadoEntrega, String referencia, LocalDateTime reservaHasta,
-            List<Linea> lineas) {}
+            String estadoReembolso, List<Linea> lineas) {}
     public static Vista vista(Pedido p) {
         return new Vista(p.getId(),p.getCodigoPedido(),p.getClienteId(),p.getVendedorId(),"PEN",p.getTotal(),
-                p.getEstadoPago(),p.getEstado(),p.getReferenciaPago(),p.getReservaHasta(),p.getDetalles().stream()
+                p.getEstadoPago(),p.getEstado(),p.getReferenciaPago(),p.getReservaHasta(),p.getEstadoReembolso(),p.getDetalles().stream()
                 .map(d->new Linea(d.getProducto().getId(),d.getCantidad(),d.getPrecioUnitario())).toList());
     }
     public Pedido propio(Long id, Usuario u) {

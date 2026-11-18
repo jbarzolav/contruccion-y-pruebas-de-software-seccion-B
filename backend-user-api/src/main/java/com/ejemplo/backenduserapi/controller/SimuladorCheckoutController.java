@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/pedidos/checkout/{id}/simulador")
 public class SimuladorCheckoutController {
     private final SimuladorPagoService simulador;
+    @PostMapping("/reembolso/solicitar") public CheckoutService.Vista solicitar(@PathVariable Long id,@RequestAttribute("usuarioSesion") Usuario u,@RequestBody SimuladorPagoService.Aviso aviso) {
+        return simulador.devolver(id,u,aviso,true);
+    }
+    @PostMapping("/reembolso/resultado") public CheckoutService.Vista resultado(@PathVariable Long id,@RequestAttribute("usuarioSesion") Usuario u,@RequestBody SimuladorPagoService.Aviso aviso) {
+        return simulador.devolver(id,u,aviso,false);
+    }
     public SimuladorCheckoutController(SimuladorPagoService simulador) { this.simulador=simulador; }
     @PostMapping public CheckoutService.Vista resolver(@PathVariable Long id,@RequestAttribute("usuarioSesion") Usuario u,@RequestBody SimuladorPagoService.Aviso aviso) {
         return simulador.resolver(id,u,aviso);
