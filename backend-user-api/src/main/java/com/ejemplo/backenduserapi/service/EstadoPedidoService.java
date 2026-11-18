@@ -43,6 +43,7 @@ import java.util.List;
  */
 @Service
 public class EstadoPedidoService {
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
 
     private final PedidoRepository pedidos;
     private final HistorialEstadoPedidoRepository historial;
@@ -60,6 +61,11 @@ public class EstadoPedidoService {
         exigirVendedor(vendedor);
 
         Pedido pedido = pedidoDelVendedor(idPedido, vendedor);
+        if (pedido.getCodigoPedido()!=null) {
+            em.refresh(pedido,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            if (!"PAGADO".equals(pedido.getEstadoPago()) || !"ENTREGADO".equalsIgnoreCase(estadoSolicitado(request)))
+                throw error(HttpStatus.CONFLICT,"Solo se puede entregar un pedido pagado; el comprador gestiona su devolución.");
+        }
 
         EstadoPedido destino = EstadoPedido.desde(estadoSolicitado(request));
         if (destino == null) {
@@ -95,6 +101,12 @@ public class EstadoPedidoService {
     @Transactional
     public PedidoEstadoActualizadoResponse cancelarCompra(Long idPedido, Usuario comprador) {
         Pedido pedido = pedidoDelComprador(idPedido, comprador);
+        if (pedido.getCodigoPedido()!=null) {
+            em.refresh(pedido,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            if (!java.util.Set.of("PENDIENTE","RECHAZADO").contains(pedido.getEstadoPago()))
+                throw error(HttpStatus.CONFLICT,"El intento está cerrado. Un cobro aprobado requiere reembolso.");
+            pedido.setEstadoPago("CANCELADO");
+        }
 
         EstadoPedido origen = EstadoPedido.desde(pedido.getEstado());
         if (origen == null) {
