@@ -13,6 +13,8 @@ import jakarta.persistence.QueryHint;
 import java.util.List;
 import java.util.Optional;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+    @Query("select coalesce(sum(d.cantidad),0) from DetallePedido d where d.producto.id=:producto and d.pedido.estadoPago='PENDIENTE' and d.pedido.reservaHasta>:ahora and (:excluir is null or d.pedido.id<>:excluir)")
+    long reservadas(@Param("producto") Long producto, @Param("ahora") java.time.LocalDateTime ahora, @Param("excluir") Long excluir);
     // Serializa la creación/reutilización de conversaciones sobre un producto.
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select p from Producto p where p.id = :id")

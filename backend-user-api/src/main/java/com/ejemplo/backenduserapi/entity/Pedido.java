@@ -36,6 +36,32 @@ public class Pedido {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
+    // Nulos en los pedidos históricos: nunca inferir un cobro por el estado de entrega.
+    @Column(unique = true, length = 36)
+    private String codigoPedido;
+    private Long vendedorId;
+    private String estadoPago;
+    private LocalDateTime reservaHasta;
+    @Column(unique = true, length = 36)
+    private String referenciaPago;
+
+    public void iniciarCheckout(Long vendedor) {
+        codigoPedido = java.util.UUID.randomUUID().toString();
+        vendedorId = vendedor;
+        renovarReserva();
+    }
+    public void renovarReserva() {
+        estadoPago = "PENDIENTE";
+        referenciaPago = java.util.UUID.randomUUID().toString();
+        reservaHasta = LocalDateTime.now().plusMinutes(15);
+    }
+    public String getCodigoPedido() { return codigoPedido; }
+    public Long getVendedorId() { return vendedorId; }
+    public String getEstadoPago() { return estadoPago; }
+    public void setEstadoPago(String valor) { estadoPago = valor; }
+    public String getReferenciaPago() { return referenciaPago; }
+    public LocalDateTime getReservaHasta() { return reservaHasta; }
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<DetallePedido> detalles = new ArrayList<>();
 

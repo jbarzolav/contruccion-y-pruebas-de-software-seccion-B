@@ -121,7 +121,7 @@ public class PedidoService {
             // refrescando la caché: dos ventas simultáneas no pueden descontar
             // sobre una copia obsoleta ni duplicar el aviso de stock bajo.
             Producto producto = productoConStockBloqueado(item.getProducto());
-            if (item.getCantidad() > producto.getStock()) {
+            if (item.getCantidad() > producto.getStock() - productoRepository.reservadas(producto.getId(), LocalDateTime.now(), null)) {
                 throw new StockInsuficienteException(
                         "Stock insuficiente para \"" + producto.getNombre()
                                 + "\": se solicitan " + item.getCantidad()

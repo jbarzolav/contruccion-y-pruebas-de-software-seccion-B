@@ -29,6 +29,10 @@ public class DetallePedido {
     @Column(nullable = false)
     private Integer cantidad;
 
+    private Long itemOrigenId;
+    public Long getItemOrigenId() { return itemOrigenId; }
+    public void setItemOrigenId(Long id) { itemOrigenId = id; }
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
 
