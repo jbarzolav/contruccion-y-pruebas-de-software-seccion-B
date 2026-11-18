@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { consultarEstadoPedido, listarPedidos } from '../api/productos.js'
+import { cancelarPedido, consultarEstadoPedido, listarPedidos } from '../api/productos.js'
 import ImagenCarrito from './ImagenCarrito.jsx'
 import ExperienciaCompra from './ExperienciaCompra.jsx'
 import { estadoPedidoVisible, fechaHoraPedidoVisible, numeroPedidoVisible } from '../utils/formatoPedidos.js'
@@ -24,6 +24,8 @@ export default function Pedidos() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [actualizandoId, setActualizandoId] = useState(null)
+  const [cancelandoId, setCancelandoId] = useState(null)
+  const [mensaje, setMensaje] = useState('')
   const [criterios, setCriterios] = useState(FILTROS_INICIALES)
   const [aplicados, setAplicados] = useState({})
   const [numero, setNumero] = useState('')
@@ -89,7 +91,7 @@ export default function Pedidos() {
   }
 
   async function actualizarEstado(idPedido) {
-    if (actualizandoId !== null) return
+    if (actualizandoId !== null || cancelandoId !== null) return
     try {
       setActualizandoId(idPedido)
       setError('')
@@ -101,6 +103,25 @@ export default function Pedidos() {
       setError(e?.response?.data?.messages?.[0] || 'No se pudo actualizar el estado del pedido.')
     } finally {
       setActualizandoId(null)
+    }
+  }
+
+  async function cancelarCompra(pedido) {
+    if (pedido.estado !== 'REGISTRADO' || cancelandoId !== null || actualizandoId !== null) return
+    if (!window.confirm('¿Cancelar el pedido N.º ' + numeroPedidoVisible(pedido.idPedido) + '?')) return
+    setCancelandoId(pedido.idPedido)
+    setError('')
+    setMensaje('')
+    try {
+      const respuesta = await cancelarPedido(pedido.idPedido)
+      setPedidos((lista) => lista.map((item) => item.idPedido === pedido.idPedido
+        ? { ...item, estado: respuesta.estado, fechaActualizacion: respuesta.fechaActualizacion }
+        : item))
+      setMensaje('Pedido N.º ' + numeroPedidoVisible(pedido.idPedido) + ' cancelado.')
+    } catch (e) {
+      setError(e?.response?.data?.messages?.[0] || 'No se pudo cancelar el pedido. El estado no se modificó.')
+    } finally {
+      setCancelandoId(null)
     }
   }
 
@@ -145,6 +166,7 @@ export default function Pedidos() {
     </form>
     {cargando && <p role="status">Cargando historial de compras...</p>}
     {error && <div className="alerta error" role="alert">{error}</div>}
+    {mensaje && <div className="alerta exito" role="status">{mensaje}</div>}
     {!cargando && !error && !resultados.length && <p>{termino || Object.values(aplicados).some(Boolean)
       ? 'No hay compras que coincidan con los filtros.'
       : 'Aún no tienes compras registradas.'}</p>}
@@ -170,10 +192,15 @@ export default function Pedidos() {
       {pedido.fechaActualizacion && <p>Última actualización: {fechaHoraPedidoVisible(pedido.fechaActualizacion)}</p>}
       <div className="compra-acciones">
         <Link className="btn-primario" to={`/pedidos/${pedido.idPedido}`}>Ver detalle</Link>
-        <button className="btn-secundario" type="button" disabled={actualizandoId !== null}
+        <button className="btn-secundario" type="button" disabled={actualizandoId !== null || cancelandoId !== null}
           onClick={() => actualizarEstado(pedido.idPedido)}>
           {actualizandoId === pedido.idPedido ? 'Actualizando...' : 'Actualizar estado'}
         </button>
+        {pedido.estado === 'REGISTRADO' && <button className="btn-secundario" type="button"
+          disabled={cancelandoId !== null || actualizandoId !== null}
+          onClick={() => cancelarCompra(pedido)}>
+          {cancelandoId === pedido.idPedido ? 'Cancelando...' : 'Cancelar pedido'}
+        </button>}
       </div>
       {pedido.estado === 'ENTREGADO' && <details className="compra-experiencia">
         <summary>Calificar mi compra</summary>
