@@ -70,6 +70,7 @@ fun DetallePedidoScreen(
             viewModel.pedido == null -> Text("No hay información del pedido.")
             else -> {
                 val pedido = viewModel.pedido!!
+                CoordinarEntrega(idPedido, vendedor = false)
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("N.º de compra: ${pedido.idPedido ?: "-"}", fontWeight = FontWeight.Bold)

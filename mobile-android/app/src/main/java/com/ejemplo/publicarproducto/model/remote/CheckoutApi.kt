@@ -10,8 +10,12 @@ data class PagoGrupo(val idPedido: Long, val codigoPedido: String, val vendedorI
     fun aviso(resultado: String) = AvisoPago(referencia, total, moneda, resultado)
 }
 interface CheckoutApi {
+    @GET("api/conversaciones/entrega/{id}/mensajes") suspend fun mensajes(@Path("id") id: Long): List<MensajeEntregaDto>
+    @POST("api/conversaciones/entrega/{id}/mensajes") suspend fun enviar(@Path("id") id: Long,@Body mensaje: TextoEntrega): MensajeEntregaDto
     @POST("api/pedidos/checkout") suspend fun crear(@Body seleccion: SeleccionGrupo): PagoGrupo
     @POST("api/pedidos/checkout/{id}/reintentar") suspend fun reintentar(@Path("id") id: Long): PagoGrupo
     @GET("api/conversaciones/entrega/{id}/pedido") suspend fun resumen(@Path("id") id: Long): PagoGrupo
     @POST("api/pedidos/checkout/{id}/simulador") suspend fun resolver(@Path("id") id: Long, @Body aviso: AvisoPago): PagoGrupo
 }
+data class TextoEntrega(val texto:String)
+data class MensajeEntregaDto(val id:Long, val autorId:Long, val texto:String, val fecha:String)

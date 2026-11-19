@@ -112,6 +112,7 @@ private fun PedidoRecibidoCard(pedido: PedidoVendedorResponse, viewModel: Pedido
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("N.º de compra: ${pedido.idPedido}", fontWeight = FontWeight.Bold)
+            CoordinarEntrega(pedido.idPedido, vendedor = true)
             Text("Fecha: ${fechaHoraPedidoVisible(pedido.fecha)}")
             Text("Estado: ${estadoPedidoVisible(pedido.estado)}")
             // Mejora técnica Offline First: el estado propuesto por el usuario
