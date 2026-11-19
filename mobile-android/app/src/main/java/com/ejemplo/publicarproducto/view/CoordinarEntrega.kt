@@ -18,6 +18,19 @@ fun CoordinarEntrega(id:Long, vendedor:Boolean) {
     val pago=vm.resumen
     if(pago!=null) {
         Text("Pedido ${pago.codigoPedido} · Pago: ${pago.estadoPago}",style=MaterialTheme.typography.bodySmall)
+        pago.estadoReembolso?.let { Text("Reembolso: $it · ${pago.moneda} ${pago.total}") }
+        if(!vendedor && pago.estadoPago=="PAGADO" && pago.estadoEntrega!="ENTREGADO") {
+            var confirmar by remember(id) { mutableStateOf(false) }
+            if(pago.estadoReembolso=="EN_TRAMITE") {
+                Text("Simulador de devolución")
+                TextButton(enabled=!vm.ocupado,onClick={vm.devolver(pago,true)}) { Text("Simular aprobación") }
+                TextButton(enabled=!vm.ocupado,onClick={vm.devolver(pago,false)}) { Text("Simular fallo") }
+            } else TextButton(enabled=!vm.ocupado,onClick={confirmar=true}) { Text("Solicitar reembolso") }
+            if(confirmar) AlertDialog(onDismissRequest={confirmar=false}, title={Text("Solicitar devolución total")},
+                text={Text("Se solicitará el reembolso de ${pago.moneda} ${pago.total} para este pedido.")},
+                confirmButton={TextButton(onClick={confirmar=false; vm.solicitar(pago)}) { Text("Confirmar solicitud") }},
+                dismissButton={TextButton(onClick={confirmar=false}) { Text("Volver") }})
+        }
         if(pago.estadoPago=="PAGADO") TextButton(onClick={abierto=true; vm.leer(id)}) { Text("Coordinar entrega") }
     }
     if(!abierto && vm.error!=null) TextButton(onClick={vm.cargar(id)}) { Text("Reintentar consulta del pago") }

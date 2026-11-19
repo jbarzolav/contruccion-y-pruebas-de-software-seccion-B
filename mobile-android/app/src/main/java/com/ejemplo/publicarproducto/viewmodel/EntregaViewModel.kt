@@ -25,5 +25,7 @@ class EntregaViewModel : ViewModel() {
     }
     fun cargar(id:Long)=operar { try { resumen=repo.resumen(id) } catch(e:HttpException) { if(e.code()!=404) throw e; resumen=null } }
     fun leer(id:Long)=operar { mensajes=repo.mensajes(id) }
+    fun solicitar(p:PagoGrupo)=operar { resumen=repo.solicitar(p) }
+    fun devolver(p:PagoGrupo, aprobado:Boolean)=operar { resumen=repo.devolver(p,aprobado) }
     fun enviar(id:Long)=operar { val nuevo=repo.enviar(id,borrador.trim()); mensajes=mensajes+nuevo; borrador="" }
 }
