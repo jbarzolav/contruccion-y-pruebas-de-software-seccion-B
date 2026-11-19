@@ -35,6 +35,7 @@ sealed interface ConfirmarCompraUiState {
  * [CarritoRepositorio] y el checkout de [PedidosRepositorio].
  */
 class ConfirmarCompraViewModel : ViewModel() {
+    val cuentaActual get() = ProveedorDatos.actual.sesion.obtenerUsuarioId()
 
     /** Repositorio del carrito (se resuelve en cada llamada). */
     private val repositorioCarrito: CarritoRepositorio

@@ -13,5 +13,6 @@ data class ItemCarritoResponse(
     val cantidad: Int?,
     val precioUnitario: BigDecimal?,
     val subtotal: BigDecimal?,
-    val stockDisponible: Int?
+    val stockDisponible: Int?,
+    val vendedorId: Long? = null
 )

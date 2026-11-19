@@ -15,6 +15,9 @@ public class ItemCarritoResponse {
     private BigDecimal precioUnitario;
     private BigDecimal subtotal;
     private Integer stockDisponible;
+    private Long vendedorId;
+    public Long getVendedorId() { return vendedorId; }
+    public void setVendedorId(Long vendedorId) { this.vendedorId=vendedorId; }
 
     public ItemCarritoResponse(Long id, Long productoId, String nombreProducto, Integer cantidad,
                                BigDecimal precioUnitario, BigDecimal subtotal, Integer stockDisponible) {

@@ -110,4 +110,8 @@ object UserApiClient {
         Retrofit.Builder().baseUrl(BASE_URL).client(httpClientSinLog)
             .addConverterFactory(GsonConverterFactory.create()).build().create(ConversacionApi::class.java)
     }
+    val checkoutApi: CheckoutApi by lazy {
+        Retrofit.Builder().baseUrl(BASE_URL).client(httpClientSinLog)
+            .addConverterFactory(GsonConverterFactory.create()).build().create(CheckoutApi::class.java)
+    }
 }

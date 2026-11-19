@@ -155,7 +155,7 @@ public class CarritoService {
         BigDecimal subtotal = item.getPrecioUnitario()
                 .multiply(BigDecimal.valueOf(item.getCantidad()));
 
-        return new ItemCarritoResponse(
+        ItemCarritoResponse respuesta = new ItemCarritoResponse(
                 item.getId(),
                 item.getProducto().getId(),
                 item.getProducto().getNombre(),
@@ -163,5 +163,7 @@ public class CarritoService {
                 item.getPrecioUnitario(),
                 subtotal,
                 item.getProducto().getStock());
+        respuesta.setVendedorId(item.getProducto().getVendedorId());
+        return respuesta;
     }
 }

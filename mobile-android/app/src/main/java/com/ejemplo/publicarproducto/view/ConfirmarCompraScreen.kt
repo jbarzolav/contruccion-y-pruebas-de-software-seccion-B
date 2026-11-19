@@ -139,7 +139,7 @@ fun ConfirmarCompraScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    ResumenCompra(viewModel = viewModel)
+                    PagoPorVendedor(viewModel.items, viewModel::cargarResumen, onVolver, viewModel.cuentaActual)
                 }
             }
         }
