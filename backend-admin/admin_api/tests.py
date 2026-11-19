@@ -95,12 +95,28 @@ class AdminEndpointsTests(SimpleTestCase):
 
     @patch("admin_api.services.UserApiRepository.autenticar_administrador")
     def test_no_auth_y_roles_sin_permiso_dan_401_403(self, authenticate):
+        casos = [
+            ("get", "/api/admin/usuarios", None),
+            ("patch", "/api/admin/usuarios/2/rol", {"rol": "VENDEDOR"}),
+            ("get", "/api/admin/auditoria", None),
+        ]
         self.client.credentials()
         authenticate.return_value = (401, b'{"status":401,"error":"No autenticado"}')
-        self.assertEqual(self.client.get("/api/admin/auditoria").status_code, 401)
+        for metodo, ruta, body in casos:
+            if body:
+                respuesta = getattr(self.client, metodo)(ruta, body, format="json")
+            else:
+                respuesta = getattr(self.client, metodo)(ruta)
+            self.assertEqual(respuesta.status_code, 401, f"{metodo.upper()} {ruta} sin token")
+
         self.client.credentials(HTTP_AUTHORIZATION="Bearer user-session")
         authenticate.return_value = (200, b'{"id":2,"correo":"user@example.test","rol":"CLIENTE"}')
-        self.assertEqual(self.client.get("/api/admin/auditoria").status_code, 403)
+        for metodo, ruta, body in casos:
+            if body:
+                respuesta = getattr(self.client, metodo)(ruta, body, format="json")
+            else:
+                respuesta = getattr(self.client, metodo)(ruta)
+            self.assertEqual(respuesta.status_code, 403, f"{metodo.upper()} {ruta} sin rol ADMINISTRADOR")
 
     @patch("admin_api.services.UserApiRepository.leer_auditoria")
     @patch("admin_api.services.UserApiRepository.autenticar_administrador")
@@ -194,6 +210,11 @@ class MySqlSharedReadTests(TransactionTestCase):
         audit_url = reverse("admin:admin_api_registroauditoriacompartido_changelist")
         audit = self.client.get(audit_url, {"accion": "CAMBIO_ROL"})
         self.assertEqual(audit.context["cl"].result_count, 1)
+        detalle_auditoria = self.client.get(reverse(
+            "admin:admin_api_registroauditoriacompartido_change", args=[102]
+        ))
+        self.assertContains(detalle_auditoria, "Realizado por:")
+        self.assertContains(detalle_auditoria, "safe@example.test")
 
         request_spring.side_effect = [
             (200, b'{"token":"sesion-temporal"}'),
@@ -202,11 +223,18 @@ class MySqlSharedReadTests(TransactionTestCase):
         ]
         assign.return_value = (200, b'{"rol":"VENDEDOR"}')
         role_url = reverse("admin:pulgatec_cambiar_rol", args=[50])
-        self.assertContains(self.client.get(role_url), "Guardar cambio")
+        formulario = self.client.get(role_url)
+        self.assertContains(formulario, "Guardar cambio")
+        self.assertContains(formulario, 'id="guardar-cambio-rol" type="submit" value="Guardar cambio" disabled')
         response = self.client.post(role_url, {
             "rol": "VENDEDOR", "correo": "admin@example.test", "password": "clave-de-prueba",
         })
-        self.assertRedirects(response, users_url, fetch_redirect_response=False)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Rol actualizado para")
+        self.assertContains(response, "Rol anterior:")
+        self.assertContains(response, "Rol nuevo:")
+        self.assertContains(response, f'{audit_url}?accion=CAMBIO_ROL')
+        self.assertContains(response, users_url)
         assign.assert_called_once_with(50, "Bearer sesion-temporal", {"rol": "VENDEDOR"})
         self.assertEqual(request_spring.call_args_list, [
             call("/api/auth/login", method="POST",
@@ -214,6 +242,31 @@ class MySqlSharedReadTests(TransactionTestCase):
             call("/api/auth/me", authorization="Bearer sesion-temporal"),
             call("/api/auth/logout", method="POST", authorization="Bearer sesion-temporal"),
         ])
+
+    def test_cambio_de_rol_mismo_valor_no_llama_a_spring(self):
+        self.client.force_login(get_user_model().objects.create_superuser("operador"))
+        role_url = reverse("admin:pulgatec_cambiar_rol", args=[50])
+        with patch("admin_api.admin.AdminService.cambiar_rol_desde_django") as change_role:
+            response = self.client.post(role_url, {
+                "rol": "ADMINISTRADOR", "correo": "admin@example.test", "password": "clave-de-prueba",
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Selecciona un rol distinto al actual.")
+        change_role.assert_not_called()
+
+    def test_error_de_spring_se_muestra_y_no_indica_rol_actualizado(self):
+        self.client.force_login(get_user_model().objects.create_superuser("operador"))
+        role_url = reverse("admin:pulgatec_cambiar_rol", args=[50])
+        with patch("admin_api.admin.AdminService.cambiar_rol_desde_django", return_value=(
+            503, {"messages": ["No fue posible completar el cambio de rol."]}
+        )):
+            response = self.client.post(role_url, {
+                "rol": "VENDEDOR", "correo": "admin@example.test", "password": "clave-de-prueba",
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No fue posible completar el cambio de rol.")
+        self.assertContains(response, "Rol actual ADMINISTRADOR")
+        self.assertNotContains(response, "Cambio de rol registrado")
 
     def test_cambio_de_rol_rechaza_personal_sin_superusuario(self):
         staff = get_user_model().objects.create_user("staff", is_staff=True)

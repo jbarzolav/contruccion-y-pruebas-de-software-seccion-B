@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ExperienciaCompra from './ExperienciaCompra.jsx'
-import { obtenerDetallePedido, obtenerExperienciaPedido } from '../api/productos.js'
+import { cancelarPedido, obtenerDetallePedido, obtenerExperienciaPedido } from '../api/productos.js'
 import { estadoPedidoVisible, fechaHoraPedidoVisible, numeroPedidoVisible } from '../utils/formatoPedidos.js'
 
 /**
@@ -14,6 +14,9 @@ export default function DetallePedido() {
   const [pedido, setPedido] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [errorCancelacion, setErrorCancelacion] = useState('')
+  const [cancelando, setCancelando] = useState(false)
+  const [mensaje, setMensaje] = useState('')
 
   useEffect(() => {
     let vigente = true
@@ -25,6 +28,27 @@ export default function DetallePedido() {
       .finally(() => { if (vigente) setCargando(false) })
     return () => { vigente = false }
   }, [idPedido])
+
+  async function cancelarCompra() {
+    if (!pedido || pedido.estado !== 'REGISTRADO' || cancelando) return
+    if (!window.confirm('¿Cancelar el pedido N.º ' + numeroPedidoVisible(pedido.idPedido) + '?')) return
+    setCancelando(true)
+    setErrorCancelacion('')
+    setMensaje('')
+    try {
+      const respuesta = await cancelarPedido(pedido.idPedido)
+      setPedido(actual => ({
+        ...actual,
+        estado: respuesta.estado,
+        fechaActualizacion: respuesta.fechaActualizacion,
+      }))
+      setMensaje('Pedido cancelado correctamente.')
+    } catch (e) {
+      setErrorCancelacion(e?.response?.data?.messages?.[0] || 'No se pudo cancelar el pedido. Se conserva el estado actual.')
+    } finally {
+      setCancelando(false)
+    }
+  }
 
   if (cargando) return <section className="tarjeta"><p>Cargando detalle del pedido...</p></section>
 
@@ -73,6 +97,12 @@ export default function DetallePedido() {
           </tr>
         </tfoot>
       </table>
+      {errorCancelacion && <div className="alerta error" role="alert">{errorCancelacion}</div>}
+      {mensaje && <div className="alerta exito" role="status">{mensaje}</div>}
+      {pedido.estado === 'REGISTRADO' && <button className="btn-secundario" type="button"
+        onClick={cancelarCompra} disabled={cancelando}>
+        {cancelando ? 'Cancelando pedido...' : 'Cancelar pedido'}
+      </button>}
       {pedido.estado === 'ENTREGADO' && <CalificacionPedido key={pedido.idPedido} idPedido={pedido.idPedido} />}
       <Link className="btn-secundario" to="/pedidos">Volver a mis compras</Link>
     </>}

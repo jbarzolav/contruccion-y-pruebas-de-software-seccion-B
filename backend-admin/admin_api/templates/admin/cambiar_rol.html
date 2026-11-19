@@ -1,5 +1,14 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
+{% if guardado %}
+<div class="messagelist"><div class="success">Rol actualizado para <strong>{{ usuario.correo }}</strong>.</div></div>
+<p>Rol anterior: <strong>{{ rol_anterior }}</strong> · Rol nuevo: <strong>{{ rol_nuevo }}</strong></p>
+<p>El cambio fue enviado a Spring y registrado en la auditoría.</p>
+<div class="submit-row">
+    <a class="button" href="{{ auditoria_url }}">Ver auditoría de cambios de rol</a>
+    <a class="button" href="{{ usuarios_url }}">Ver usuarios y roles</a>
+</div>
+{% else %}
 <p>{{ usuario.correo }} · Rol actual {{ usuario.rol }}</p>
 <p>Confirma con tu cuenta administradora de PulgaTec para registrar el cambio en Auditoría.</p>
 <form method="post">
@@ -7,7 +16,19 @@
     {{ form.as_p }}
     <div class="submit-row">
         <a href="{% url 'admin:admin_api_usuariocompartido_changelist' %}">Cancelar</a>
-        <input type="submit" value="Guardar cambio">
+        <input id="guardar-cambio-rol" type="submit" value="Guardar cambio" disabled>
     </div>
 </form>
+<script>
+  (() => {
+    const selector = document.getElementById('id_rol')
+    const guardar = document.getElementById('guardar-cambio-rol')
+    const rolActual = '{{ usuario.rol|escapejs }}'
+    if (!selector || !guardar) return
+    const actualizarEstado = () => { guardar.disabled = selector.value === rolActual }
+    selector.addEventListener('change', actualizarEstado)
+    actualizarEstado()
+  })()
+</script>
+{% endif %}
 {% endblock %}

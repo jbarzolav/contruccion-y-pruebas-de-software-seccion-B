@@ -203,9 +203,18 @@ export async function obtenerTotalCarrito() {
   return data
 }
 
-// HU 15 - POST /api/pedidos → 201 con el comprobante (idPedido, total, detalles)
-export async function confirmarCompra() {
-  const { data } = await apiPedidos.post('')
+// HU 59.2/59.3 - Una clave por intento permite recuperar el mismo pedido
+// después de un timeout sin repetir el descuento de stock.
+export async function confirmarCompra(claveIntento) {
+  const config = claveIntento ? { headers: { 'Idempotency-Key': claveIntento } } : undefined
+  const { data } = await apiPedidos.post('', null, config)
+  return data
+}
+
+// HU 59.6 - Solo el comprador autenticado puede cancelar un pedido propio
+// mientras conserve el estado REGISTRADO.
+export async function cancelarPedido(idPedido) {
+  const { data } = await apiPedidos.post(`/${idPedido}/cancelar`)
   return data
 }
 
