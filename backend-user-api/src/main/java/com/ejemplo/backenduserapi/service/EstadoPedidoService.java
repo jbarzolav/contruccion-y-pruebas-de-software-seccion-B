@@ -62,7 +62,7 @@ public class EstadoPedidoService {
 
         Pedido pedido = pedidoDelVendedor(idPedido, vendedor);
         if (pedido.getCodigoPedido()!=null) {
-            em.refresh(pedido,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            bloquear(pedido, "Solo se puede entregar un pedido pagado; el comprador gestiona su devolución.");
             if (!"PAGADO".equals(pedido.getEstadoPago()) || "EN_TRAMITE".equals(pedido.getEstadoReembolso()) || !"ENTREGADO".equalsIgnoreCase(estadoSolicitado(request)))
                 throw error(HttpStatus.CONFLICT,"Solo se puede entregar un pedido pagado; el comprador gestiona su devolución.");
         }
@@ -102,7 +102,7 @@ public class EstadoPedidoService {
     public PedidoEstadoActualizadoResponse cancelarCompra(Long idPedido, Usuario comprador) {
         Pedido pedido = pedidoDelComprador(idPedido, comprador);
         if (pedido.getCodigoPedido()!=null) {
-            em.refresh(pedido,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            bloquear(pedido, "El intento está cerrado. Un cobro aprobado requiere reembolso.");
             if (!java.util.Set.of("PENDIENTE","RECHAZADO").contains(pedido.getEstadoPago()))
                 throw error(HttpStatus.CONFLICT,"El intento está cerrado. Un cobro aprobado requiere reembolso.");
             pedido.setEstadoPago("CANCELADO");
@@ -134,6 +134,22 @@ public class EstadoPedidoService {
             throw error(HttpStatus.FORBIDDEN, "No puedes operar con una compra de otro cliente.");
         }
         return pedido;
+    }
+
+    /**
+     * Toma el pedido con bloqueo de escritura antes de decidir sobre el pago.
+     *
+     * Si otra transacción lo modificó mientras se leía (por ejemplo, el
+     * cobro aprobándose a la vez que la cancelación), el gestor falla al
+     * bloquear: en ese caso se responde con el conflicto de negocio (409)
+     * en vez de un error 500, y la transacción se revierte.
+     */
+    private void bloquear(Pedido pedido, String mensajeConflicto) {
+        try {
+            em.refresh(pedido, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        } catch (jakarta.persistence.PersistenceException e) {
+            throw error(HttpStatus.CONFLICT, mensajeConflicto);
+        }
     }
 
     /** Cambio de estado permitido: persiste, deja historial y avisa (HU 51). */
