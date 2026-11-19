@@ -19,10 +19,15 @@ public class AuditService {
 
     @Transactional
     public void registrar(Usuario usuario, AccionAuditoria accion) {
+        registrar(usuario, accion, null);
+    }
+
+    @Transactional
+    public void registrar(Usuario usuario, AccionAuditoria accion, Long usuarioAfectadoId) {
         if (usuario == null || usuario.getCorreo() == null || accion == null) {
             throw new IllegalArgumentException("La acción de auditoría requiere identidad y tipo válidos.");
         }
-        registros.save(new RegistroAuditoria(accion, usuario.getCorreo(), Instant.now()));
+        registros.save(new RegistroAuditoria(accion, usuario.getCorreo(), Instant.now(), usuarioAfectadoId));
     }
 
 }

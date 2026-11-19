@@ -26,7 +26,7 @@ public class RolService {
         Usuario usuario = usuarios.findById(id).orElseThrow(() -> new AutorizacionException(HttpStatus.NOT_FOUND, "Usuario no encontrado."));
         usuario.setRol(rol);
         UsuarioRolResponse respuesta = UsuarioRolResponse.de(usuarios.save(usuario));
-        auditoria.registrar(administrador, AccionAuditoria.CAMBIO_ROL);
+        auditoria.registrar(administrador, AccionAuditoria.CAMBIO_ROL, usuario.getId());
         return respuesta;
     }
 }

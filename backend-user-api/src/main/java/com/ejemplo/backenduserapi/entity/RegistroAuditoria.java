@@ -24,19 +24,28 @@ public class RegistroAuditoria {
     @Column(nullable = false, length = 255)
     private String usuario;
 
+    @Column(name = "usuario_afectado_id")
+    private Long usuarioAfectadoId;
+
     @Column(nullable = false)
     private Instant fecha;
 
     protected RegistroAuditoria() { }
 
     public RegistroAuditoria(AccionAuditoria accion, String usuario, Instant fecha) {
+        this(accion, usuario, fecha, null);
+    }
+
+    public RegistroAuditoria(AccionAuditoria accion, String usuario, Instant fecha, Long usuarioAfectadoId) {
         this.accion = accion;
         this.usuario = usuario;
         this.fecha = fecha;
+        this.usuarioAfectadoId = usuarioAfectadoId;
     }
 
     public Long getId() { return id; }
     public AccionAuditoria getAccion() { return accion; }
     public String getUsuario() { return usuario; }
+    public Long getUsuarioAfectadoId() { return usuarioAfectadoId; }
     public Instant getFecha() { return fecha; }
 }
